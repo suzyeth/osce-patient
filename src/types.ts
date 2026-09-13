@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
-export type Domain = 'data_gathering' | 'interpersonal' | 'management';
-export type FactKind = 'presenting' | 'history' | 'red_flag' | 'concern';
+export const DOMAINS = ['data_gathering', 'interpersonal', 'management'] as const;
+export type Domain = (typeof DOMAINS)[number];
+export const FACT_KINDS = ['presenting', 'history', 'red_flag', 'concern'] as const;
+export type FactKind = (typeof FACT_KINDS)[number];
 export type GlobalJudgement = 'Unsatisfactory' | 'Borderline' | 'Satisfactory' | 'Good';
 
 export const SourceSchema = z.object({
@@ -14,7 +16,7 @@ export const SourceSchema = z.object({
 
 export const RubricItemSchema = z.object({
   id: z.string().min(1),
-  domain: z.enum(['data_gathering', 'interpersonal', 'management']),
+  domain: z.enum(DOMAINS),
   label: z.string().min(1),
   /** A critical item (e.g. a red flag) caps the global judgement at Borderline when missed. */
   critical: z.boolean().default(false),
@@ -26,7 +28,7 @@ export const RubricItemSchema = z.object({
 
 export const FactSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['presenting', 'history', 'red_flag', 'concern']),
+  kind: z.enum(FACT_KINDS),
   /** The rubric item whose coverage unlocks this fact. */
   rubricItemId: z.string().min(1),
   /** What the patient may say once the fact is unlocked. */
