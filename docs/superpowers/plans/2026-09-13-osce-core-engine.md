@@ -270,8 +270,10 @@ Expected: FAIL — cannot resolve `../src/types.js`.
 ```ts
 import { z } from 'zod';
 
-export type Domain = 'data_gathering' | 'interpersonal' | 'management';
-export type FactKind = 'presenting' | 'history' | 'red_flag' | 'concern';
+export const DOMAINS = ['data_gathering', 'interpersonal', 'management'] as const;
+export type Domain = (typeof DOMAINS)[number];
+export const FACT_KINDS = ['presenting', 'history', 'red_flag', 'concern'] as const;
+export type FactKind = (typeof FACT_KINDS)[number];
 export type GlobalJudgement = 'Unsatisfactory' | 'Borderline' | 'Satisfactory' | 'Good';
 
 export const SourceSchema = z.object({
@@ -284,7 +286,7 @@ export const SourceSchema = z.object({
 
 export const RubricItemSchema = z.object({
   id: z.string().min(1),
-  domain: z.enum(['data_gathering', 'interpersonal', 'management']),
+  domain: z.enum(DOMAINS),
   label: z.string().min(1),
   /** A critical item (e.g. a red flag) caps the global judgement at Borderline when missed. */
   critical: z.boolean().default(false),
@@ -296,7 +298,7 @@ export const RubricItemSchema = z.object({
 
 export const FactSchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['presenting', 'history', 'red_flag', 'concern']),
+  kind: z.enum(FACT_KINDS),
   /** The rubric item whose coverage unlocks this fact. */
   rubricItemId: z.string().min(1),
   /** What the patient may say once the fact is unlocked. */
@@ -1338,7 +1340,7 @@ Expected: FAIL — cannot resolve `../src/report.js`.
 - [ ] **Step 3: Create `src/report.ts`**
 
 ```ts
-import type { Domain, GlobalJudgement, PatientCase, SessionState } from './types.js';
+import { DOMAINS, type Domain, type GlobalJudgement, type PatientCase, type SessionState } from './types.js';
 
 export interface ItemResult {
   id: string;
@@ -1372,8 +1374,6 @@ export interface SessionReport {
   interruptions: number;
   jargonCount: number;
 }
-
-const DOMAINS: Domain[] = ['data_gathering', 'interpersonal', 'management'];
 
 function domainScore(items: ItemResult[], domain: Domain): DomainScore {
   const inDomain = items.filter((i) => i.domain === domain);
@@ -1699,6 +1699,17 @@ describe('validateCase', () => {
     delete bad.facts[4]!.minTrust;
     expect(validateCase(bad).warnings).toContain('concern fact f_concern has no minTrust, so it only unlocks when asked');
   });
+
+  it('warns about settings that have no effect', () => {
+    const bad = loadDemoCase();
+    bad.facts[1]!.minTrust = 50;
+    bad.facts[0]!.guardedTerms = ['cough'];
+    const w = validateCase(bad).warnings;
+    expect(w).toContain('minTrust on non-concern fact f_duration has no effect');
+    expect(w).toContain(
+      'guarded terms on presenting fact f_presenting have no effect, because presenting facts are always public',
+    );
+  });
 });
 ```
 
@@ -1747,6 +1758,12 @@ export function validateCase(c: PatientCase): CaseIssues {
     if (f.kind !== 'presenting' && f.guardedTerms.length === 0) {
       warnings.push(`fact ${f.id} has no guarded terms, so the output guard cannot protect it`);
     }
+    if (f.kind !== 'concern' && f.minTrust !== undefined) {
+      warnings.push(`minTrust on non-concern fact ${f.id} has no effect`);
+    }
+    if (f.kind === 'presenting' && f.guardedTerms.length > 0) {
+      warnings.push(`guarded terms on presenting fact ${f.id} have no effect, because presenting facts are always public`);
+    }
   }
 
   const publicText = [
@@ -1774,7 +1791,7 @@ export function validateCase(c: PatientCase): CaseIssues {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/validateCase.test.ts`
-Expected: PASS (4 tests).
+Expected: PASS (5 tests).
 
 - [ ] **Step 5: Commit**
 
