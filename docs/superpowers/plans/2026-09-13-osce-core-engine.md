@@ -634,10 +634,13 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/patientGuard.ts`
 - Test: `tests/patientGuard.test.ts`
 
+Design note (after review): a single pass over the original reply with one combined regex. Terms are normalised (trimmed, deduped by case and spacing, first spelling kept), sorted longest-first so 'lung cancer' wins over 'cancer', and matched with Unicode lookaround boundaries so terms ending in punctuation (C.O.P.D.) work. Whitespace inside a term matches any whitespace run, because model output wraps lines. The redaction is never rescanned, so it cannot cause false leaks.
+
 - [ ] **Step 1: Write the failing test `tests/patientGuard.test.ts`**
 
 ```ts
 import { describe, it, expect } from 'vitest';
+import type { PatientCase } from '../src/types.js';
 import { forbiddenTerms, guardReply } from '../src/patientGuard.js';
 import { initialSessionState } from '../src/state.js';
 import { loadDemoCase } from './loadCase.js';
@@ -655,6 +658,29 @@ describe('forbiddenTerms', () => {
       'cancer',
     ]);
     expect(forbiddenTerms(c, { ...initialSessionState(), unlockedFactIds: ['f_blood'] })).not.toContain('blood');
+  });
+
+  it('dedupes terms case-insensitively, keeping first spelling', () => {
+    // Create a case with both 'blood' and 'Blood'
+    const caseWithDuplicate: PatientCase = {
+      ...c,
+      facts: [
+        ...c.facts,
+        {
+          id: 'f_duplicate',
+          kind: 'history',
+          rubricItemId: 'r_dup',
+          text: 'Test fact',
+          guardedTerms: ['Blood'],
+          source: { dataset: 'authored', ref: 'test', quote: 'test' },
+        },
+      ],
+    };
+    const result = forbiddenTerms(caseWithDuplicate, initialSessionState());
+    // Should contain 'blood' (from original) but not 'Blood'
+    expect(result).toContain('blood');
+    const bloodCount = result.filter((t) => t.toLowerCase() === 'blood').length;
+    expect(bloodCount).toBe(1);
   });
 });
 
@@ -682,6 +708,55 @@ describe('guardReply', () => {
     expect(guardReply('I smoke twenty a day.', ['twenty a day']).ok).toBe(false);
     expect(guardReply('Take a+b now.', ['a+b']).ok).toBe(false);
   });
+
+  it('handles terms ending in punctuation', () => {
+    expect(guardReply('He has C.O.P.D. now.', ['C.O.P.D.']).ok).toBe(false);
+  });
+
+  it('handles overlapping terms: longest match first', () => {
+    const r = guardReply('Is it lung cancer?', ['cancer', 'lung cancer']);
+    expect(r.leaked).toEqual(['lung cancer']);
+    expect(r.sanitized).toBe('Is it ...?');
+  });
+
+  it('reports multiple matches in input order', () => {
+    const r = guardReply('Is it lung cancer? Cancer runs in my family.', ['lung cancer', 'cancer']);
+    expect(r.leaked).toEqual(['lung cancer', 'cancer']);
+    expect(r.sanitized).toBe('Is it ...? ... runs in my family.');
+  });
+
+  it('redacts multiple occurrences of same term', () => {
+    const r = guardReply('blood blood Blood', ['blood']);
+    expect(r.sanitized).toBe('... ... ...');
+    expect(r.leaked).toEqual(['blood']);
+  });
+
+  it('does not flag term inside a longer word (lifeblood)', () => {
+    expect(guardReply('lifeblood', ['blood']).ok).toBe(true);
+  });
+
+  it('matches multi-word terms with flexible whitespace', () => {
+    expect(guardReply('six  weeks', ['six weeks']).ok).toBe(false);
+    expect(guardReply('six\nweeks', ['six weeks']).ok).toBe(false);
+  });
+
+  it('does not flag redaction character itself', () => {
+    const r = guardReply('I said blood.', ['blood', '...']);
+    expect(r.leaked).toEqual(['blood']);
+    expect(r.ok).toBe(false);
+  });
+
+  it('handles parenthesised terms', () => {
+    const r = guardReply('a (b) c and x', ['a (b) c', 'x', '(b)']);
+    expect(r.leaked).toEqual(['a (b) c', 'x']);
+    expect(r.sanitized).toBe('... and ...');
+  });
+
+  it('collapses terms with different spacing to one', () => {
+    const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
+    expect(r.leaked).toEqual(['six weeks']);
+    expect(r.ok).toBe(false);
+  });
 });
 ```
 
@@ -708,52 +783,101 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function wholeWord(term: string): RegExp {
-  return new RegExp(`\\b${escapeRegExp(term)}\\b`, 'gi');
+/**
+ * Normalise terms: trim, drop empty, dedupe by lowercase + normalised spacing.
+ * Keeps the first spelling of each unique term (case-insensitive, whitespace-insensitive).
+ */
+function normaliseTerms(terms: readonly string[]): string[] {
+  const seenKey = new Map<string, string>();
+  for (const raw of terms) {
+    const term = raw.trim();
+    if (term) {
+      // Key: lowercase with runs of whitespace collapsed to single space.
+      const key = term.toLowerCase().replace(/\s+/g, ' ');
+      if (!seenKey.has(key)) {
+        seenKey.set(key, term);
+      }
+    }
+  }
+  return Array.from(seenKey.values());
+}
+
+function buildMatcher(sortedTerms: readonly string[]): RegExp {
+  const alternatives = sortedTerms.map((term) => {
+    const escaped = escapeRegExp(term);
+    // Replace runs of whitespace with \s+ for flexible spacing in the regex.
+    const flexible = escaped.replace(/\s+/g, '\\s+');
+    return `(${flexible})`;
+  });
+
+  const pattern = String.raw`(?<![\p{L}\p{N}_])` +
+    `(?:${alternatives.join('|')})` +
+    String.raw`(?![\p{L}\p{N}_])`;
+
+  return new RegExp(pattern, 'giu');
 }
 
 /** Guarded terms of every fact that is still locked, deduplicated, in case-file order. */
 export function forbiddenTerms(patientCase: PatientCase, state: SessionState): string[] {
-  const seen = new Set<string>();
+  const allTerms: string[] = [];
   for (const fact of patientCase.facts) {
     if (isPublic(fact) || state.unlockedFactIds.includes(fact.id)) continue;
-    for (const raw of fact.guardedTerms) {
-      const term = raw.trim();
-      if (term) seen.add(term);
-    }
+    allTerms.push(...fact.guardedTerms);
   }
-  return [...seen];
+  return normaliseTerms(allTerms);
 }
 
 /**
  * Second line of defence: the patient never sees locked facts, but a model can still
- * guess. Any locked term in the reply is reported and redacted (whole word, any case).
+ * guess. Single-pass scan for locked terms with whole-word matching (any case),
+ * redacting all matches and reporting which were found.
+ * Terms sorted longest-first to handle overlaps (e.g. 'lung cancer' before 'cancer').
+ * Whitespace runs in terms are matched flexibly (multiple spaces, tabs, newlines).
  */
 export function guardReply(reply: string, forbidden: readonly string[]): GuardResult {
-  const leaked: string[] = [];
-  let sanitized = reply;
-  for (const raw of forbidden) {
-    const term = raw.trim();
-    if (!term) continue;
-    if (wholeWord(term).test(sanitized)) {
-      leaked.push(term);
-      sanitized = sanitized.replace(wholeWord(term), REDACTION);
-    }
+  const normalised = normaliseTerms(forbidden);
+
+  if (normalised.length === 0) {
+    return { ok: true, leaked: [], sanitized: reply };
   }
-  return { ok: leaked.length === 0, leaked, sanitized };
+
+  // Sort by length descending (longest first, to match 'lung cancer' before 'cancer').
+  const sortedTerms = [...normalised].sort((a, b) => b.length - a.length);
+  const regex = buildMatcher(sortedTerms);
+
+  // Single pass: track which terms (in sorted order) matched.
+  const matched = new Set<string>();
+
+  const sanitized = reply.replace(regex, (...args: readonly unknown[]) => {
+    // args = [fullMatch, group1, group2, ..., groupN, offset, string]
+    // Extract groups: exactly sortedTerms.length groups, starting at index 1.
+    const groups = args.slice(1, 1 + sortedTerms.length);
+
+    for (let i = 0; i < groups.length; i++) {
+      if (groups[i] !== undefined && typeof groups[i] === 'string') {
+        matched.add(sortedTerms[i] as string);
+        break;
+      }
+    }
+    return REDACTION;
+  });
+
+  const leaked = normalised.filter((t) => matched.has(t));
+
+  return { ok: matched.size === 0, leaked, sanitized };
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/patientGuard.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (15 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/patientGuard.ts tests/patientGuard.test.ts
-git commit -m "feat: whole-word output guard for terms of locked facts
+git commit -m "feat: single-pass output guard for terms of locked facts
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
