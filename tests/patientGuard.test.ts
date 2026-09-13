@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { PatientCase } from '../src/types.js';
 import { forbiddenTerms, guardReply } from '../src/patientGuard.js';
 import { initialSessionState } from '../src/state.js';
 import { loadDemoCase } from './loadCase.js';
@@ -16,6 +17,29 @@ describe('forbiddenTerms', () => {
       'cancer',
     ]);
     expect(forbiddenTerms(c, { ...initialSessionState(), unlockedFactIds: ['f_blood'] })).not.toContain('blood');
+  });
+
+  it('dedupes terms case-insensitively, keeping first spelling', () => {
+    // Create a case with both 'blood' and 'Blood'
+    const caseWithDuplicate: PatientCase = {
+      ...c,
+      facts: [
+        ...c.facts,
+        {
+          id: 'f_duplicate',
+          kind: 'history',
+          rubricItemId: 'r_dup',
+          text: 'Test fact',
+          guardedTerms: ['Blood'],
+          source: { dataset: 'authored', ref: 'test', quote: 'test' },
+        },
+      ],
+    };
+    const result = forbiddenTerms(caseWithDuplicate, initialSessionState());
+    // Should contain 'blood' (from original) but not 'Blood'
+    expect(result).toContain('blood');
+    const bloodCount = result.filter((t) => t.toLowerCase() === 'blood').length;
+    expect(bloodCount).toBe(1);
   });
 });
 
@@ -46,5 +70,38 @@ describe('guardReply', () => {
 
   it('handles terms ending in punctuation', () => {
     expect(guardReply('He has C.O.P.D. now.', ['C.O.P.D.']).ok).toBe(false);
+  });
+
+  it('handles overlapping terms: longest match first', () => {
+    const r = guardReply('Is it lung cancer?', ['cancer', 'lung cancer']);
+    expect(r.leaked).toEqual(['lung cancer']);
+    expect(r.sanitized).toBe('Is it ...?');
+  });
+
+  it('reports multiple matches in input order', () => {
+    const r = guardReply('Is it lung cancer? Cancer runs in my family.', ['lung cancer', 'cancer']);
+    expect(r.leaked).toEqual(['lung cancer', 'cancer']);
+    expect(r.sanitized).toBe('Is it ...? ... runs in my family.');
+  });
+
+  it('redacts multiple occurrences of same term', () => {
+    const r = guardReply('blood blood Blood', ['blood']);
+    expect(r.sanitized).toBe('... ... ...');
+    expect(r.leaked).toEqual(['blood']);
+  });
+
+  it('does not flag term at leading word boundary', () => {
+    expect(guardReply('lifeblood', ['blood']).ok).toBe(true);
+  });
+
+  it('matches multi-word terms with flexible whitespace', () => {
+    expect(guardReply('six  weeks', ['six weeks']).ok).toBe(false);
+    expect(guardReply('six\nweeks', ['six weeks']).ok).toBe(false);
+  });
+
+  it('does not flag redaction character itself', () => {
+    const r = guardReply('I said blood.', ['blood', '...']);
+    expect(r.leaked).toEqual(['blood']);
+    expect(r.ok).toBe(false);
   });
 });
