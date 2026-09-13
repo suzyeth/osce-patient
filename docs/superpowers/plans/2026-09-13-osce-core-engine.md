@@ -857,6 +857,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/safety.ts`
 - Test: `tests/safety.test.ts`
 
+Design note: this regex check is a fast, precision-first pre-filter on the candidate's input. The judge verdict's `selfDisclosure` field (semantic, Plan 2) catches what it misses. A false block mid-exam costs the candidate time, so every pattern needs either an explicit self-referential phrase or a first-person experience phrase followed by a symptom word, never reaching past "you"/"your". Curly apostrophes are normalised first.
+
 - [ ] **Step 1: Write the failing test `tests/safety.test.ts`**
 
 ```ts
@@ -868,17 +870,39 @@ describe('looksLikeSelfDisclosure', () => {
     'I have been having chest pains myself, what do I have?',
     'Should I see a doctor about my symptoms?',
     "I've been feeling dizzy lately",
+    'I’ve been feeling dizzy lately',
+    'Ive been having chest pain',
     'Am I dying?',
+    'I keep getting headaches, is that bad?',
+    'What do you think I have?',
+    'I feel really sick today',
+    "I've got a lump in my neck, should I worry?",
+    "I'm having palpitations right now",
+    "I've been coughing up blood myself",
   ])('flags: %s', (s) => {
     expect(looksLikeSelfDisclosure(s)).toBe(true);
   });
 
+  // Ordinary candidate phrasing must never trigger the block.
   it.each([
     'Have you been having any chest pain?',
     "I'm sorry to hear that.",
     'What brings you in today?',
     'Do you smoke?',
     'Is it okay if I ask you some questions?',
+    'I have been having a look through your notes.',
+    "I've been getting some information from the nurse.",
+    "I've been feeling that we should check your chest.",
+    'Should I call the doctor on duty to see you?',
+    'Let me summarise my understanding of your symptoms.',
+    'What do I have here, let me check your records.',
+    'Am I right in thinking the cough started after a cold?',
+    'I feel we should do a chest X-ray to be safe.',
+    'I have a few more questions about the cough.',
+    'I understand you have been coughing up blood.',
+    "I've been having a think about your cough.",
+    "I've got some questions about your chest pain.",
+    'I feel your cough needs a chest X-ray.',
   ])('allows: %s', (s) => {
     expect(looksLikeSelfDisclosure(s)).toBe(false);
   });
@@ -901,28 +925,44 @@ Expected: FAIL — cannot resolve `../src/safety.js`.
  * This is an education tool with fictional patients. If a user appears to describe their
  * own real symptoms, we stop and signpost instead of answering (keeps the product outside
  * "symptom checker" territory under MHRA guidance).
+ *
+ * Precision first: a false block costs an exam candidate time, and the judge's semantic
+ * selfDisclosure flag backs this up.
  */
-const PATTERNS: RegExp[] = [
+const SYMPTOM = String.raw`(?:pains?|aches?|aching|headaches?|migraines?|dizz(?:y|iness)|faint|breathless|short of breath|palpitations|nause(?:a|ous)|vomiting|sick|bleeding|blood|lumps?|rash|fevers?|temperature|numb(?:ness)?|tingling|tired|exhausted|depressed|anxious|suicidal|cough(?:ing)?|swollen|swelling)`;
+
+// "I've been ...ing", "I've got", "I keep having", "I'm feeling", "I feel".
+const EXPERIENCE = String.raw`\bI(?:'?ve| have) been \w+ing\b|\bI'?ve got\b|\bI keep (?:having|getting)\b|\bI(?:'?m| am) (?:having|getting|feeling)\b|\bI feel\b`;
+
+const PATTERNS: readonly RegExp[] = [
   /\bmy (?:own )?(?:real )?symptoms\b/i,
-  /\bI(?:'ve| have) been (?:having|getting|feeling)\b/i,
-  /\bshould I (?:see|go to|call) (?:a|my|the) (?:doctor|GP|hospital)\b/i,
-  /\bwhat do (?:you think )?I have\b/i,
+  /\bshould I (?:see|go to|call|ring) (?:a|my) (?:doctor|GP)\b/i,
+  /\bshould I go to (?:A&E|hospital)\b/i,
+  /\bwhat do you think I(?:'?ve)? (?:have|got)\b/i,
+  /\bwhat(?:'?s| is) wrong with me\b/i,
   /\bam I (?:ill|sick|dying)\b/i,
+  // First-person experience, then a symptom within six words, never reaching past "you"/"your".
+  new RegExp(String.raw`(?:${EXPERIENCE})(?:\s+(?!(?:you|your)\b)\S+){0,6}?\s+${SYMPTOM}\b`, 'i'),
 ];
 
 export const SAFETY_MESSAGE =
   "This is a practice tool with a fictional patient, so it can't give advice about your own health. " +
   "If you're unwell, contact NHS 111 or your GP, or call 999 in an emergency.";
 
+function normaliseApostrophes(s: string): string {
+  return s.replace(/[‘’ʼ]/g, "'");
+}
+
 export function looksLikeSelfDisclosure(input: string): boolean {
-  return PATTERNS.some((p) => p.test(input));
+  const text = normaliseApostrophes(input);
+  return PATTERNS.some((p) => p.test(text));
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/safety.test.ts`
-Expected: PASS (10 tests).
+Expected: PASS (31 tests).
 
 - [ ] **Step 5: Commit**
 
