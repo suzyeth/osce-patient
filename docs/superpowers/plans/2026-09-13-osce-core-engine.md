@@ -2224,7 +2224,19 @@ Expected: all test files pass; no skipped tests.
 Run: `npm run typecheck`
 Expected: exits 0 with no output.
 
-- [ ] **Step 3: Confirm the repo is clean and list the history**
+- [ ] **Step 3: Run both command-line tools end to end**
+
+Run: `npm run check-case -- cases/demo-cough.json`
+Expected: last line `OK: demo-cough (5 facts, 7 rubric items)`, exit code 0.
+
+Run: `printf 'What brings you in today?
+Do you smoke?
+Have you coughed up any blood?
+/end
+' | npm run play`
+Expected: three patient replies (cough, twenty a day, streak of blood), then the full report including `[x] turn 3  Asks about coughing up blood`. The session must reach the report; a hang or an "unsettled top-level await" warning is a failure.
+
+- [ ] **Step 4: Confirm the repo is clean and list the history**
 
 Run: `git status --short && git log --oneline`
-Expected: empty status; 14 commits from scaffold to CLI tools.
+Expected: empty status; history runs from the scaffold commit to the CLI tools commit, including review-fix and plan-sync commits.
