@@ -13,23 +13,48 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** Guarded terms of every fact that is still locked, deduplicated case-insensitively, in case-file order. */
-export function forbiddenTerms(patientCase: PatientCase, state: SessionState): string[] {
-  // Dedupe by lowercase key, keeping first spelling encountered.
-  const seenLower = new Map<string, string>();
-  for (const fact of patientCase.facts) {
-    if (isPublic(fact) || state.unlockedFactIds.includes(fact.id)) continue;
-    for (const raw of fact.guardedTerms) {
-      const term = raw.trim();
-      if (term) {
-        const lower = term.toLowerCase();
-        if (!seenLower.has(lower)) {
-          seenLower.set(lower, term);
-        }
+/**
+ * Normalise terms: trim, drop empty, dedupe by lowercase + normalised spacing.
+ * Keeps the first spelling of each unique term (case-insensitive, whitespace-insensitive).
+ */
+function normaliseTerms(terms: readonly string[]): string[] {
+  const seenKey = new Map<string, string>();
+  for (const raw of terms) {
+    const term = raw.trim();
+    if (term) {
+      // Key: lowercase with runs of whitespace collapsed to single space.
+      const key = term.toLowerCase().replace(/\s+/g, ' ');
+      if (!seenKey.has(key)) {
+        seenKey.set(key, term);
       }
     }
   }
-  return Array.from(seenLower.values());
+  return Array.from(seenKey.values());
+}
+
+function buildMatcher(sortedTerms: readonly string[]): RegExp {
+  const alternatives = sortedTerms.map((term) => {
+    const escaped = escapeRegExp(term);
+    // Replace runs of whitespace with \s+ for flexible spacing in the regex.
+    const flexible = escaped.replace(/\s+/g, '\\s+');
+    return `(${flexible})`;
+  });
+
+  const pattern = String.raw`(?<![\p{L}\p{N}_])` +
+    `(?:${alternatives.join('|')})` +
+    String.raw`(?![\p{L}\p{N}_])`;
+
+  return new RegExp(pattern, 'giu');
+}
+
+/** Guarded terms of every fact that is still locked, deduplicated, in case-file order. */
+export function forbiddenTerms(patientCase: PatientCase, state: SessionState): string[] {
+  const allTerms: string[] = [];
+  for (const fact of patientCase.facts) {
+    if (isPublic(fact) || state.unlockedFactIds.includes(fact.id)) continue;
+    allTerms.push(...fact.guardedTerms);
+  }
+  return normaliseTerms(allTerms);
 }
 
 /**
@@ -40,79 +65,34 @@ export function forbiddenTerms(patientCase: PatientCase, state: SessionState): s
  * Whitespace runs in terms are matched flexibly (multiple spaces, tabs, newlines).
  */
 export function guardReply(reply: string, forbidden: readonly string[]): GuardResult {
-  // Trim and dedupe case-insensitively, keeping first spelling of each lowercase variant.
-  const dedupedMap = new Map<string, string>();
-  const dedupedList: string[] = [];
+  const normalised = normaliseTerms(forbidden);
 
-  for (const raw of forbidden) {
-    const term = raw.trim();
-    if (term) {
-      const lower = term.toLowerCase();
-      if (!dedupedMap.has(lower)) {
-        dedupedMap.set(lower, term);
-        dedupedList.push(term);
-      }
-    }
-  }
-
-  // If no usable terms, return clean.
-  if (dedupedList.length === 0) {
+  if (normalised.length === 0) {
     return { ok: true, leaked: [], sanitized: reply };
   }
 
   // Sort by length descending (longest first, to match 'lung cancer' before 'cancer').
-  const sortedTerms = [...dedupedList].sort((a, b) => b.length - a.length);
+  const sortedTerms = [...normalised].sort((a, b) => b.length - a.length);
+  const regex = buildMatcher(sortedTerms);
 
-  // Build combined regex: one capturing group per term, wrapped in lookarounds.
-  const alternatives = sortedTerms.map((term) => {
-    const escaped = escapeRegExp(term);
-    // Replace runs of whitespace with \s+ to match flexible spacing.
-    const flexible = escaped.replace(/\s+/g, '\\s+');
-    return `(${flexible})`;
-  });
-
-  const pattern = String.raw`(?<![\p{L}\p{N}_])` +
-    `(?:${alternatives.join('|')})` +
-    String.raw`(?![\p{L}\p{N}_])`;
-
-  const regex = new RegExp(pattern, 'giu');
-
-  // Single pass: track which terms (sorted) matched, then report in input order.
-  const leakedSet = new Set<string>();
+  // Single pass: track which terms (in sorted order) matched.
+  const matched = new Set<string>();
 
   const sanitized = reply.replace(regex, (...args: readonly unknown[]) => {
     // args = [fullMatch, group1, group2, ..., groupN, offset, string]
-    // Extract groups (skip last two: offset and string).
-    const groups = args.slice(1, -2);
+    // Extract groups: exactly sortedTerms.length groups, starting at index 1.
+    const groups = args.slice(1, 1 + sortedTerms.length);
 
     for (let i = 0; i < groups.length; i++) {
       if (groups[i] !== undefined && typeof groups[i] === 'string') {
-        leakedSet.add(sortedTerms[i] as string);
+        matched.add(sortedTerms[i] as string);
         break;
       }
     }
     return REDACTION;
   });
 
-  // Build leaked array in the order of the input forbidden, deduped.
-  const leaked: string[] = [];
-  const processedLower = new Set<string>();
+  const leaked = normalised.filter((t) => matched.has(t));
 
-  for (const raw of forbidden) {
-    const term = raw.trim();
-    if (term) {
-      const lower = term.toLowerCase();
-      if (!processedLower.has(lower)) {
-        for (const matched of leakedSet) {
-          if (matched.toLowerCase() === lower) {
-            leaked.push(matched);
-            processedLower.add(lower);
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  return { ok: leakedSet.size === 0, leaked, sanitized };
+  return { ok: matched.size === 0, leaked, sanitized };
 }

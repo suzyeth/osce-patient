@@ -90,7 +90,7 @@ describe('guardReply', () => {
     expect(r.leaked).toEqual(['blood']);
   });
 
-  it('does not flag term at leading word boundary', () => {
+  it('does not flag term inside a longer word (lifeblood)', () => {
     expect(guardReply('lifeblood', ['blood']).ok).toBe(true);
   });
 
@@ -102,6 +102,18 @@ describe('guardReply', () => {
   it('does not flag redaction character itself', () => {
     const r = guardReply('I said blood.', ['blood', '...']);
     expect(r.leaked).toEqual(['blood']);
+    expect(r.ok).toBe(false);
+  });
+
+  it('handles parenthesised terms', () => {
+    const r = guardReply('a (b) c and x', ['a (b) c', 'x', '(b)']);
+    expect(r.leaked).toEqual(['a (b) c', 'x']);
+    expect(r.sanitized).toBe('... and ...');
+  });
+
+  it('collapses terms with different spacing to one', () => {
+    const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
+    expect(r.leaked).toEqual(['six weeks']);
     expect(r.ok).toBe(false);
   });
 });
