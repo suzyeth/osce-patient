@@ -37,4 +37,14 @@ describe('unlockFacts', () => {
     expect(unlockFacts(c, s, verdict())).toEqual(['f_concern']);
     expect(unlockFacts(c, { ...s, trust: 59 }, verdict())).toEqual([]);
   });
+
+  it('never unlocks a red flag through trust alone, even with a stray minTrust', () => {
+    const withStray = {
+      ...c,
+      facts: c.facts.map((f) => (f.id === 'f_blood' ? { ...f, minTrust: 0 } : f)),
+    };
+    const highTrust = { ...initialSessionState(), trust: 100 };
+    expect(unlockFacts(withStray, highTrust, verdict())).not.toContain('f_blood');
+    expect(unlockFacts(withStray, highTrust, verdict({ rubricItemIds: ['haemoptysis'] }))).toContain('f_blood');
+  });
 });
