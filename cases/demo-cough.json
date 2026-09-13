@@ -1,0 +1,29 @@
+{
+  "id": "demo-cough",
+  "title": "Demo: persistent cough (synthetic)",
+  "candidateBrief": "You are a doctor in a GP surgery. Mr Alan Price, 58, has come in about a cough. Take a focused history. You have 8 minutes.",
+  "durationSeconds": 480,
+  "reviewStatus": "unreviewed",
+  "patient": {
+    "name": "Alan Price",
+    "age": 58,
+    "persona": "A retired bus driver, polite but a bit gruff, downplays his symptoms and dislikes fuss.",
+    "openingLine": "Morning, doctor. It's this cough, really."
+  },
+  "rubric": [
+    { "id": "intro_consent", "domain": "interpersonal", "label": "Introduces self and gains consent", "exampleQuestion": "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?", "offlineCues": ["my name is", "i'm one of the doctors", "is it okay if"] },
+    { "id": "open_question", "domain": "interpersonal", "label": "Opens with an open question", "exampleQuestion": "What brings you in today?", "offlineCues": ["what brings", "tell me about", "how can i help"] },
+    { "id": "onset_duration", "domain": "data_gathering", "label": "Asks about onset and duration", "exampleQuestion": "When did the cough start?", "offlineCues": ["when did", "how long"] },
+    { "id": "haemoptysis", "domain": "data_gathering", "label": "Asks about coughing up blood", "critical": true, "exampleQuestion": "Have you coughed up any blood?", "offlineCues": ["blood"] },
+    { "id": "smoking", "domain": "data_gathering", "label": "Takes a smoking history", "exampleQuestion": "Do you smoke, or have you ever smoked?", "offlineCues": ["smoke", "cigarette"] },
+    { "id": "ice_concerns", "domain": "interpersonal", "label": "Explores the patient's concerns", "exampleQuestion": "Is there anything in particular you're worried this might be?", "offlineCues": ["worried", "worry", "concern"] },
+    { "id": "closing", "domain": "interpersonal", "label": "Summarises and invites questions", "exampleQuestion": "Can I summarise what you've told me? Do you have any questions?", "offlineCues": ["summarise", "summarize", "any questions"] }
+  ],
+  "facts": [
+    { "id": "f_presenting", "kind": "presenting", "rubricItemId": "open_question", "text": "I've had a cough that just won't go away.", "source": { "dataset": "authored", "ref": "demo", "quote": "Synthetic demo content for engine tests. Not clinical content." } },
+    { "id": "f_duration", "kind": "history", "rubricItemId": "onset_duration", "text": "It started about six weeks ago, after a cold.", "guardedTerms": ["six weeks"], "source": { "dataset": "authored", "ref": "demo", "quote": "Synthetic demo content for engine tests. Not clinical content." } },
+    { "id": "f_blood", "kind": "red_flag", "rubricItemId": "haemoptysis", "text": "Last week I noticed a streak of blood when I coughed.", "guardedTerms": ["blood"], "source": { "dataset": "authored", "ref": "demo", "quote": "Synthetic demo content for engine tests. Not clinical content." } },
+    { "id": "f_smoking", "kind": "history", "rubricItemId": "smoking", "text": "I smoke about twenty a day and have done since I was eighteen.", "guardedTerms": ["twenty a day", "eighteen"], "source": { "dataset": "authored", "ref": "demo", "quote": "Synthetic demo content for engine tests. Not clinical content." } },
+    { "id": "f_concern", "kind": "concern", "rubricItemId": "ice_concerns", "text": "My dad had lung cancer, and I'm scared this is the same thing.", "guardedTerms": ["lung cancer", "cancer"], "minTrust": 60, "source": { "dataset": "authored", "ref": "demo", "quote": "Authored persona detail, not a clinical fact." } }
+  ]
+}
