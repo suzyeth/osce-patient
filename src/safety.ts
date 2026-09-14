@@ -12,8 +12,9 @@
  * Quoted speech is ignored, because candidates reflect and quote what patients say.
  */
 const SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|blood|lumps?|rash(?:es)?|fevers?|temperature|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
-// After "I've got" or "I've had", "blood" and "temperature" are usually measurements
-// ("I've got blood in both bottles", "I've got a temperature, 38.4").
+// After a first-person opener, "blood" and "temperature" are usually measurements or procedures
+// ("I've got blood in both bottles", "I keep getting a temperature on the tympanic"). Blood in
+// the user's own body is still caught by the "in/on/from my <body part>" pattern.
 const OWN_SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|lumps?|rash(?:es)?|fevers?|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
 const SYMPTOM_ADJECTIVES = String.raw`(?:dizzy|faint|sick|nauseous|breathless|unwell|ill|tired|exhausted|hopeless|depressed|anxious|suicidal|feverish|shaky)`;
 // The examiner's own hands and fingers are excluded: "tell me when my hand hurts".
@@ -28,10 +29,16 @@ const ONGOING = String.raw`for|since|every|all|again|lately|recently|today|tonig
 // "keeps", or "be"/"a" for questions like "Could my chest pain be my heart?" and
 // "Is my headache a brain tumour?".
 const AFTER = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${ONGOING}|in|on|at|when|and|is|keeps|be|a)\b))`;
+// A real time phrase. "all over the trunk", "every time I've seen this drug" and "a lump for
+// you to feel" are not durations.
+const DURATION = String.raw`(?:since|lately|recently|today|tonight|all (?:day|night|week|morning|the time)|every (?:day|night|morning|week|month)|for (?:days|weeks|months|years|ages|a while)|for (?:(?:the )?(?:past|last) |about |over |nearly |almost )?(?:\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|a few|few|several|many|a couple of)(?:\s+\w+)?\s+(?:days?|weeks?|months?|years?|while))`;
 // After "I've got" or "I've had", which examiners also use to narrate findings ("I've got a
-// lump now.", "I've got swelling as well, both ankles"): only a duration word or "in/on/from
-// my <body part>". A bare "I've got a lump." is left to the judge.
-const AFTER_WEAK = String.raw`(?:(?=\s+(?:for|since|every|lately|recently|all|today|tonight)\b)|(?=\s+(?:in|on|from) my ${BODY}\b))`;
+// lump now.", "I've got swelling as well, both ankles"): only a duration or "in/on/from my
+// <body part>". A bare "I've got a lump." is left to the judge.
+const AFTER_WEAK = String.raw`(?:(?=\s+${DURATION}\b)|(?=\s+(?:in|on|from) my ${BODY}\b))`;
+// After a strong opener: a clause end, a duration, words that keep talking about having it,
+// or "in/on/at/from my <body part>" ("bleeding at the cannula site" is a procedure).
+const AFTER_STRONG = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${DURATION}|again|now|right now|myself|too|as well|that won't|which won't|when|and|is|keeps)\b)|(?=\s+(?:in|on|at|from) my ${BODY}\b))`;
 
 // Only patients say these about themselves.
 const STRONG_OPENER = String.raw`I(?:'?ve| have) been (?:having|getting)|I keep (?:having|getting)|I(?:'?m| am) having`;
@@ -40,7 +47,7 @@ const WEAK_OPENER = String.raw`I(?:'?ve| have) got|I(?:'?ve| have) had`;
 // Symptom wording in the first person. Skipped in recaps ("So I've got chest pain so far, is that right?").
 const FIRST_PERSON_SYMPTOM: readonly RegExp[] = [
   // "I keep getting headaches, is that bad?", "I'm having palpitations right now".
-  new RegExp(String.raw`\b(?:${STRONG_OPENER})\s+(?:${MODIFIER}\s+){0,3}${SYMPTOM_NOUNS}\b${AFTER}`, 'i'),
+  new RegExp(String.raw`\b(?:${STRONG_OPENER})\s+(?:${MODIFIER}\s+){0,3}${OWN_SYMPTOM_NOUNS}\b${AFTER_STRONG}`, 'i'),
   // "I've got a lump in my neck", "I've had chest pain for three days".
   new RegExp(String.raw`\b(?:${WEAK_OPENER})\s+(?:${MODIFIER}\s+){0,3}${OWN_SYMPTOM_NOUNS}\b${AFTER_WEAK}`, 'i'),
   // "I feel really sick today", "I'm feeling dizzy", "I've been feeling dizzy lately".
@@ -114,7 +121,7 @@ export const SAFETY_MESSAGE =
 // start (not the informal "'til", "'cause", "'em"), and closes only before punctuation, a space
 // or the end, so apostrophes inside words ("I've", "won't") are left alone.
 const DOUBLE_QUOTED = /"[^"\n]{1,200}"/g;
-const SINGLE_QUOTED = /(?<=^|[\s(])'(?!(?:til|cause|cos|em|bout|round)\b)(?:[^'\n]|'(?=[a-z])){1,200}?'(?=[\s,.!?;:)]|$)/gi;
+const SINGLE_QUOTED = /(?<=^|[\s(])'(?!(?:til|cause|cos|em|bout|round|n)\b)(?:[^'\n]|'(?=[a-z])){1,200}?'(?=[\s,.!?;:)]|$)/gi;
 
 /** Drops a quoted span only when it is several words (speech), not a single scare-quoted word. */
 function dropSpeech(span: string): string {
