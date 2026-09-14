@@ -28,9 +28,10 @@ const ONGOING = String.raw`for|since|every|all|again|lately|recently|today|tonig
 // "keeps", or "be"/"a" for questions like "Could my chest pain be my heart?" and
 // "Is my headache a brain tumour?".
 const AFTER = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${ONGOING}|in|on|at|when|and|is|keeps|be|a)\b))`;
-// After "I've got" or "I've had", which examiners also use for findings ("I've got swelling at
-// both ankles, pitting to mid-shin"): only a sentence end, ongoing words, or "in/on/at my".
-const AFTER_WEAK = String.raw`(?:${SENTENCE_END}|(?=\s+(?:${ONGOING})\b)|(?=\s+(?:in|on|at|from) my\b))`;
+// After "I've got" or "I've had", which examiners also use to narrate findings ("I've got a
+// lump now.", "I've got swelling as well, both ankles"): only a duration word or "in/on/from
+// my <body part>". A bare "I've got a lump." is left to the judge.
+const AFTER_WEAK = String.raw`(?:(?=\s+(?:for|since|every|lately|recently|all|today|tonight)\b)|(?=\s+(?:in|on|from) my ${BODY}\b))`;
 
 // Only patients say these about themselves.
 const STRONG_OPENER = String.raw`I(?:'?ve| have) been (?:having|getting)|I keep (?:having|getting)|I(?:'?m| am) having`;
@@ -108,18 +109,28 @@ export const SAFETY_MESSAGE =
   "If you're unwell, contact NHS 111 or your GP, or call 999 in an emergency. " +
   "If you're struggling or thinking about harming yourself, you can call Samaritans free on 116 123.";
 
+// Quoted speech: at most 200 characters on one line, so a stray quote cannot hide the rest of
+// a message and the scan stays linear. A single quote opens only after a space, "(" or the
+// start (not the informal "'til", "'cause", "'em"), and closes only before punctuation, a space
+// or the end, so apostrophes inside words ("I've", "won't") are left alone.
+const DOUBLE_QUOTED = /"[^"\n]{1,200}"/g;
+const SINGLE_QUOTED = /(?<=^|[\s(])'(?!(?:til|cause|cos|em|bout|round)\b)(?:[^'\n]|'(?=[a-z])){1,200}?'(?=[\s,.!?;:)]|$)/gi;
+
+/** Drops a quoted span only when it is several words (speech), not a single scare-quoted word. */
+function dropSpeech(span: string): string {
+  return /\s/.test(span) ? ' ' : span;
+}
+
 /**
  * Straightens quotes and drops quoted speech, so "You said 'I've got a lump in my neck'" and
- * 'Some patients say "I want to die"' are not read as the user's own words. A single quote
- * only opens after a space or the start and only closes before punctuation, a space or the
- * end, so apostrophes inside words ("I've", "won't") are left alone.
+ * 'Some patients say "I want to die"' are not read as the user's own words.
  */
 function normalise(s: string): string {
   return s
     .replace(/[‘’ʼ]/g, "'")
     .replace(/[“”]/g, '"')
-    .replace(/"[^"]*"/g, ' ')
-    .replace(/(?<=^|[\s(])'(?:[^']|'(?=[a-z]))*'(?=[\s,.!?;:)]|$)/gi, ' ');
+    .replace(DOUBLE_QUOTED, dropSpeech)
+    .replace(SINGLE_QUOTED, dropSpeech);
 }
 
 export function looksLikeSelfDisclosure(input: string): boolean {
