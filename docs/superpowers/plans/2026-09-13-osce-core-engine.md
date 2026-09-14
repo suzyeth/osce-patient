@@ -1029,7 +1029,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/safety.ts`
 - Test: `tests/safety.test.ts`
 
-Design note (after three review rounds and a blind test): this regex is a high-precision core that runs before any model call and in offline mode; recall on free-form wording belongs to the judge verdict's semantic `selfDisclosure` flag (Plan 2). Broad first-person patterns kept blocking ordinary candidate phrasing (examination, counselling, empathy, PLAB-style English), so every first-person symptom pattern is anchored on both sides: an explicit first-person phrase before the symptom, and only a clause end or a short list of words after it. "I've got" and "I've had" are weaker openers because examiners use them for findings ("I've got swelling at both ankles"), so after them only a real time phrase ("for three days", "all week", "every night") or "in/on/from my <body part>" counts ("I've got a lump now." and "a rash all over the trunk" are narration). After any first-person opener, blood and temperature are treated as measurements or procedures ("I keep getting blood on the tray"). Multi-word quoted speech (double or single quotes, at most 200 characters on one line) is stripped, so candidates can reflect a patient's words without a stray quote hiding the rest of a message or slowing the scan. Self-harm wording is always caught and the message adds Samaritans. Blind set written by an agent that never saw the patterns: 0/152 candidate lines blocked, 5/5 self-harm disclosures caught, about 40% of other disclosures caught. The test lists are generated verbatim from the review probes and the blind set; the blind set is kept at `eval/fixtures/safety-blind-heldout.json` for the Plan 3 judge evaluation. Whether a block should be a soft prompt the candidate can dismiss ("this was part of the role-play") is a product decision for Plan 4.
+Design note (after three review rounds and a blind test): this regex is a high-precision core that runs before any model call and in offline mode; recall on free-form wording belongs to the judge verdict's semantic `selfDisclosure` flag (Plan 2). Broad first-person patterns kept blocking ordinary candidate phrasing (examination, counselling, empathy, PLAB-style English), so every first-person symptom pattern is anchored on both sides: an explicit first-person phrase before the symptom, and only a clause end or a short list of words after it. "I've got" and "I've had" are weaker openers because examiners use them for findings ("I've got swelling at both ankles"), so after them only a real time phrase ("for three days", "all week", "every night") or "in/on/from my <body part>" counts ("I've got a lump now." and "a rash all over the trunk" are narration). After any first-person opener, blood and temperature are treated as measurements or procedures ("I keep getting blood on the tray"). Multi-word quoted speech (double or single quotes, at most 200 characters on one line) is stripped, so candidates can reflect a patient's words without a stray quote hiding the rest of a message or slowing the scan. Self-harm wording is always caught in plain first-person forms (suicidal thoughts, thinking about ending one's life, planning or having tried to kill oneself or overdose, "I wish I was dead", "better off dead"), each tied to "I" or "myself" so questions about "yourself" stay allowed, and the message adds Samaritans. Blind set written by an agent that never saw the patterns: 0/152 candidate lines blocked, 5/5 self-harm disclosures caught, about 40% of other disclosures caught. The test lists are generated verbatim from the review probes and the blind set; the blind set is kept at `eval/fixtures/safety-blind-heldout.json` for the Plan 3 judge evaluation. Whether a block should be a soft prompt the candidate can dismiss ("this was part of the role-play") is a product decision for Plan 4.
 
 - [ ] **Step 1: Write the failing test `tests/safety.test.ts`**
 
@@ -1066,6 +1066,18 @@ const FLAG = [
   "I cut myself last night and it won't stop bleeding.",
   "I relapsed on heroin last week and I'm worried I might overdose.",
   "I haven't eaten properly in days and I keep making myself sick after meals.",
+  "I've been having suicidal thoughts",
+  'I have suicidal thoughts',
+  'I keep having suicidal thoughts',
+  'I keep thinking about ending my life',
+  "I'm thinking of ending it all",
+  "I've been thinking about suicide a lot",
+  "I'm planning to kill myself",
+  "I've tried to kill myself before",
+  'I tried to overdose last month',
+  'I wish I was dead',
+  "Sometimes I think I'd be better off dead",
+  'I feel like killing myself',
 ];
 
 // Other disclosures from review that the high-precision patterns catch today. Wording they
@@ -1386,6 +1398,12 @@ const ALLOW = [
   "I've been getting blood on my gloves all morning, let me change them",
   'I keep getting a temperature on the tympanic, let me recheck',
   "I'm having a bit of bleeding at the cannula site, pressing now",
+  'Have you had suicidal thoughts recently?',
+  'Have you ever tried to kill yourself?',
+  'Some people feel they would be better off dead, have you felt that?',
+  "I'm thinking about suicide risk here, so I need to ask a few questions",
+  "I'm going to end it there and summarise",
+  'My son is asthmatic too, so what should I do in your position?',
   "Have you had any chest pain before this episode?",
   "I'd like to ask about your periods, is that okay?",
   "I have a few questions about your bowel habits.",
@@ -1663,7 +1681,11 @@ const EXPLICIT: readonly RegExp[] = [
   /\bI(?:'?m| am) (?:worried|scared|afraid|frightened) (?:that )?I (?:might |may |could )?(?:have|have got|'ve got|am having|'m having) (?:a )?(?:cancer|heart attack|stroke|tumour|tumor|blood clot)\b/i,
   /\bI (?:think|feel like) I(?:'?m| am| might| may| could)? (?:be |going to |about to )?(?:have |having )?(?:a )?(?:heart attack|panic attack|stroke|pass out|faint|be sick)\b/i,
   // Someone the user cares for, plus a request for advice.
-  /\bmy (?:child|son|daughter|baby|kid|husband|wife|partner|mum|mom|mother|dad|father)\b[^.?!]{0,60}\b(?:what should I do|should I (?:take|give|call|go))\b/i,
+  // "what should I do" must end the clause: "what should I do in your position?" is empathy.
+  new RegExp(
+    String.raw`\bmy (?:child|son|daughter|baby|kid|husband|wife|partner|mum|mom|mother|dad|father)\b[^.?!]{0,60}\b(?:what should I do${CLAUSE_END}|should I (?:take|give|call|go)\b)`,
+    'i',
+  ),
 ];
 
 // Self-harm and suicide, first person only; a doctor asks about "you" and "yourself".
@@ -1682,6 +1704,14 @@ const SELF_HARM: readonly RegExp[] = [
   /\bI(?:'?ve| have)? (?:took|taken) (?:a load of|loads of|lots of|too much|a lot of|all the|a bottle of|a packet of|a box of) (?:paracetamol|pills|tablets|co-codamol|codeine|my (?:pills|tablets|medication))\b/i,
   /\bI(?:'?m| am) (?:worried|scared|afraid) I (?:might|will|could) overdose\b/i,
   /\bmaking myself sick\b/i,
+  /\bI(?:'?ve been| have been| keep|'?m| am)? ?(?:having|getting|have|get) suicidal (?:thoughts|feelings|ideas)\b/i,
+  // "I'm thinking about suicide risk" is a candidate planning questions, not a disclosure.
+  /\bI(?:'?m| am|'?ve been| have been| keep| kept)? ?(?:thinking|thought) (?:about|of) (?:ending it all|ending my life|suicide|taking my (?:own )?life)\b(?!\s+(?:risk|assessment|prevention|screening|questions?)\b)/i,
+  /\bI(?:'?m| am) planning to (?:kill myself|end my life|end it all|take my (?:own )?life)\b/i,
+  /\bI(?:'?ve| have)? ?tried to (?:kill myself|end my life|end it all|take my (?:own )?life|overdose)\b|\bI (?:tried|attempted) suicide\b/i,
+  /\bI wish I (?:was|were) dead\b/i,
+  /\bI(?:'d| would) be better off dead\b/i,
+  /\bI feel like (?:killing myself|ending it all|ending my life|dying)\b/i,
 ];
 
 export const SAFETY_MESSAGE =
@@ -1724,7 +1754,7 @@ export function looksLikeSelfDisclosure(input: string): boolean {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/safety.test.ts`
-Expected: PASS (489 tests).
+Expected: PASS (507 tests).
 
 - [ ] **Step 5: Commit**
 
