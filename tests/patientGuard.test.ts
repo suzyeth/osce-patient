@@ -118,6 +118,10 @@ describe('guardReply', () => {
     expect(hidden.sanitized).toBe('Is it ...?');
   });
 
+  it('redacts the original wording when folding finds nothing extra', () => {
+    expect(guardReply('It was 2² times, and there was blood…', ['blood']).sanitized).toBe('It was 2² times, and there was ...…');
+  });
+
   it('collapses terms with different spacing to one', () => {
     const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
     expect(r.leaked).toEqual(['six weeks']);

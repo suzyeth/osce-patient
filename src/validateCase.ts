@@ -119,26 +119,35 @@ function phrases(text: string): string[] {
  * Guarded terms only catch exact words. If a locked fact's own wording also appears in text the
  * patient can see while it is locked, the patient can say it before it is earned: "a streak of
  * blood" in the presenting complaint gives away a red flag guarded only by "haemoptysis".
- * Paraphrases ("a malignant growth") are not caught here; Plan 2's case pipeline checks those.
+ * It is a warning, because real transcripts often share ordinary phrasing ("since the start of");
+ * paraphrases ("a malignant growth") are not caught here, and Plan 2's case pipeline checks those.
  */
-function contentOverlapErrors(c: PatientCase): string[] {
+function contentOverlapWarnings(c: PatientCase): string[] {
   const sources: TextSource[] = [
     { label: 'the persona', text: c.patient.persona },
     { label: 'the opening line', text: c.patient.openingLine },
     { label: 'the candidate brief', text: c.candidateBrief },
     ...c.facts.map((f) => ({ label: `fact ${f.id}`, text: f.text, factId: f.id })),
   ];
-  const errors: string[] = [];
+  const warnings: string[] = [];
   for (const locked of c.facts.filter((f) => f.kind !== 'presenting')) {
     const own = new Set(phrases(locked.text));
     for (const source of sources.filter((s) => s.factId !== locked.id)) {
       const shared = phrases(source.text).find((p) => own.has(p));
       if (shared) {
-        errors.push(`text of ${locked.id} shares "${shared}" with ${source.label}, so the patient could say it while ${locked.id} is locked`);
+        warnings.push(`text of ${locked.id} shares "${shared}" with ${source.label}, so the patient could say it while ${locked.id} is locked`);
       }
     }
   }
-  return errors;
+  return warnings;
+}
+
+/** Guarded terms that never appear in their own fact cannot catch the patient repeating that fact. */
+function unguardedTextErrors(c: PatientCase): string[] {
+  return c.facts
+    .filter((f) => f.kind !== 'presenting' && f.guardedTerms.length > 0)
+    .filter((f) => !f.guardedTerms.some((term) => containsTerm(f.text, term)))
+    .map((f) => `none of the guarded terms of ${f.id} appear in its own text, so the guard cannot catch the patient repeating it`);
 }
 
 /** Public text outside the patient prompt: the opening line the patient speaks and the candidate brief. */
@@ -167,9 +176,6 @@ function factWarnings(c: PatientCase, f: Fact): string[] {
   if (f.kind !== 'concern' && f.minTrust !== undefined) {
     warnings.push(`minTrust on non-concern fact ${f.id} has no effect`);
   }
-  if (f.kind !== 'presenting' && f.guardedTerms.length > 0 && !f.guardedTerms.some((t) => containsTerm(f.text, t))) {
-    warnings.push(`none of the guarded terms of ${f.id} appear in its own text, so the guard may not catch the patient repeating it`);
-  }
   if (f.kind === 'presenting' && f.guardedTerms.length > 0) {
     warnings.push(`guarded terms on presenting fact ${f.id} have no effect, because presenting facts are always public`);
   }
@@ -185,10 +191,10 @@ export function validateCase(c: PatientCase): CaseIssues {
     ...scoredDomainErrors(c),
     ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
-    ...contentOverlapErrors(c),
+    ...unguardedTextErrors(c),
     ...openingTextErrors(c),
   ];
-  const warnings = c.facts.flatMap((f) => factWarnings(c, f));
+  const warnings = [...c.facts.flatMap((f) => factWarnings(c, f)), ...contentOverlapWarnings(c)];
   if (c.rubric.some((r) => r.critical) && !c.facts.some((f) => f.kind === 'red_flag')) {
     warnings.push('case has a critical rubric item but no red flag fact');
   }

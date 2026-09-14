@@ -57,6 +57,23 @@ export function forbiddenTerms(patientCase: PatientCase, state: SessionState): s
   return normaliseTerms(allTerms);
 }
 
+interface Redaction {
+  sanitized: string;
+  matched: Set<string>;
+}
+
+/** One pass over the text: every match becomes REDACTION, and the matched terms are recorded. */
+function redact(text: string, regex: RegExp, sortedTerms: readonly string[]): Redaction {
+  const matched = new Set<string>();
+  const sanitized = text.replace(regex, (...args: readonly unknown[]) => {
+    // args = [fullMatch, group1, ..., groupN, offset, string]: one group per term, from index 1.
+    const index = args.slice(1, 1 + sortedTerms.length).findIndex((group) => typeof group === 'string');
+    if (index >= 0) matched.add(sortedTerms[index] as string);
+    return REDACTION;
+  });
+  return { sanitized, matched };
+}
+
 /**
  * Folds fullwidth and other compatibility forms (NFKC) and drops zero-width characters and soft
  * hyphens, so "ｃａｎｃｅｒ" and "can\u200Bcer" are matched like "cancer".
@@ -83,25 +100,12 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
   const sortedTerms = [...normalised].sort((a, b) => b.length - a.length);
   const regex = buildMatcher(sortedTerms);
 
-  // Single pass: track which terms (in sorted order) matched.
-  const matched = new Set<string>();
-
-  const sanitized = foldReply(reply).replace(regex, (...args: readonly unknown[]) => {
-    // args = [fullMatch, group1, group2, ..., groupN, offset, string]
-    // Extract groups: exactly sortedTerms.length groups, starting at index 1.
-    const groups = args.slice(1, 1 + sortedTerms.length);
-
-    for (let i = 0; i < groups.length; i++) {
-      if (groups[i] !== undefined && typeof groups[i] === 'string') {
-        matched.add(sortedTerms[i] as string);
-        break;
-      }
-    }
-    return REDACTION;
-  });
-
-  const leaked = normalised.filter((t) => matched.has(t));
-
-  // A clean reply is returned exactly as the model wrote it.
-  return { ok: matched.size === 0, leaked, sanitized: matched.size === 0 ? reply : sanitized };
+  // Detect on the folded text, so hidden variants are caught; redact the original wording when it
+  // catches the same terms, so "2²" or "…" next to a redaction keep their meaning.
+  const original = redact(reply, regex, sortedTerms);
+  const folded = foldReply(reply);
+  const viaFold = folded === reply ? original : redact(folded, regex, sortedTerms);
+  const chosen = viaFold.matched.size > original.matched.size ? viaFold : original;
+  const leaked = normalised.filter((term) => chosen.matched.has(term));
+  return { ok: chosen.matched.size === 0, leaked, sanitized: chosen.sanitized };
 }

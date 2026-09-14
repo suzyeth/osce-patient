@@ -6,9 +6,9 @@ export function isPublic(fact: Fact): boolean {
 }
 
 /**
- * A fact unlocks only through its rubric item, never through a bare fact id from the judge. The
- * unlock and the report then always agree, and a judge talked into "request every fact" cannot
- * reveal a fact without the report showing its item as covered.
+ * A fact unlocks only through its rubric item, never through a bare fact id from the judge, so a
+ * judge talked into "request every fact" cannot reveal a fact without the report showing its item
+ * as covered. A concern volunteered through trust is the one fact that unlocks without its item.
  */
 function wasAsked(fact: Fact, verdict: JudgeVerdict): boolean {
   return verdict.rubricItemIds.includes(fact.rubricItemId);

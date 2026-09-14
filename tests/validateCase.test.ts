@@ -84,17 +84,26 @@ describe('validateCase', () => {
     expect(validateCase(ok).errors.some((e) => e.includes('f_concern has minTrust'))).toBe(false);
   });
 
-  it('flags a locked fact whose wording appears in text the patient can see', () => {
+  it("errors when a fact's guarded terms miss its own text, and warns about shared wording", () => {
     const bad = loadDemoCase();
     bad.facts[0]!.text = "I've had a cough and a streak of blood.";
     bad.facts[2]!.guardedTerms = ['haemoptysis'];
     const r = validateCase(bad);
     expect(r.errors).toContain(
-      'text of f_blood shares "a streak of blood" with fact f_presenting, so the patient could say it while f_blood is locked',
+      'none of the guarded terms of f_blood appear in its own text, so the guard cannot catch the patient repeating it',
     );
     expect(r.warnings).toContain(
-      'none of the guarded terms of f_blood appear in its own text, so the guard may not catch the patient repeating it',
+      'text of f_blood shares "a streak of blood" with fact f_presenting, so the patient could say it while f_blood is locked',
     );
+  });
+
+  it('treats ordinary shared phrasing as a warning, not an error', () => {
+    const ok = loadDemoCase();
+    ok.facts[0]!.text = "I've had a cough since the start of the month.";
+    ok.facts[1]!.text = 'It started about six weeks ago, since the start of a cold.';
+    const r = validateCase(ok);
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.some((w) => w.includes('shares "since the start of"'))).toBe(true);
   });
 
   it('warns about a concern fact without minTrust', () => {
