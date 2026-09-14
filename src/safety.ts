@@ -90,7 +90,11 @@ const EXPLICIT: readonly RegExp[] = [
   /\bI(?:'?m| am) (?:worried|scared|afraid|frightened) (?:that )?I (?:might |may |could )?(?:have|have got|'ve got|am having|'m having) (?:a )?(?:cancer|heart attack|stroke|tumour|tumor|blood clot)\b/i,
   /\bI (?:think|feel like) I(?:'?m| am| might| may| could)? (?:be |going to |about to )?(?:have |having )?(?:a )?(?:heart attack|panic attack|stroke|pass out|faint|be sick)\b/i,
   // Someone the user cares for, plus a request for advice.
-  /\bmy (?:child|son|daughter|baby|kid|husband|wife|partner|mum|mom|mother|dad|father)\b[^.?!]{0,60}\b(?:what should I do|should I (?:take|give|call|go))\b/i,
+  // "what should I do" must end the clause: "what should I do in your position?" is empathy.
+  new RegExp(
+    String.raw`\bmy (?:child|son|daughter|baby|kid|husband|wife|partner|mum|mom|mother|dad|father)\b[^.?!]{0,60}\b(?:what should I do${CLAUSE_END}|should I (?:take|give|call|go)\b)`,
+    'i',
+  ),
 ];
 
 // Self-harm and suicide, first person only; a doctor asks about "you" and "yourself".
@@ -109,6 +113,14 @@ const SELF_HARM: readonly RegExp[] = [
   /\bI(?:'?ve| have)? (?:took|taken) (?:a load of|loads of|lots of|too much|a lot of|all the|a bottle of|a packet of|a box of) (?:paracetamol|pills|tablets|co-codamol|codeine|my (?:pills|tablets|medication))\b/i,
   /\bI(?:'?m| am) (?:worried|scared|afraid) I (?:might|will|could) overdose\b/i,
   /\bmaking myself sick\b/i,
+  /\bI(?:'?ve been| have been| keep|'?m| am)? ?(?:having|getting|have|get) suicidal (?:thoughts|feelings|ideas)\b/i,
+  // "I'm thinking about suicide risk" is a candidate planning questions, not a disclosure.
+  /\bI(?:'?m| am|'?ve been| have been| keep| kept)? ?(?:thinking|thought) (?:about|of) (?:ending it all|ending my life|suicide|taking my (?:own )?life)\b(?!\s+(?:risk|assessment|prevention|screening|questions?)\b)/i,
+  /\bI(?:'?m| am) planning to (?:kill myself|end my life|end it all|take my (?:own )?life)\b/i,
+  /\bI(?:'?ve| have)? ?tried to (?:kill myself|end my life|end it all|take my (?:own )?life|overdose)\b|\bI (?:tried|attempted) suicide\b/i,
+  /\bI wish I (?:was|were) dead\b/i,
+  /\bI(?:'d| would) be better off dead\b/i,
+  /\bI feel like (?:killing myself|ending it all|ending my life|dying)\b/i,
 ];
 
 export const SAFETY_MESSAGE =
