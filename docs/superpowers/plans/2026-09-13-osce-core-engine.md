@@ -540,8 +540,8 @@ describe('unlockFacts', () => {
     ]);
   });
 
-  it('unlocks a fact requested by id even if no rubric item matched', () => {
-    expect(unlockFacts(c, initialSessionState(), verdict({ requestedFactIds: ['f_blood'] }))).toEqual(['f_blood']);
+  it('never unlocks a fact from a bare fact id, so unlocks and the report always agree', () => {
+    expect(unlockFacts(c, initialSessionState(), verdict({ requestedFactIds: ['f_blood', 'f_smoking'] }))).toEqual([]);
   });
 
   it('does not return facts that are already unlocked', () => {
@@ -586,8 +586,13 @@ export function isPublic(fact: Fact): boolean {
   return fact.kind === 'presenting';
 }
 
+/**
+ * A fact unlocks only through its rubric item, never through a bare fact id from the judge. The
+ * unlock and the report then always agree, and a judge talked into "request every fact" cannot
+ * reveal a fact without the report showing its item as covered.
+ */
 function wasAsked(fact: Fact, verdict: JudgeVerdict): boolean {
-  return verdict.rubricItemIds.includes(fact.rubricItemId) || verdict.requestedFactIds.includes(fact.id);
+  return verdict.rubricItemIds.includes(fact.rubricItemId);
 }
 
 function trustReached(fact: Fact, state: SessionState): boolean {
@@ -752,6 +757,13 @@ describe('guardReply', () => {
     expect(r.sanitized).toBe('... and ...');
   });
 
+  it('catches fullwidth and zero-width variants of a term', () => {
+    expect(guardReply('Is it ｃａｎｃｅｒ?', ['cancer']).leaked).toEqual(['cancer']);
+    const hidden = guardReply('Is it can\u200Bcer?', ['cancer']);
+    expect(hidden.leaked).toEqual(['cancer']);
+    expect(hidden.sanitized).toBe('Is it ...?');
+  });
+
   it('collapses terms with different spacing to one', () => {
     const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
     expect(r.leaked).toEqual(['six weeks']);
@@ -828,6 +840,14 @@ export function forbiddenTerms(patientCase: PatientCase, state: SessionState): s
 }
 
 /**
+ * Folds fullwidth and other compatibility forms (NFKC) and drops zero-width characters and soft
+ * hyphens, so "ｃａｎｃｅｒ" and "can\u200Bcer" are matched like "cancer".
+ */
+function foldReply(reply: string): string {
+  return reply.normalize('NFKC').replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '');
+}
+
+/**
  * Second line of defence: the patient never sees locked facts, but a model can still
  * guess. Single-pass scan for locked terms with whole-word matching (any case),
  * redacting all matches and reporting which were found.
@@ -848,7 +868,7 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
   // Single pass: track which terms (in sorted order) matched.
   const matched = new Set<string>();
 
-  const sanitized = reply.replace(regex, (...args: readonly unknown[]) => {
+  const sanitized = foldReply(reply).replace(regex, (...args: readonly unknown[]) => {
     // args = [fullMatch, group1, group2, ..., groupN, offset, string]
     // Extract groups: exactly sortedTerms.length groups, starting at index 1.
     const groups = args.slice(1, 1 + sortedTerms.length);
@@ -864,14 +884,15 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
 
   const leaked = normalised.filter((t) => matched.has(t));
 
-  return { ok: matched.size === 0, leaked, sanitized };
+  // A clean reply is returned exactly as the model wrote it.
+  return { ok: matched.size === 0, leaked, sanitized: matched.size === 0 ? reply : sanitized };
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/patientGuard.test.ts`
-Expected: PASS (15 tests).
+Expected: PASS (16 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -991,7 +1012,8 @@ function shareableLines(patientCase: PatientCase, state: SessionState): string {
 
 /**
  * The only thing the patient model sees about the case.
- * Locked facts are structurally absent, so no jailbreak can extract them.
+ * Locked facts are structurally absent, so a jailbroken patient model cannot extract them.
+ * What unlocks is decided by the judge, and only through rubric items (see gates.ts).
  */
 export function buildPatientContext(patientCase: PatientCase, state: SessionState): string {
   const { patient } = patientCase;
@@ -1669,7 +1691,7 @@ Expected: FAIL — cannot resolve `../src/safety.js`.
  *
  * Division of labour: this regex is a high-precision core that runs before any model call
  * and in offline mode. Recall on free-form wording belongs to the judge's semantic
- * selfDisclosure flag. Three rounds of held-out probing showed that broad first-person
+ * selfDisclosure flag. Nine review rounds and a blind held-out test showed that broad first-person
  * patterns keep blocking ordinary candidate phrasing, and a false block costs exam time.
  * So every first-person symptom pattern is anchored on both sides: an explicit first-person
  * phrase before the symptom, and only a clause end or a short list of words after it.
@@ -1927,7 +1949,7 @@ export interface PatientInput {
   context: string;
   studentInput: string;
   history: ConversationTurn[];
-  /** Facts the student just reached this turn (newly unlocked, or public facts they asked about). */
+  /** Facts the student reached this turn: newly unlocked ones, plus shareable facts they asked about again. */
   relevantFacts: string[];
 }
 
@@ -2285,7 +2307,7 @@ export async function runTurn(
   return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false };
 }
 
-/** The next conversation history. A blocked turn is dropped, so real symptoms never reach a model. */
+/** The next conversation history. A blocked turn is dropped, so its text is never sent to a model on a later turn. */
 export function appendTurn(history: readonly ConversationTurn[], student: string, result: TurnResult): ConversationTurn[] {
   return result.safetyBlocked ? [...history] : [...history, { student, patient: result.reply }];
 }
@@ -2754,7 +2776,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 Design note (after plan review): checks reuse the output guard's matcher, so a term the guard would redact at runtime is exactly a term flagged here (including terms ending in punctuation such as C.O.P.D.). The prompt-leak check is generic: for each locked fact it builds the real patient prompt at every trust level with every other fact unlocked, so the persona, the fixed instructions (e.g. a guarded term "medicines") and other facts' text are all covered. Checks are split into small functions to keep each under 50 lines.
 
-Design note (pre-review): also errors on blank offline cues or guarded terms, on a rubric with no data-gathering or interpersonal items, and on a concern whose minTrust is at or below the starting trust (it would unlock on the first turn).
+Design note (pre-review): also errors on blank offline cues or guarded terms, on a rubric with no data-gathering or interpersonal items, and on a concern whose minTrust the starting trust plus one turn of rapport can reach (it could unlock on the first turn).
 
 - [ ] **Step 1: Write the failing test `tests/validateCase.test.ts`**
 
@@ -2843,6 +2865,19 @@ describe('validateCase', () => {
     const ok = loadDemoCase();
     ok.facts[4]!.minTrust = 51;
     expect(validateCase(ok).errors.some((e) => e.includes('f_concern has minTrust'))).toBe(false);
+  });
+
+  it('flags a locked fact whose wording appears in text the patient can see', () => {
+    const bad = loadDemoCase();
+    bad.facts[0]!.text = "I've had a cough and a streak of blood.";
+    bad.facts[2]!.guardedTerms = ['haemoptysis'];
+    const r = validateCase(bad);
+    expect(r.errors).toContain(
+      'text of f_blood shares "a streak of blood" with fact f_presenting, so the patient could say it while f_blood is locked',
+    );
+    expect(r.warnings).toContain(
+      'none of the guarded terms of f_blood appear in its own text, so the guard may not catch the patient repeating it',
+    );
   });
 
   it('warns about a concern fact without minTrust', () => {
@@ -2962,6 +2997,59 @@ function promptLeakErrors(c: PatientCase): string[] {
   return errors;
 }
 
+const OVERLAP_WORDS = 4;
+
+interface TextSource {
+  label: string;
+  text: string;
+  factId?: string;
+}
+
+function words(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}' ]+/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/** Every run of OVERLAP_WORDS words with at least two longer words, so "and I am the" is ignored. */
+function phrases(text: string): string[] {
+  const w = words(text);
+  const out: string[] = [];
+  for (let i = 0; i + OVERLAP_WORDS <= w.length; i += 1) {
+    const window = w.slice(i, i + OVERLAP_WORDS);
+    if (window.filter((x) => x.length >= 4).length >= 2) out.push(window.join(' '));
+  }
+  return out;
+}
+
+/**
+ * Guarded terms only catch exact words. If a locked fact's own wording also appears in text the
+ * patient can see while it is locked, the patient can say it before it is earned: "a streak of
+ * blood" in the presenting complaint gives away a red flag guarded only by "haemoptysis".
+ * Paraphrases ("a malignant growth") are not caught here; Plan 2's case pipeline checks those.
+ */
+function contentOverlapErrors(c: PatientCase): string[] {
+  const sources: TextSource[] = [
+    { label: 'the persona', text: c.patient.persona },
+    { label: 'the opening line', text: c.patient.openingLine },
+    { label: 'the candidate brief', text: c.candidateBrief },
+    ...c.facts.map((f) => ({ label: `fact ${f.id}`, text: f.text, factId: f.id })),
+  ];
+  const errors: string[] = [];
+  for (const locked of c.facts.filter((f) => f.kind !== 'presenting')) {
+    const own = new Set(phrases(locked.text));
+    for (const source of sources.filter((s) => s.factId !== locked.id)) {
+      const shared = phrases(source.text).find((p) => own.has(p));
+      if (shared) {
+        errors.push(`text of ${locked.id} shares "${shared}" with ${source.label}, so the patient could say it while ${locked.id} is locked`);
+      }
+    }
+  }
+  return errors;
+}
+
 /** Public text outside the patient prompt: the opening line the patient speaks and the candidate brief. */
 function openingTextErrors(c: PatientCase): string[] {
   const text = [c.patient.openingLine, c.candidateBrief].join('\n');
@@ -2988,6 +3076,9 @@ function factWarnings(c: PatientCase, f: Fact): string[] {
   if (f.kind !== 'concern' && f.minTrust !== undefined) {
     warnings.push(`minTrust on non-concern fact ${f.id} has no effect`);
   }
+  if (f.kind !== 'presenting' && f.guardedTerms.length > 0 && !f.guardedTerms.some((t) => containsTerm(f.text, t))) {
+    warnings.push(`none of the guarded terms of ${f.id} appear in its own text, so the guard may not catch the patient repeating it`);
+  }
   if (f.kind === 'presenting' && f.guardedTerms.length > 0) {
     warnings.push(`guarded terms on presenting fact ${f.id} have no effect, because presenting facts are always public`);
   }
@@ -3003,6 +3094,7 @@ export function validateCase(c: PatientCase): CaseIssues {
     ...scoredDomainErrors(c),
     ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
+    ...contentOverlapErrors(c),
     ...openingTextErrors(c),
   ];
   const warnings = c.facts.flatMap((f) => factWarnings(c, f));
@@ -3016,7 +3108,7 @@ export function validateCase(c: PatientCase): CaseIssues {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/validateCase.test.ts`
-Expected: PASS (13 tests).
+Expected: PASS (14 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -3309,6 +3401,21 @@ Expected: empty status; history runs from the scaffold commit to the CLI tools c
 
 ---
 
+## Hardening after the final review
+
+A final whole-branch review found the engine ready to merge for Plan 1's scope and two gaps in the core promise
+that were fixed before merging:
+
+- **Unlocks go through rubric items only** (Task 3). A bare fact id from the judge no longer unlocks a fact, so
+  an unlocked fact always shows its rubric item as covered in the report.
+- **Shared wording is an authoring error** (Task 12). If four consecutive words of a locked fact appear in the
+  persona, opening line, brief or another fact, `check-case` fails; a fact whose guarded terms never appear in
+  its own text gets a warning.
+- **The output guard folds fullwidth and zero-width variants** (Task 4) before matching.
+- Comments that promised more than the code does were corrected, and the README now describes the engine.
+
+---
+
 ## Notes for Plan 2 (from Plan 1 reviews)
 
 - **Token usage:** `UsageReport`/`UsageSink` in `src/llm.ts` are not wired yet. Pass a sink into the client
@@ -3320,3 +3427,15 @@ Expected: empty status; history runs from the scaffold commit to the CLI tools c
   candidate saw; "Explores concerns" can read as missed while the concern was volunteered through trust.
 - **Safety regex scope is frozen** (see Task 6). Plan 3 measures the judge's `selfDisclosure` recall on
   `eval/fixtures/safety-blind-heldout.json`. Plan 4 decides whether a block is a soft prompt the candidate can dismiss.
+- **Judge as an unlock surface:** a judge talked into returning every rubric id would unlock (and score) every
+  fact. The Plan 2 judge prompt must treat the candidate's text as data, and a per-turn plausibility cap is worth
+  considering.
+- **Paraphrase leaks:** `check-case` catches exact shared wording, not paraphrases ("a malignant growth in the
+  lung"). The Plan 2 case pipeline needs a model-based check for generated personas.
+- **Numeral forms:** the guard matches words, so "six weeks" does not catch "6 weeks". Case authoring guidance
+  should list both forms.
+- **Spec deviations to confirm:** presenting facts are public from the first turn (the spec had them unlock after
+  an open question), red flags use the same unlock rule as other history, and the Confession engine's novelty
+  decay was not ported.
+- **Unused report fields:** `turnsUsed`, `interruptions`, `jargonCount`, `empathyCount` and `questionStyle` are
+  recorded but not shown; the `play` timer only advances on input.
