@@ -587,9 +587,9 @@ export function isPublic(fact: Fact): boolean {
 }
 
 /**
- * A fact unlocks only through its rubric item, never through a bare fact id from the judge. The
- * unlock and the report then always agree, and a judge talked into "request every fact" cannot
- * reveal a fact without the report showing its item as covered.
+ * A fact unlocks only through its rubric item, never through a bare fact id from the judge, so a
+ * judge talked into "request every fact" cannot reveal a fact without the report showing its item
+ * as covered. A concern volunteered through trust is the one fact that unlocks without its item.
  */
 function wasAsked(fact: Fact, verdict: JudgeVerdict): boolean {
   return verdict.rubricItemIds.includes(fact.rubricItemId);
@@ -764,6 +764,15 @@ describe('guardReply', () => {
     expect(hidden.sanitized).toBe('Is it ...?');
   });
 
+  it('redacts the original wording when folding finds nothing extra', () => {
+    expect(guardReply('It was 2² times, and there was blood…', ['blood']).sanitized).toBe('It was 2² times, and there was ...…');
+  });
+
+  it('redacts every copy when a term appears both plainly and hidden', () => {
+    expect(guardReply('I saw blood, yes bl\u200Bood', ['blood']).sanitized).toBe('I saw ..., yes ...');
+    expect(guardReply('blood and ｂｌｏｏｄ', ['blood']).sanitized).toBe('... and ...');
+  });
+
   it('collapses terms with different spacing to one', () => {
     const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
     expect(r.leaked).toEqual(['six weeks']);
@@ -839,6 +848,23 @@ export function forbiddenTerms(patientCase: PatientCase, state: SessionState): s
   return normaliseTerms(allTerms);
 }
 
+interface Redaction {
+  sanitized: string;
+  matched: Set<string>;
+}
+
+/** One pass over the text: every match becomes REDACTION, and the matched terms are recorded. */
+function redact(text: string, regex: RegExp, sortedTerms: readonly string[]): Redaction {
+  const matched = new Set<string>();
+  const sanitized = text.replace(regex, (...args: readonly unknown[]) => {
+    // args = [fullMatch, group1, ..., groupN, offset, string]: one group per term, from index 1.
+    const index = args.slice(1, 1 + sortedTerms.length).findIndex((group) => typeof group === 'string');
+    if (index >= 0) matched.add(sortedTerms[index] as string);
+    return REDACTION;
+  });
+  return { sanitized, matched };
+}
+
 /**
  * Folds fullwidth and other compatibility forms (NFKC) and drops zero-width characters and soft
  * hyphens, so "ｃａｎｃｅｒ" and "can\u200Bcer" are matched like "cancer".
@@ -865,34 +891,21 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
   const sortedTerms = [...normalised].sort((a, b) => b.length - a.length);
   const regex = buildMatcher(sortedTerms);
 
-  // Single pass: track which terms (in sorted order) matched.
-  const matched = new Set<string>();
-
-  const sanitized = foldReply(reply).replace(regex, (...args: readonly unknown[]) => {
-    // args = [fullMatch, group1, group2, ..., groupN, offset, string]
-    // Extract groups: exactly sortedTerms.length groups, starting at index 1.
-    const groups = args.slice(1, 1 + sortedTerms.length);
-
-    for (let i = 0; i < groups.length; i++) {
-      if (groups[i] !== undefined && typeof groups[i] === 'string') {
-        matched.add(sortedTerms[i] as string);
-        break;
-      }
-    }
-    return REDACTION;
-  });
-
-  const leaked = normalised.filter((t) => matched.has(t));
-
-  // A clean reply is returned exactly as the model wrote it.
-  return { ok: matched.size === 0, leaked, sanitized: matched.size === 0 ? reply : sanitized };
+  // Keep the original wording (so "2²" or "…" next to a redaction keep their meaning) only when
+  // nothing is left once the redacted text is folded. Otherwise redact the folded text, so a hidden
+  // copy such as a zero-width "bl-ood" next to a plain "blood" never stays on screen.
+  const original = redact(reply, regex, sortedTerms);
+  const residue = redact(foldReply(original.sanitized), regex, sortedTerms).matched.size;
+  const chosen = residue === 0 ? original : redact(foldReply(reply), regex, sortedTerms);
+  const leaked = normalised.filter((term) => chosen.matched.has(term));
+  return { ok: chosen.matched.size === 0, leaked, sanitized: chosen.sanitized };
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/patientGuard.test.ts`
-Expected: PASS (16 tests).
+Expected: PASS (18 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -2867,17 +2880,26 @@ describe('validateCase', () => {
     expect(validateCase(ok).errors.some((e) => e.includes('f_concern has minTrust'))).toBe(false);
   });
 
-  it('flags a locked fact whose wording appears in text the patient can see', () => {
+  it("errors when a fact's guarded terms miss its own text, and warns about shared wording", () => {
     const bad = loadDemoCase();
     bad.facts[0]!.text = "I've had a cough and a streak of blood.";
     bad.facts[2]!.guardedTerms = ['haemoptysis'];
     const r = validateCase(bad);
     expect(r.errors).toContain(
-      'text of f_blood shares "a streak of blood" with fact f_presenting, so the patient could say it while f_blood is locked',
+      'none of the guarded terms of f_blood appear in its own text, so the guard cannot catch the patient repeating it',
     );
     expect(r.warnings).toContain(
-      'none of the guarded terms of f_blood appear in its own text, so the guard may not catch the patient repeating it',
+      'text of f_blood shares "a streak of blood" with fact f_presenting, so the patient could say it while f_blood is locked',
     );
+  });
+
+  it('treats ordinary shared phrasing as a warning, not an error', () => {
+    const ok = loadDemoCase();
+    ok.facts[0]!.text = "I've had a cough since the start of the month.";
+    ok.facts[1]!.text = 'It started about six weeks ago, since the start of a cold.';
+    const r = validateCase(ok);
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.some((w) => w.includes('shares "since the start of"'))).toBe(true);
   });
 
   it('warns about a concern fact without minTrust', () => {
@@ -3028,26 +3050,35 @@ function phrases(text: string): string[] {
  * Guarded terms only catch exact words. If a locked fact's own wording also appears in text the
  * patient can see while it is locked, the patient can say it before it is earned: "a streak of
  * blood" in the presenting complaint gives away a red flag guarded only by "haemoptysis".
- * Paraphrases ("a malignant growth") are not caught here; Plan 2's case pipeline checks those.
+ * It is a warning, because real transcripts often share ordinary phrasing ("since the start of");
+ * paraphrases ("a malignant growth") are not caught here, and Plan 2's case pipeline checks those.
  */
-function contentOverlapErrors(c: PatientCase): string[] {
+function contentOverlapWarnings(c: PatientCase): string[] {
   const sources: TextSource[] = [
     { label: 'the persona', text: c.patient.persona },
     { label: 'the opening line', text: c.patient.openingLine },
     { label: 'the candidate brief', text: c.candidateBrief },
     ...c.facts.map((f) => ({ label: `fact ${f.id}`, text: f.text, factId: f.id })),
   ];
-  const errors: string[] = [];
+  const warnings: string[] = [];
   for (const locked of c.facts.filter((f) => f.kind !== 'presenting')) {
     const own = new Set(phrases(locked.text));
     for (const source of sources.filter((s) => s.factId !== locked.id)) {
       const shared = phrases(source.text).find((p) => own.has(p));
       if (shared) {
-        errors.push(`text of ${locked.id} shares "${shared}" with ${source.label}, so the patient could say it while ${locked.id} is locked`);
+        warnings.push(`text of ${locked.id} shares "${shared}" with ${source.label}, so the patient could say it while ${locked.id} is locked`);
       }
     }
   }
-  return errors;
+  return warnings;
+}
+
+/** Guarded terms that never appear in their own fact cannot catch the patient repeating that fact. */
+function unguardedTextErrors(c: PatientCase): string[] {
+  return c.facts
+    .filter((f) => f.kind !== 'presenting' && f.guardedTerms.length > 0)
+    .filter((f) => !f.guardedTerms.some((term) => containsTerm(f.text, term)))
+    .map((f) => `none of the guarded terms of ${f.id} appear in its own text, so the guard cannot catch the patient repeating it`);
 }
 
 /** Public text outside the patient prompt: the opening line the patient speaks and the candidate brief. */
@@ -3076,9 +3107,6 @@ function factWarnings(c: PatientCase, f: Fact): string[] {
   if (f.kind !== 'concern' && f.minTrust !== undefined) {
     warnings.push(`minTrust on non-concern fact ${f.id} has no effect`);
   }
-  if (f.kind !== 'presenting' && f.guardedTerms.length > 0 && !f.guardedTerms.some((t) => containsTerm(f.text, t))) {
-    warnings.push(`none of the guarded terms of ${f.id} appear in its own text, so the guard may not catch the patient repeating it`);
-  }
   if (f.kind === 'presenting' && f.guardedTerms.length > 0) {
     warnings.push(`guarded terms on presenting fact ${f.id} have no effect, because presenting facts are always public`);
   }
@@ -3094,10 +3122,10 @@ export function validateCase(c: PatientCase): CaseIssues {
     ...scoredDomainErrors(c),
     ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
-    ...contentOverlapErrors(c),
+    ...unguardedTextErrors(c),
     ...openingTextErrors(c),
   ];
-  const warnings = c.facts.flatMap((f) => factWarnings(c, f));
+  const warnings = [...c.facts.flatMap((f) => factWarnings(c, f)), ...contentOverlapWarnings(c)];
   if (c.rubric.some((r) => r.critical) && !c.facts.some((f) => f.kind === 'red_flag')) {
     warnings.push('case has a critical rubric item but no red flag fact');
   }
@@ -3108,7 +3136,7 @@ export function validateCase(c: PatientCase): CaseIssues {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/validateCase.test.ts`
-Expected: PASS (14 tests).
+Expected: PASS (15 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -3407,11 +3435,14 @@ A final whole-branch review found the engine ready to merge for Plan 1's scope a
 that were fixed before merging:
 
 - **Unlocks go through rubric items only** (Task 3). A bare fact id from the judge no longer unlocks a fact, so
-  an unlocked fact always shows its rubric item as covered in the report.
-- **Shared wording is an authoring error** (Task 12). If four consecutive words of a locked fact appear in the
-  persona, opening line, brief or another fact, `check-case` fails; a fact whose guarded terms never appear in
-  its own text gets a warning.
-- **The output guard folds fullwidth and zero-width variants** (Task 4) before matching.
+  a fact revealed by asking always shows its rubric item as covered (a concern volunteered through trust
+  is the one exception).
+- **Guarded terms must appear in their own fact** (Task 12). Otherwise `check-case` fails, because the guard
+  could not catch the patient repeating the fact. Four consecutive words shared between a locked fact and the
+  persona, opening line, brief or another fact are a warning: real transcripts share ordinary phrasing
+  ("since the start of"), so an error would block legitimate cases.
+- **The output guard folds fullwidth and zero-width variants** (Task 4) before matching, and redacts the
+  original wording when folding finds nothing extra.
 - Comments that promised more than the code does were corrected, and the README now describes the engine.
 
 ---
