@@ -1029,7 +1029,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/safety.ts`
 - Test: `tests/safety.test.ts`
 
-Design note (after three review rounds and a blind test): this regex is a high-precision core that runs before any model call and in offline mode; recall on free-form wording belongs to the judge verdict's semantic `selfDisclosure` flag (Plan 2). Broad first-person patterns kept blocking ordinary candidate phrasing (examination, counselling, empathy, PLAB-style English), so every first-person symptom pattern is anchored on both sides: an explicit first-person phrase before the symptom, and only a clause end or a short list of words after it. "I've got" and "I've had" are weaker openers because examiners use them for findings ("I've got swelling at both ankles"), so after them only a duration word or "in/on/from my <body part>" counts ("I've got a lump now." is narration), and blood or temperature are treated as measurements. Multi-word quoted speech (double or single quotes, at most 200 characters on one line) is stripped, so candidates can reflect a patient's words without a stray quote hiding the rest of a message or slowing the scan. Self-harm wording is always caught and the message adds Samaritans. Blind set written by an agent that never saw the patterns: 0/152 candidate lines blocked, 5/5 self-harm disclosures caught, about 40% of other disclosures caught. The test lists are generated verbatim from the review probes and the blind set; the blind set is kept at `eval/fixtures/safety-blind-heldout.json` for the Plan 3 judge evaluation. Whether a block should be a soft prompt the candidate can dismiss ("this was part of the role-play") is a product decision for Plan 4.
+Design note (after three review rounds and a blind test): this regex is a high-precision core that runs before any model call and in offline mode; recall on free-form wording belongs to the judge verdict's semantic `selfDisclosure` flag (Plan 2). Broad first-person patterns kept blocking ordinary candidate phrasing (examination, counselling, empathy, PLAB-style English), so every first-person symptom pattern is anchored on both sides: an explicit first-person phrase before the symptom, and only a clause end or a short list of words after it. "I've got" and "I've had" are weaker openers because examiners use them for findings ("I've got swelling at both ankles"), so after them only a real time phrase ("for three days", "all week", "every night") or "in/on/from my <body part>" counts ("I've got a lump now." and "a rash all over the trunk" are narration). After any first-person opener, blood and temperature are treated as measurements or procedures ("I keep getting blood on the tray"). Multi-word quoted speech (double or single quotes, at most 200 characters on one line) is stripped, so candidates can reflect a patient's words without a stray quote hiding the rest of a message or slowing the scan. Self-harm wording is always caught and the message adds Samaritans. Blind set written by an agent that never saw the patterns: 0/152 candidate lines blocked, 5/5 self-harm disclosures caught, about 40% of other disclosures caught. The test lists are generated verbatim from the review probes and the blind set; the blind set is kept at `eval/fixtures/safety-blind-heldout.json` for the Plan 3 judge evaluation. Whether a block should be a soft prompt the candidate can dismiss ("this was part of the role-play") is a product decision for Plan 4.
 
 - [ ] **Step 1: Write the failing test `tests/safety.test.ts`**
 
@@ -1116,7 +1116,7 @@ const ALSO_CAUGHT = [
   'My ankle is swollen after I fell',
   'I have really bad back pain, what can I take?',
   'Should I be worried about my headaches?',
-  "I work nights 'til late and I keep getting chest pain every shift, it's my managers' fault",
+  "Me 'n my wife have both got flu, I keep getting headaches every day, the kids' school sent them home",
   "'Cause of stress I keep getting headaches every day, my parents' advice was to ask",
   "I've had a cough for three weeks, should I be worried?",
   "Can you tell me what this rash on my arm is?",
@@ -1378,6 +1378,14 @@ const ALLOW = [
   "I've got swelling again on this side",
   "Good, I've got a pulse, and I've got some swelling too.",
   "I've got a lump at my fingertips here, quite hard",
+  "I've got a rash all over the trunk, blanching",
+  "I've got swelling all around the joint",
+  "I've had a rash every time I've seen this drug used",
+  "I've got a lump for you to feel, examiner, left breast",
+  'Sorry, I keep getting blood on the tray, one second',
+  "I've been getting blood on my gloves all morning, let me change them",
+  'I keep getting a temperature on the tympanic, let me recheck',
+  "I'm having a bit of bleeding at the cannula site, pressing now",
   "Have you had any chest pain before this episode?",
   "I'd like to ask about your periods, is that okay?",
   "I have a few questions about your bowel habits.",
@@ -1577,8 +1585,9 @@ Expected: FAIL — cannot resolve `../src/safety.js`.
  * Quoted speech is ignored, because candidates reflect and quote what patients say.
  */
 const SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|blood|lumps?|rash(?:es)?|fevers?|temperature|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
-// After "I've got" or "I've had", "blood" and "temperature" are usually measurements
-// ("I've got blood in both bottles", "I've got a temperature, 38.4").
+// After a first-person opener, "blood" and "temperature" are usually measurements or procedures
+// ("I've got blood in both bottles", "I keep getting a temperature on the tympanic"). Blood in
+// the user's own body is still caught by the "in/on/from my <body part>" pattern.
 const OWN_SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|lumps?|rash(?:es)?|fevers?|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
 const SYMPTOM_ADJECTIVES = String.raw`(?:dizzy|faint|sick|nauseous|breathless|unwell|ill|tired|exhausted|hopeless|depressed|anxious|suicidal|feverish|shaky)`;
 // The examiner's own hands and fingers are excluded: "tell me when my hand hurts".
@@ -1593,10 +1602,16 @@ const ONGOING = String.raw`for|since|every|all|again|lately|recently|today|tonig
 // "keeps", or "be"/"a" for questions like "Could my chest pain be my heart?" and
 // "Is my headache a brain tumour?".
 const AFTER = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${ONGOING}|in|on|at|when|and|is|keeps|be|a)\b))`;
+// A real time phrase. "all over the trunk", "every time I've seen this drug" and "a lump for
+// you to feel" are not durations.
+const DURATION = String.raw`(?:since|lately|recently|today|tonight|all (?:day|night|week|morning|the time)|every (?:day|night|morning|week|month)|for (?:days|weeks|months|years|ages|a while)|for (?:(?:the )?(?:past|last) |about |over |nearly |almost )?(?:\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|a few|few|several|many|a couple of)(?:\s+\w+)?\s+(?:days?|weeks?|months?|years?|while))`;
 // After "I've got" or "I've had", which examiners also use to narrate findings ("I've got a
-// lump now.", "I've got swelling as well, both ankles"): only a duration word or "in/on/from
-// my <body part>". A bare "I've got a lump." is left to the judge.
-const AFTER_WEAK = String.raw`(?:(?=\s+(?:for|since|every|lately|recently|all|today|tonight)\b)|(?=\s+(?:in|on|from) my ${BODY}\b))`;
+// lump now.", "I've got swelling as well, both ankles"): only a duration or "in/on/from my
+// <body part>". A bare "I've got a lump." is left to the judge.
+const AFTER_WEAK = String.raw`(?:(?=\s+${DURATION}\b)|(?=\s+(?:in|on|from) my ${BODY}\b))`;
+// After a strong opener: a clause end, a duration, words that keep talking about having it,
+// or "in/on/at/from my <body part>" ("bleeding at the cannula site" is a procedure).
+const AFTER_STRONG = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${DURATION}|again|now|right now|myself|too|as well|that won't|which won't|when|and|is|keeps)\b)|(?=\s+(?:in|on|at|from) my ${BODY}\b))`;
 
 // Only patients say these about themselves.
 const STRONG_OPENER = String.raw`I(?:'?ve| have) been (?:having|getting)|I keep (?:having|getting)|I(?:'?m| am) having`;
@@ -1605,7 +1620,7 @@ const WEAK_OPENER = String.raw`I(?:'?ve| have) got|I(?:'?ve| have) had`;
 // Symptom wording in the first person. Skipped in recaps ("So I've got chest pain so far, is that right?").
 const FIRST_PERSON_SYMPTOM: readonly RegExp[] = [
   // "I keep getting headaches, is that bad?", "I'm having palpitations right now".
-  new RegExp(String.raw`\b(?:${STRONG_OPENER})\s+(?:${MODIFIER}\s+){0,3}${SYMPTOM_NOUNS}\b${AFTER}`, 'i'),
+  new RegExp(String.raw`\b(?:${STRONG_OPENER})\s+(?:${MODIFIER}\s+){0,3}${OWN_SYMPTOM_NOUNS}\b${AFTER_STRONG}`, 'i'),
   // "I've got a lump in my neck", "I've had chest pain for three days".
   new RegExp(String.raw`\b(?:${WEAK_OPENER})\s+(?:${MODIFIER}\s+){0,3}${OWN_SYMPTOM_NOUNS}\b${AFTER_WEAK}`, 'i'),
   // "I feel really sick today", "I'm feeling dizzy", "I've been feeling dizzy lately".
@@ -1679,7 +1694,7 @@ export const SAFETY_MESSAGE =
 // start (not the informal "'til", "'cause", "'em"), and closes only before punctuation, a space
 // or the end, so apostrophes inside words ("I've", "won't") are left alone.
 const DOUBLE_QUOTED = /"[^"\n]{1,200}"/g;
-const SINGLE_QUOTED = /(?<=^|[\s(])'(?!(?:til|cause|cos|em|bout|round)\b)(?:[^'\n]|'(?=[a-z])){1,200}?'(?=[\s,.!?;:)]|$)/gi;
+const SINGLE_QUOTED = /(?<=^|[\s(])'(?!(?:til|cause|cos|em|bout|round|n)\b)(?:[^'\n]|'(?=[a-z])){1,200}?'(?=[\s,.!?;:)]|$)/gi;
 
 /** Drops a quoted span only when it is several words (speech), not a single scare-quoted word. */
 function dropSpeech(span: string): string {
@@ -1709,7 +1724,7 @@ export function looksLikeSelfDisclosure(input: string): boolean {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/safety.test.ts`
-Expected: PASS (481 tests).
+Expected: PASS (489 tests).
 
 - [ ] **Step 5: Commit**
 
