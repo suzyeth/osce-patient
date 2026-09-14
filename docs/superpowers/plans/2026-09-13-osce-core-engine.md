@@ -1029,7 +1029,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/safety.ts`
 - Test: `tests/safety.test.ts`
 
-Design note: this regex check is a fast, precision-first pre-filter on the candidate's input. The judge verdict's `selfDisclosure` field (semantic, Plan 2) catches what it misses. A false block mid-exam costs the candidate time, so every pattern needs either an explicit self-referential phrase or a first-person experience phrase followed by a symptom word, never reaching past "you"/"your". Curly apostrophes are normalised first.
+Design note (after review): this regex check is a fast, precision-first pre-filter on the candidate's input; the judge verdict's `selfDisclosure` field (semantic, Plan 2) backs it up. A false block mid-exam costs the candidate time. Every pattern needs first-person wording tied to a symptom. The gap between a first-person opener ("I've got", "I feel") and a symptom word may not cross punctuation or words used to talk ABOUT a symptom (the, any, about, your, ...), recaps ("so far, is that right?") are exempt, and "blood test"-style equipment words are not symptoms. Self-harm wording is always flagged, and the message adds Samaritans. The test lists were generated verbatim from a probe run: 37 disclosures and 85 candidate lines, including 37 realistic lines from the review that the first version blocked.
 
 - [ ] **Step 1: Write the failing test `tests/safety.test.ts`**
 
@@ -1037,50 +1037,152 @@ Design note: this regex check is a fast, precision-first pre-filter on the candi
 import { describe, it, expect } from 'vitest';
 import { looksLikeSelfDisclosure, SAFETY_MESSAGE } from '../src/safety.js';
 
+// Real self-disclosure: the original spec cases, then patient-style lines from review.
+const FLAG = [
+  'I have been having chest pains myself, what do I have?',
+  'Should I see a doctor about my symptoms?',
+  "I've been feeling dizzy lately",
+  'I’ve been feeling dizzy lately',
+  'Ive been having chest pain',
+  'Am I dying?',
+  'I keep getting headaches, is that bad?',
+  'What do you think I have?',
+  'I feel really sick today',
+  "I've got a lump in my neck, should I worry?",
+  "I'm having palpitations right now",
+  "I've been coughing up blood myself",
+  'I have a terrible headache right now',
+  'My chest hurts, is that serious?',
+  'I think I might have a heart attack',
+  "I've had chest pain for three days",
+  'I get migraines every week, what should I take?',
+  "I've noticed blood in my stool",
+  "Is it normal that I've had a fever for a week?",
+  "I'm worried about a lump I found on my breast",
+  "I've been coughing for weeks and I'm scared",
+  "I'm really dizzy and can't stand up",
+  "I feel like I'm going to pass out",
+  "Can you tell me what's wrong with me?",
+  'Do you think I need antibiotics for my sore throat?',
+  'I have had palpitations since this morning',
+  'Should I go to the hospital?',
+  'Should I see my doctor?',
+  'Should I see a GP?',
+  "I've felt suicidal lately",
+  "I'm suicidal",
+  'My symptoms are chest pain and sweating',
+  "I'm in pain",
+  "I've been in pain all week",
+  "what do you think I've got",
+  "I've been vomiting all night",
+  'I want to kill myself',
+];
+
+// Candidate phrasing that must never be blocked: spec cases, lines from review, and lines
+// aimed at each pattern (recaps, "in my experience", "blood test", questions about "yourself").
+const ALLOW = [
+  'Have you been having any chest pain?',
+  "I'm sorry to hear that.",
+  'What brings you in today?',
+  'Do you smoke?',
+  'Is it okay if I ask you some questions?',
+  'I have been having a look through your notes.',
+  "I've been getting some information from the nurse.",
+  "I've been feeling that we should check your chest.",
+  'Should I call the doctor on duty to see you?',
+  'Let me summarise my understanding of your symptoms.',
+  'What do I have here, let me check your records.',
+  'Am I right in thinking the cough started after a cold?',
+  'I feel we should do a chest X-ray to be safe.',
+  'I have a few more questions about the cough.',
+  'I understand you have been coughing up blood.',
+  "I've been having a think about your cough.",
+  "I've got some questions about your chest pain.",
+  'I feel your cough needs a chest X-ray.',
+  "I feel it's important we rule out anything serious",
+  "I've got a few more questions",
+  "I'm getting the sense this has been worrying you",
+  'I keep getting back to the cough, sorry',
+  "I've been told you had some chest pain",
+  "I'm feeling a bit rushed, can I recap?",
+  'What do you think is going on?',
+  "I've been seeing a lot of patients with this",
+  'I feel that the pain might be coming from your heart',
+  "I'm getting a picture of chest pain that comes on with exertion",
+  "I've got a note here that says the pain started on Monday",
+  "I've been reading your notes and I see you had a rash",
+  'I feel we should check your temperature',
+  "I'm having trouble hearing you, could you repeat that?",
+  "I've got a sense the headaches are getting worse for you",
+  'I keep having to remind myself to ask about blood in the stool',
+  "I'm feeling like we should talk about the swelling in the leg",
+  "I've been wondering whether the dizziness is linked to the tablets",
+  "I've got to ask, has there been any blood in your urine?",
+  'I feel bad asking, but any bleeding?',
+  "I feel sorry you've had so much pain",
+  "I'm getting the impression the pain is sharp",
+  "I've been told by the nurse the pain is 8 out of 10",
+  "I've been thinking the palpitations may be anxiety related",
+  'I feel like the nausea could be a side effect',
+  "So I've got chest pain, shortness of breath and a cough so far, is that right?",
+  "I'm having a look at the rash now",
+  "I'm getting a bit worried about the chest pain you're describing",
+  "I've been asked to see you about a headache",
+  'I feel concerned about the blood you mentioned',
+  "I've got the results of the blood test",
+  'Am I right that the pain is worse at night?',
+  "What's wrong with me asking about your family history?",
+  "I'm feeling confident this is not a heart attack but we should do an ECG",
+  'I have been told about the headaches',
+  "I've been going over your symptoms, the fever worries me",
+  'I feel the lump you mentioned is worth examining',
+  'In my experience chest pain like this is usually muscular',
+  'The pain in my experience usually settles',
+  'Have you ever felt suicidal?',
+  'Have you had any thoughts of harming yourself?',
+  'Have you had thoughts of ending your life?',
+  'I think I might have your results here',
+  'I get the impression the pain is sharp',
+  "I've had a look at your notes",
+  'I have some concerns about the blood results',
+  'I have to ask about any blood',
+  "Sorry, I've had a busy morning",
+  "I'm a little concerned about the swelling",
+  'What do you think might be causing the pain?',
+  "I've noticed you seem worried",
+  'Is the pain in your chest or your arm?',
+  "I'm going to examine your chest now",
+  'I think I might have mentioned the blood test',
+  "Just to recap, I've got chest pain and a cough, is that correct?",
+  'I have blood test results here',
+  'Let me get my blood pressure cuff',
+  'I have a leaflet on headaches for you',
+  'I have one more question about your breathing',
+  "I've got your blood results back",
+  "I'm going to check your temperature",
+  'I get that this is hard for you',
+  'Do you feel dizzy when you stand up?',
+  'Does the pain in your chest spread anywhere?',
+  "I'm sorry, is the pain there right now?",
+  'I feel it would help to know more about the headaches',
+  "I've noted the cough and the weight loss",
+];
+
 describe('looksLikeSelfDisclosure', () => {
-  it.each([
-    'I have been having chest pains myself, what do I have?',
-    'Should I see a doctor about my symptoms?',
-    "I've been feeling dizzy lately",
-    'I’ve been feeling dizzy lately',
-    'Ive been having chest pain',
-    'Am I dying?',
-    'I keep getting headaches, is that bad?',
-    'What do you think I have?',
-    'I feel really sick today',
-    "I've got a lump in my neck, should I worry?",
-    "I'm having palpitations right now",
-    "I've been coughing up blood myself",
-  ])('flags: %s', (s) => {
+  it.each(FLAG)('flags: %s', (s) => {
     expect(looksLikeSelfDisclosure(s)).toBe(true);
   });
 
-  // Ordinary candidate phrasing must never trigger the block.
-  it.each([
-    'Have you been having any chest pain?',
-    "I'm sorry to hear that.",
-    'What brings you in today?',
-    'Do you smoke?',
-    'Is it okay if I ask you some questions?',
-    'I have been having a look through your notes.',
-    "I've been getting some information from the nurse.",
-    "I've been feeling that we should check your chest.",
-    'Should I call the doctor on duty to see you?',
-    'Let me summarise my understanding of your symptoms.',
-    'What do I have here, let me check your records.',
-    'Am I right in thinking the cough started after a cold?',
-    'I feel we should do a chest X-ray to be safe.',
-    'I have a few more questions about the cough.',
-    'I understand you have been coughing up blood.',
-    "I've been having a think about your cough.",
-    "I've got some questions about your chest pain.",
-    'I feel your cough needs a chest X-ray.',
-  ])('allows: %s', (s) => {
+  it.each(ALLOW)('allows: %s', (s) => {
     expect(looksLikeSelfDisclosure(s)).toBe(false);
   });
+});
 
-  it('points to NHS 111 in the safety message', () => {
+describe('SAFETY_MESSAGE', () => {
+  it('points to NHS 111, 999 and Samaritans', () => {
     expect(SAFETY_MESSAGE).toContain('NHS 111');
+    expect(SAFETY_MESSAGE).toContain('999');
+    expect(SAFETY_MESSAGE).toContain('Samaritans free on 116 123');
   });
 });
 ```
@@ -1099,27 +1201,59 @@ Expected: FAIL — cannot resolve `../src/safety.js`.
  * "symptom checker" territory under MHRA guidance).
  *
  * Precision first: a false block costs an exam candidate time, and the judge's semantic
- * selfDisclosure flag backs this up.
+ * selfDisclosure flag backs this up. Every pattern needs first-person wording tied to a
+ * symptom; wording about "you", "your", "the pain" or "any bleeding" is never matched.
  */
-const SYMPTOM = String.raw`(?:pains?|aches?|aching|headaches?|migraines?|dizz(?:y|iness)|faint|breathless|short of breath|palpitations|nause(?:a|ous)|vomiting|sick|bleeding|blood|lumps?|rash|fevers?|temperature|numb(?:ness)?|tingling|tired|exhausted|depressed|anxious|suicidal|cough(?:ing)?|swollen|swelling)`;
+const SYMPTOM_WORDS = String.raw`(?:pains?|aches?|aching|headaches?|migraines?|dizz(?:y|iness)|faint|pass(?:ing)? out|breathless|short of breath|palpitations|nause(?:a|ous)|vomiting|sick|bleeding|blood|lumps?|rash|fevers?|temperature|numb(?:ness)?|tingling|tired|exhausted|depressed|anxious|suicidal|cough(?:ing)?|swollen|swelling|sore throat)`;
 
-// "I've been ...ing", "I've got", "I keep having", "I'm feeling", "I feel".
-const EXPERIENCE = String.raw`\bI(?:'?ve| have) been \w+ing\b|\bI'?ve got\b|\bI keep (?:having|getting)\b|\bI(?:'?m| am) (?:having|getting|feeling)\b|\bI feel\b`;
+// "blood test", "temperature chart" and similar are equipment or results, not symptoms.
+const SYMPTOM = String.raw`${SYMPTOM_WORDS}\b(?!\s+(?:pressure|tests?|results?|cuff|machine|chart|probe|forms?|samples?|count)\b)`;
 
-const PATTERNS: readonly RegExp[] = [
+// First-person openers: "I've been ...ing", "I've got/had/noticed", "I have", "I get",
+// "I keep having", "I'm feeling", "I feel".
+const OPENER = String.raw`\bI(?:'?ve| have) been \w+ing\b|\bI(?:'?ve| have) (?:got|had|noticed)\b|\bI have\b|\bI get\b|\bI keep (?:having|getting)\b|\bI(?:'?m| am) (?:having|getting|feeling)\b|\bI feel\b`;
+
+// Words a candidate uses to talk ABOUT a symptom ("the pain", "any bleeding", "your cough").
+// The gap between opener and symptom may not cross them, or any punctuation.
+const STOP = String.raw`you|your|the|that|this|these|those|any|some|about|whether|if|like|to|of|on|for|with|over|into|around|regarding|results|note|sense|picture|impression|questions?`;
+const GAP = String.raw`(?:\s+(?!(?:${STOP})\b)[\w'-]+){0,6}?\s+`;
+
+const EXPERIENCE = new RegExp(String.raw`(?:${OPENER})${GAP}${SYMPTOM}`, 'i');
+
+// Recaps repeat the patient's words in the first person ("So I've got chest pain so far, is that right?").
+const RECAP = /\b(?:so far|is that (?:right|correct)|to recap|to summari[sz]e|let me summari[sz]e|just to check)\b/i;
+
+const EXPLICIT: readonly RegExp[] = [
   /\bmy (?:own )?(?:real )?symptoms\b/i,
   /\bshould I (?:see|go to|call|ring) (?:a|my) (?:doctor|GP)\b/i,
-  /\bshould I go to (?:A&E|hospital)\b/i,
+  /\bshould I go to (?:the )?(?:A&E|hospital)\b/i,
   /\bwhat do you think I(?:'?ve)? (?:have|got)\b/i,
-  /\bwhat(?:'?s| is) wrong with me\b/i,
+  /\bwhat(?:'?s| is) wrong with me\b(?=\s*(?:[?.!,]|$))/i,
   /\bam I (?:ill|sick|dying)\b/i,
-  // First-person experience, then a symptom within six words, never reaching past "you"/"your".
-  new RegExp(String.raw`(?:${EXPERIENCE})(?:\s+(?!(?:you|your)\b)\S+){0,6}?\s+${SYMPTOM}\b`, 'i'),
+  // Self-harm is always first person here; a doctor asks about "yourself".
+  /\b(?:kill|killing|hurt|hurting|harm|harming) myself\b|\bI want to die\b|\bend(?:ing)? my (?:own )?life\b/i,
+  /\bI(?:'?m| am| feel| felt|'?ve felt| have felt|'?ve been feeling| have been feeling)\s+(?:\w+\s+)?suicidal\b/i,
+];
+
+const FIRST_PERSON_STATE: readonly RegExp[] = [
+  // "I've been coughing for weeks": the -ing word is itself the symptom.
+  /\bI(?:'?ve| have) been (?:coughing|vomiting|bleeding|wheezing|fainting|throwing up|in (?:a lot of |so much )?pain)\b/i,
+  // "I'm really dizzy", "I'm in pain".
+  /\bI(?:'?m| am) (?:(?:really|so|very|quite|feeling|a bit|a little)\s+)*(?:dizzy|faint|breathless|nauseous|unwell|ill|in pain|bleeding)\b/i,
+  // "My chest hurts".
+  /\bmy (?:[\w'-]+\s+){0,2}?(?:hurts|aches|is (?:sore|painful|swollen|bleeding|killing me))\b/i,
+  // "my sore throat", "my chest pain", but not "in my experience ...".
+  new RegExp(String.raw`\bmy (?:(?!(?:experience|opinion|view|understanding|notes)\b)[\w'-]+\s+)?${SYMPTOM}`, 'i'),
+  // "a lump I found on my breast".
+  new RegExp(String.raw`${SYMPTOM_WORDS}(?:\s+[\w'-]+){0,3}?\s+(?:in|on) my\b(?!\s+(?:experience|opinion|view|practice|clinic|notes|mind)\b)`, 'i'),
+  // "I think I might have a heart attack", "I feel like I'm going to pass out".
+  new RegExp(String.raw`\bI (?:think|worry|feel like) I(?:'?m| am| might| may| could)? (?:be |going to |about to )?(?:have |having |had )?(?:a )?(?:heart attack|stroke|${SYMPTOM})`, 'i'),
 ];
 
 export const SAFETY_MESSAGE =
   "This is a practice tool with a fictional patient, so it can't give advice about your own health. " +
-  "If you're unwell, contact NHS 111 or your GP, or call 999 in an emergency.";
+  "If you're unwell, contact NHS 111 or your GP, or call 999 in an emergency. " +
+  "If you're struggling or thinking about harming yourself, you can call Samaritans free on 116 123.";
 
 function normaliseApostrophes(s: string): string {
   return s.replace(/[‘’ʼ]/g, "'");
@@ -1127,14 +1261,16 @@ function normaliseApostrophes(s: string): string {
 
 export function looksLikeSelfDisclosure(input: string): boolean {
   const text = normaliseApostrophes(input);
-  return PATTERNS.some((p) => p.test(text));
+  if (EXPLICIT.some((p) => p.test(text))) return true;
+  if (FIRST_PERSON_STATE.some((p) => p.test(text))) return true;
+  return EXPERIENCE.test(text) && !RECAP.test(text);
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/safety.test.ts`
-Expected: PASS (31 tests).
+Expected: PASS (123 tests).
 
 - [ ] **Step 5: Commit**
 
