@@ -58,6 +58,14 @@ export function forbiddenTerms(patientCase: PatientCase, state: SessionState): s
 }
 
 /**
+ * Folds fullwidth and other compatibility forms (NFKC) and drops zero-width characters and soft
+ * hyphens, so "ｃａｎｃｅｒ" and "can\u200Bcer" are matched like "cancer".
+ */
+function foldReply(reply: string): string {
+  return reply.normalize('NFKC').replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '');
+}
+
+/**
  * Second line of defence: the patient never sees locked facts, but a model can still
  * guess. Single-pass scan for locked terms with whole-word matching (any case),
  * redacting all matches and reporting which were found.
@@ -78,7 +86,7 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
   // Single pass: track which terms (in sorted order) matched.
   const matched = new Set<string>();
 
-  const sanitized = reply.replace(regex, (...args: readonly unknown[]) => {
+  const sanitized = foldReply(reply).replace(regex, (...args: readonly unknown[]) => {
     // args = [fullMatch, group1, group2, ..., groupN, offset, string]
     // Extract groups: exactly sortedTerms.length groups, starting at index 1.
     const groups = args.slice(1, 1 + sortedTerms.length);
@@ -94,5 +102,6 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
 
   const leaked = normalised.filter((t) => matched.has(t));
 
-  return { ok: matched.size === 0, leaked, sanitized };
+  // A clean reply is returned exactly as the model wrote it.
+  return { ok: matched.size === 0, leaked, sanitized: matched.size === 0 ? reply : sanitized };
 }

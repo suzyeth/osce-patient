@@ -17,7 +17,8 @@ function shareableLines(patientCase: PatientCase, state: SessionState): string {
 
 /**
  * The only thing the patient model sees about the case.
- * Locked facts are structurally absent, so no jailbreak can extract them.
+ * Locked facts are structurally absent, so a jailbroken patient model cannot extract them.
+ * What unlocks is decided by the judge, and only through rubric items (see gates.ts).
  */
 export function buildPatientContext(patientCase: PatientCase, state: SessionState): string {
   const { patient } = patientCase;

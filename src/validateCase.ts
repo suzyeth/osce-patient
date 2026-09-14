@@ -88,6 +88,59 @@ function promptLeakErrors(c: PatientCase): string[] {
   return errors;
 }
 
+const OVERLAP_WORDS = 4;
+
+interface TextSource {
+  label: string;
+  text: string;
+  factId?: string;
+}
+
+function words(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}' ]+/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/** Every run of OVERLAP_WORDS words with at least two longer words, so "and I am the" is ignored. */
+function phrases(text: string): string[] {
+  const w = words(text);
+  const out: string[] = [];
+  for (let i = 0; i + OVERLAP_WORDS <= w.length; i += 1) {
+    const window = w.slice(i, i + OVERLAP_WORDS);
+    if (window.filter((x) => x.length >= 4).length >= 2) out.push(window.join(' '));
+  }
+  return out;
+}
+
+/**
+ * Guarded terms only catch exact words. If a locked fact's own wording also appears in text the
+ * patient can see while it is locked, the patient can say it before it is earned: "a streak of
+ * blood" in the presenting complaint gives away a red flag guarded only by "haemoptysis".
+ * Paraphrases ("a malignant growth") are not caught here; Plan 2's case pipeline checks those.
+ */
+function contentOverlapErrors(c: PatientCase): string[] {
+  const sources: TextSource[] = [
+    { label: 'the persona', text: c.patient.persona },
+    { label: 'the opening line', text: c.patient.openingLine },
+    { label: 'the candidate brief', text: c.candidateBrief },
+    ...c.facts.map((f) => ({ label: `fact ${f.id}`, text: f.text, factId: f.id })),
+  ];
+  const errors: string[] = [];
+  for (const locked of c.facts.filter((f) => f.kind !== 'presenting')) {
+    const own = new Set(phrases(locked.text));
+    for (const source of sources.filter((s) => s.factId !== locked.id)) {
+      const shared = phrases(source.text).find((p) => own.has(p));
+      if (shared) {
+        errors.push(`text of ${locked.id} shares "${shared}" with ${source.label}, so the patient could say it while ${locked.id} is locked`);
+      }
+    }
+  }
+  return errors;
+}
+
 /** Public text outside the patient prompt: the opening line the patient speaks and the candidate brief. */
 function openingTextErrors(c: PatientCase): string[] {
   const text = [c.patient.openingLine, c.candidateBrief].join('\n');
@@ -114,6 +167,9 @@ function factWarnings(c: PatientCase, f: Fact): string[] {
   if (f.kind !== 'concern' && f.minTrust !== undefined) {
     warnings.push(`minTrust on non-concern fact ${f.id} has no effect`);
   }
+  if (f.kind !== 'presenting' && f.guardedTerms.length > 0 && !f.guardedTerms.some((t) => containsTerm(f.text, t))) {
+    warnings.push(`none of the guarded terms of ${f.id} appear in its own text, so the guard may not catch the patient repeating it`);
+  }
   if (f.kind === 'presenting' && f.guardedTerms.length > 0) {
     warnings.push(`guarded terms on presenting fact ${f.id} have no effect, because presenting facts are always public`);
   }
@@ -129,6 +185,7 @@ export function validateCase(c: PatientCase): CaseIssues {
     ...scoredDomainErrors(c),
     ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
+    ...contentOverlapErrors(c),
     ...openingTextErrors(c),
   ];
   const warnings = c.facts.flatMap((f) => factWarnings(c, f));

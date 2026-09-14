@@ -111,6 +111,13 @@ describe('guardReply', () => {
     expect(r.sanitized).toBe('... and ...');
   });
 
+  it('catches fullwidth and zero-width variants of a term', () => {
+    expect(guardReply('Is it ｃａｎｃｅｒ?', ['cancer']).leaked).toEqual(['cancer']);
+    const hidden = guardReply('Is it can\u200Bcer?', ['cancer']);
+    expect(hidden.leaked).toEqual(['cancer']);
+    expect(hidden.sanitized).toBe('Is it ...?');
+  });
+
   it('collapses terms with different spacing to one', () => {
     const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
     expect(r.leaked).toEqual(['six weeks']);

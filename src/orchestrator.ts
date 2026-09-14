@@ -83,7 +83,7 @@ export async function runTurn(
   return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false };
 }
 
-/** The next conversation history. A blocked turn is dropped, so real symptoms never reach a model. */
+/** The next conversation history. A blocked turn is dropped, so its text is never sent to a model on a later turn. */
 export function appendTurn(history: readonly ConversationTurn[], student: string, result: TurnResult): ConversationTurn[] {
   return result.safetyBlocked ? [...history] : [...history, { student, patient: result.reply }];
 }

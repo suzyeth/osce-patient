@@ -19,8 +19,8 @@ describe('unlockFacts', () => {
     ]);
   });
 
-  it('unlocks a fact requested by id even if no rubric item matched', () => {
-    expect(unlockFacts(c, initialSessionState(), verdict({ requestedFactIds: ['f_blood'] }))).toEqual(['f_blood']);
+  it('never unlocks a fact from a bare fact id, so unlocks and the report always agree', () => {
+    expect(unlockFacts(c, initialSessionState(), verdict({ requestedFactIds: ['f_blood', 'f_smoking'] }))).toEqual([]);
   });
 
   it('does not return facts that are already unlocked', () => {

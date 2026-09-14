@@ -21,7 +21,7 @@ export interface PatientInput {
   context: string;
   studentInput: string;
   history: ConversationTurn[];
-  /** Facts the student just reached this turn (newly unlocked, or public facts they asked about). */
+  /** Facts the student reached this turn: newly unlocked ones, plus shareable facts they asked about again. */
   relevantFacts: string[];
 }
 

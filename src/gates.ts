@@ -5,8 +5,13 @@ export function isPublic(fact: Fact): boolean {
   return fact.kind === 'presenting';
 }
 
+/**
+ * A fact unlocks only through its rubric item, never through a bare fact id from the judge. The
+ * unlock and the report then always agree, and a judge talked into "request every fact" cannot
+ * reveal a fact without the report showing its item as covered.
+ */
 function wasAsked(fact: Fact, verdict: JudgeVerdict): boolean {
-  return verdict.rubricItemIds.includes(fact.rubricItemId) || verdict.requestedFactIds.includes(fact.id);
+  return verdict.rubricItemIds.includes(fact.rubricItemId);
 }
 
 function trustReached(fact: Fact, state: SessionState): boolean {

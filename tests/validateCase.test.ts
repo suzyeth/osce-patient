@@ -84,6 +84,19 @@ describe('validateCase', () => {
     expect(validateCase(ok).errors.some((e) => e.includes('f_concern has minTrust'))).toBe(false);
   });
 
+  it('flags a locked fact whose wording appears in text the patient can see', () => {
+    const bad = loadDemoCase();
+    bad.facts[0]!.text = "I've had a cough and a streak of blood.";
+    bad.facts[2]!.guardedTerms = ['haemoptysis'];
+    const r = validateCase(bad);
+    expect(r.errors).toContain(
+      'text of f_blood shares "a streak of blood" with fact f_presenting, so the patient could say it while f_blood is locked',
+    );
+    expect(r.warnings).toContain(
+      'none of the guarded terms of f_blood appear in its own text, so the guard may not catch the patient repeating it',
+    );
+  });
+
   it('warns about a concern fact without minTrust', () => {
     const bad = loadDemoCase();
     delete bad.facts[4]!.minTrust;

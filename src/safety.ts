@@ -5,7 +5,7 @@
  *
  * Division of labour: this regex is a high-precision core that runs before any model call
  * and in offline mode. Recall on free-form wording belongs to the judge's semantic
- * selfDisclosure flag. Three rounds of held-out probing showed that broad first-person
+ * selfDisclosure flag. Nine review rounds and a blind held-out test showed that broad first-person
  * patterns keep blocking ordinary candidate phrasing, and a false block costs exam time.
  * So every first-person symptom pattern is anchored on both sides: an explicit first-person
  * phrase before the symptom, and only a clause end or a short list of words after it.
