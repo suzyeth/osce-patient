@@ -7,29 +7,44 @@
  * and in offline mode. Recall on free-form wording belongs to the judge's semantic
  * selfDisclosure flag. Three rounds of held-out probing showed that broad first-person
  * patterns keep blocking ordinary candidate phrasing, and a false block costs exam time.
- * So every pattern here is anchored on both sides: an explicit first-person phrase before
- * the symptom, and only a clause end or a short list of words after it.
+ * So every first-person symptom pattern is anchored on both sides: an explicit first-person
+ * phrase before the symptom, and only a clause end or a short list of words after it.
+ * Quoted speech is ignored, because candidates reflect and quote what patients say.
  */
 const SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|blood|lumps?|rash(?:es)?|fevers?|temperature|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
+// After "I've got" or "I've had", "blood" and "temperature" are usually measurements
+// ("I've got blood in both bottles", "I've got a temperature, 38.4").
+const OWN_SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|lumps?|rash(?:es)?|fevers?|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
 const SYMPTOM_ADJECTIVES = String.raw`(?:dizzy|faint|sick|nauseous|breathless|unwell|ill|tired|exhausted|hopeless|depressed|anxious|suicidal|feverish|shaky)`;
 // The examiner's own hands and fingers are excluded: "tell me when my hand hurts".
 const BODY = String.raw`(?:head|chest|back|stomach|tummy|belly|abdomen|throat|neck|breasts?|armpits?|groin|arms?|legs?|knees?|feet|foot|ankles?|ears?|eyes?|nose|mouth|gums|lips?|teeth|tooth|heart|side|joints?|skin|bladder|bowels?|stool|urine|poo|pee|wee|sputum|phlegm|period)`;
 const MODIFIER = String.raw`(?:a|an|some|really|very|so|quite|bad|terrible|awful|sharp|severe|constant|horrible|little|bit of|lot of|${BODY})`;
 
-// What may follow a symptom: a clause end, or words that keep talking about having it.
-// Anything else ("cough medicine", "headache diary", "discharge letter") cancels the match.
-const AFTER = String.raw`(?=\s*(?:[,.!?;]|$)|\s+(?:in|on|for|since|when|every|at|all|again|lately|recently|today|tonight|now|right now|and|is|keeps|myself|too|as well|that won't|which won't|be|a)\b)`;
 const CLAUSE_END = String.raw`(?=\s*(?:[,.!?;]|$))`;
+const SENTENCE_END = String.raw`(?=\s*(?:[.!?;]|$))`;
+// Words that keep talking about having the symptom: time, repetition, or where on "my" body.
+const ONGOING = String.raw`for|since|every|all|again|lately|recently|today|tonight|now|right now|myself|too|as well|that won't|which won't`;
+// After a strong opener or "my <symptom>": a clause end, ongoing words, "in/on", "and", "is",
+// "keeps", or "be"/"a" for questions like "Could my chest pain be my heart?" and
+// "Is my headache a brain tumour?".
+const AFTER = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${ONGOING}|in|on|at|when|and|is|keeps|be|a)\b))`;
+// After "I've got" or "I've had", which examiners also use for findings ("I've got swelling at
+// both ankles, pitting to mid-shin"): only a sentence end, ongoing words, or "in/on/at my".
+const AFTER_WEAK = String.raw`(?:${SENTENCE_END}|(?=\s+(?:${ONGOING})\b)|(?=\s+(?:in|on|at|from) my\b))`;
 
-const HAVE_OPENER = String.raw`I(?:'?ve| have) been (?:having|getting)|I keep (?:having|getting)|I(?:'?m| am) having|I(?:'?ve| have) got|I(?:'?ve| have) had`;
+// Only patients say these about themselves.
+const STRONG_OPENER = String.raw`I(?:'?ve| have) been (?:having|getting)|I keep (?:having|getting)|I(?:'?m| am) having`;
+const WEAK_OPENER = String.raw`I(?:'?ve| have) got|I(?:'?ve| have) had`;
 
 // Symptom wording in the first person. Skipped in recaps ("So I've got chest pain so far, is that right?").
 const FIRST_PERSON_SYMPTOM: readonly RegExp[] = [
-  // "I've got a lump in my neck", "I keep getting headaches", "I'm having palpitations right now".
-  new RegExp(String.raw`\b(?:${HAVE_OPENER})\s+(?:${MODIFIER}\s+){0,3}${SYMPTOM_NOUNS}\b${AFTER}`, 'i'),
-  // "I feel really sick today", "I've been feeling dizzy lately".
+  // "I keep getting headaches, is that bad?", "I'm having palpitations right now".
+  new RegExp(String.raw`\b(?:${STRONG_OPENER})\s+(?:${MODIFIER}\s+){0,3}${SYMPTOM_NOUNS}\b${AFTER}`, 'i'),
+  // "I've got a lump in my neck", "I've had chest pain for three days".
+  new RegExp(String.raw`\b(?:${WEAK_OPENER})\s+(?:${MODIFIER}\s+){0,3}${OWN_SYMPTOM_NOUNS}\b${AFTER_WEAK}`, 'i'),
+  // "I feel really sick today", "I'm feeling dizzy", "I've been feeling dizzy lately".
   new RegExp(
-    String.raw`\bI(?:'?ve been| have been)? ?(?:feel|feeling|felt) (?:(?:really|very|so|quite|a bit|a little|pretty|extremely|always)\s+)*${SYMPTOM_ADJECTIVES}\b(?=\s*(?:[,.!?;]|$)|\s+(?:today|lately|recently|all the time|when|at night|and|since|for (?:days|weeks|months|ages|a while))\b)`,
+    String.raw`\bI(?:'?ve been| have been|'?m| am)? ?(?:feel|feeling|felt) (?:(?:really|very|so|quite|a bit|a little|pretty|extremely|always)\s+)*${SYMPTOM_ADJECTIVES}\b(?:${CLAUSE_END}|(?=\s+(?:today|lately|recently|all the time|when|at night|and|since|for (?:days|weeks|months|ages|a while))\b))`,
     'i',
   ),
   // "I'm really dizzy and can't stand up".
@@ -39,11 +54,12 @@ const FIRST_PERSON_SYMPTOM: readonly RegExp[] = [
     String.raw`\bmy ${BODY}\s+(?:hurts|aches|is (?:sore|painful|swollen|bleeding|killing me)|has been (?:hurting|aching|swollen|bleeding|killing me))\b(?!\s+(?:you|to)\b)`,
     'i',
   ),
-  // "my sore throat", "Could my chest pain be my heart?".
+  // "my sore throat", "Could my chest pain be my heart?"; not "excuse my cough".
   new RegExp(String.raw`(?<!\b(?:excuse|pardon)\s)\bmy (?:${BODY}\s+)?${SYMPTOM_NOUNS}\b${AFTER}`, 'i'),
-  // "blood in my stool", "a lump I found in my breast", "blood when I pee".
+  // "blood in my stool", "a lump I found in my breast", "blood when I pee"; not a candidate
+  // pointing at themselves ("the pain in my chest area, like this").
   new RegExp(
-    String.raw`\b${SYMPTOM_NOUNS}(?:\s+[\w'-]+){0,3}?\s+(?:in|on|from) my ${BODY}\b|\b${SYMPTOM_NOUNS} when I (?:pee|wee|poo|cough|breathe|eat|swallow)\b`,
+    String.raw`\b${SYMPTOM_NOUNS}(?:\s+[\w'-]+){0,3}?\s+(?:in|on|from) my ${BODY}\b(?!\s+(?:area|like this|here)\b)|\b${SYMPTOM_NOUNS} when I (?:pee|wee|poo|cough|breathe|eat|swallow)\b`,
     'i',
   ),
 ];
@@ -52,13 +68,13 @@ const RECAP = /\b(?:so far|is that (?:right|correct)|to recap|to summari[sz]e|le
 // Asking for advice about the speaker's own health.
 const EXPLICIT: readonly RegExp[] = [
   /\bmy (?:own )?(?:real )?symptoms\b/i,
-  new RegExp(String.raw`\bshould I (?:see|go to|call|ring) (?:a|my) (?:doctor|GP)\b(?=\s*(?:[,.!?;]|$)|\s+(?:about|for me)\b)`, 'i'),
+  new RegExp(String.raw`\bshould I (?:see|go to|call|ring) (?:a|my) (?:doctor|GP)\b(?:${CLAUSE_END}|(?=\s+(?:about|for me)\b))`, 'i'),
   new RegExp(String.raw`\bshould I go to (?:the )?(?:A&E|hospital)${CLAUSE_END}`, 'i'),
   /\bwhat do you think I(?:'?ve)? (?:have|got)\b/i,
   /\bwhat do I have\s*(?:[?!]|$)/i,
-  /\bwhat(?:'?s| is) wrong with me\b(?=\s*(?:[?.!,]|$))/i,
+  new RegExp(String.raw`\bwhat(?:'?s| is) wrong with me\b${CLAUSE_END}`, 'i'),
   /\bam I (?:ill|sick|dying)\b/i,
-  /\bwhat (?:should|can) I take\b(?=\s*(?:[?.!,]|$)|\s+for (?:it|this|that|the pain)\b)/i,
+  new RegExp(String.raw`\bwhat (?:should|can) I take\b(?:${CLAUSE_END}|(?=\s+for (?:it|this|that|the pain)\b))`, 'i'),
   /\bI(?:'?ve| have) been (?:coughing|vomiting|bleeding|wheezing|fainting|throwing up|in (?:a lot of |so much )?pain)\b/i,
   /\bI(?:'?m| am) in (?:a lot of |so much )?pain\b(?!\s+(?:team|clinic|service|management|medicine|department)\b)/i,
   /\bI can(?:'?t|not) (?:breathe|stop (?:coughing|vomiting|bleeding|shaking|crying))\b/i,
@@ -78,7 +94,6 @@ const SELF_HARM: readonly RegExp[] = [
   /\bI(?:'?ve| have)? ?(?:been )?(?:having |had )?thoughts? (?:of|about) (?:ending it all|ending my life|killing myself|suicide)\b/i,
   /\bI(?:'?ve| have)? (?:took|taken) (?:too many (?:pills|tablets|paracetamol)|an overdose|all my (?:pills|tablets|medication))\b/i,
   /\bI(?:'?m| am|'?ve felt| have felt|'?ve been feeling| have been feeling| feel| felt) (?:\w+\s+)?suicidal\b/i,
-  // "myself" and "I" make these first person; a doctor asks about "yourself".
   /\b(?:thinking|thought|think) (?:about|of) (?:killing|hurting|harming) myself\b/i,
   /\bI (?:cut|burned|burnt|hurt|harmed) myself\b/i,
   /\b(?:feel like|want to) (?:hurt(?:ing)?|harm(?:ing)?|cut(?:ting)?) myself\b/i,
@@ -93,12 +108,18 @@ export const SAFETY_MESSAGE =
   "If you're unwell, contact NHS 111 or your GP, or call 999 in an emergency. " +
   "If you're struggling or thinking about harming yourself, you can call Samaritans free on 116 123.";
 
-/** Straightens apostrophes and drops quoted speech ("some patients say 'I want to die'"). */
+/**
+ * Straightens quotes and drops quoted speech, so "You said 'I've got a lump in my neck'" and
+ * 'Some patients say "I want to die"' are not read as the user's own words. A single quote
+ * only opens after a space or the start and only closes before punctuation, a space or the
+ * end, so apostrophes inside words ("I've", "won't") are left alone.
+ */
 function normalise(s: string): string {
   return s
     .replace(/[‘’ʼ]/g, "'")
     .replace(/[“”]/g, '"')
-    .replace(/"[^"]*"/g, ' ');
+    .replace(/"[^"]*"/g, ' ')
+    .replace(/(?<=^|[\s(])'(?:[^']|'(?=[a-z]))*'(?=[\s,.!?;:)]|$)/gi, ' ');
 }
 
 export function looksLikeSelfDisclosure(input: string): boolean {
