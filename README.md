@@ -4,11 +4,12 @@ A simulated patient for practising the history-taking station of medical OSCEs (
 The candidate interviews a fictional patient against a timer and gets a deterministic report on what they
 covered, what they missed, and whether they found out what the patient was worried about.
 
-**Educational use only.** This is a practice tool with fictional patients. It is not a medical device, it
-does not give medical advice, and it is not a symptom checker. If a user seems to describe their own real
+**Educational use only.** This is a practice tool with fictional patients. It is not intended as a medical
+device, it does not give medical advice, and it is not a symptom checker (software that assesses a user's own
+symptoms can fall under UK MHRA medical-device rules). If a user seems to describe their own real
 health problem, the session pauses and points them to NHS 111, their GP, 999 or Samaritans (116 123).
 
-**Cases are not clinically reviewed.** Every case is marked `unreviewed` and says so in the report. The demo
+**Cases are not clinically reviewed.** Every case so far is marked `unreviewed`, and the report says so. The demo
 case (`cases/demo-cough.json`) is synthetic.
 
 ## What the engine does
@@ -21,7 +22,7 @@ case (`cases/demo-cough.json`) is synthetic.
   redacts if needed. The honest boundary: a model can still guess, which is why the guard exists, and a case
   author can still leak a fact through a paraphrase, which `check-case` cannot catch.
 - **Safety block.** A high-precision check runs before any model call and pauses the session on real-symptom
-  or self-harm wording; the judge model's semantic flag covers the rest. Blocked turns are never sent to a model.
+  or self-harm wording; the judge model's semantic flag covers the rest. Blocked turns never reach the patient model and never enter later history.
 - **Deterministic report.** Covered items with the turn they were first covered, missed critical items (which cap
   the global judgement at Borderline), an example question for every miss, and scores for data gathering and
   interpersonal skills. Clinical management is only partly scored in this version.
