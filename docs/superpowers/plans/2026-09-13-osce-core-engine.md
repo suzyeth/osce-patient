@@ -2039,18 +2039,32 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/orchestrator.ts`
 - Test: `tests/orchestrator.test.ts`
 
+Design note (pre-review): the judge verdict is parsed with its zod schema before it touches state (a NaN trust delta would otherwise disable every trust gate); an empty or leaking reply is retried once, then redacted or replaced with an in-character fallback; facts asked about again are passed to the patient; `appendTurn` drops safety-blocked turns so real symptoms never reach a model on a later turn.
+
 - [ ] **Step 1: Write the failing test `tests/orchestrator.test.ts`**
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { runTurn } from '../src/orchestrator.js';
+import { appendTurn, FALLBACK_REPLY, runTurn } from '../src/orchestrator.js';
 import { initialSessionState } from '../src/state.js';
 import { SAFETY_MESSAGE } from '../src/safety.js';
 import type { JudgeClient, PatientInput } from '../src/llm.js';
+import type { JudgeVerdict } from '../src/types.js';
 import { loadDemoCase } from './loadCase.js';
 import { echoPatient, fakeJudge, scriptedPatient, verdict } from './fakes.js';
 
 const c = loadDemoCase();
+
+function recordingPatient() {
+  const seen: { relevantFacts: string[] } = { relevantFacts: [] };
+  return {
+    seen,
+    async respond(input: PatientInput) {
+      seen.relevantFacts = input.relevantFacts;
+      return 'ok';
+    },
+  };
+}
 
 describe('runTurn', () => {
   it('unlocks the asked fact and records the rubric hit', async () => {
@@ -2085,6 +2099,21 @@ describe('runTurn', () => {
     expect(r.guardTriggered).toBe(true);
   });
 
+  it('retries once on an empty reply and uses the retry', async () => {
+    const patient = scriptedPatient('', 'It is just a cough.');
+    const r = await runTurn(c, initialSessionState(), 'How are you?', fakeJudge(verdict()), patient);
+    expect(patient.calls).toBe(2);
+    expect(r.reply).toBe('It is just a cough.');
+    expect(r.guardTriggered).toBe(false);
+  });
+
+  it('falls back to an in-character line when the patient stays silent', async () => {
+    const patient = scriptedPatient('', '   ');
+    const r = await runTurn(c, initialSessionState(), 'How are you?', fakeJudge(verdict()), patient);
+    expect(patient.calls).toBe(2);
+    expect(r.reply).toBe(FALLBACK_REPLY);
+  });
+
   it('blocks real-symptom disclosure before calling any model', async () => {
     const patient = scriptedPatient('should not be called');
     let judgeCalls = 0;
@@ -2110,14 +2139,19 @@ describe('runTurn', () => {
     expect(patient.calls).toBe(0);
   });
 
-  it('passes relevant facts: newly unlocked facts plus public facts that were asked about', async () => {
-    let seen: string[] = [];
-    const patient = {
-      async respond(input: PatientInput) {
-        seen = input.relevantFacts;
-        return 'ok';
+  it('rejects a malformed judge verdict before it touches state', async () => {
+    const judge: JudgeClient = {
+      async evaluate() {
+        return { trustDelta: Number.NaN } as unknown as JudgeVerdict;
       },
     };
+    const patient = scriptedPatient('should not be called');
+    await expect(runTurn(c, initialSessionState(), 'Do you smoke?', judge, patient)).rejects.toThrow();
+    expect(patient.calls).toBe(0);
+  });
+
+  it('passes relevant facts: newly unlocked facts plus public facts that were asked about', async () => {
+    const patient = recordingPatient();
     await runTurn(
       c,
       initialSessionState(),
@@ -2125,10 +2159,35 @@ describe('runTurn', () => {
       fakeJudge(verdict({ rubricItemIds: ['open_question', 'smoking'] })),
       patient,
     );
-    expect(seen).toEqual([
+    expect(patient.seen.relevantFacts).toEqual([
       "I've had a cough that just won't go away.",
       'I smoke about twenty a day and have done since I was eighteen.',
     ]);
+  });
+
+  it('passes a fact again when it is asked about after it was unlocked', async () => {
+    const patient = recordingPatient();
+    const state = { ...initialSessionState(), unlockedFactIds: ['f_smoking'] };
+    await runTurn(c, state, 'Sorry, do you smoke?', fakeJudge(verdict({ rubricItemIds: ['smoking'] })), patient);
+    expect(patient.seen.relevantFacts).toEqual(['I smoke about twenty a day and have done since I was eighteen.']);
+  });
+});
+
+describe('appendTurn', () => {
+  const history = [{ student: 'Hello', patient: 'Morning, doctor.' }];
+
+  it('drops a safety-blocked turn so real symptoms never reach a model', async () => {
+    const input = "I've been feeling dizzy, what do I have?";
+    const r = await runTurn(c, initialSessionState(), input, fakeJudge(verdict()), scriptedPatient('x'));
+    expect(appendTurn(history, input, r)).toEqual(history);
+  });
+
+  it('returns a new array with the turn appended', async () => {
+    const r = await runTurn(c, initialSessionState(), 'Do you smoke?', fakeJudge(verdict({ rubricItemIds: ['smoking'] })), scriptedPatient('Yes.'));
+    const next = appendTurn(history, 'Do you smoke?', r);
+    expect(next).toEqual([...history, { student: 'Do you smoke?', patient: 'Yes.' }]);
+    expect(next).not.toBe(history);
+    expect(history).toHaveLength(1);
   });
 });
 ```
@@ -2141,7 +2200,7 @@ Expected: FAIL — cannot resolve `../src/orchestrator.js`.
 - [ ] **Step 3: Create `src/orchestrator.ts`**
 
 ```ts
-import type { JudgeVerdict, PatientCase, SessionState } from './types.js';
+import { JudgeVerdictSchema, type Fact, type JudgeVerdict, type PatientCase, type SessionState } from './types.js';
 import type { ConversationTurn, JudgeClient, PatientClient, PatientInput } from './llm.js';
 import { applyVerdict } from './state.js';
 import { isPublic, unlockFacts } from './gates.js';
@@ -2159,21 +2218,40 @@ export interface TurnResult {
   safetyBlocked: boolean;
 }
 
-/** Generic warning for the retry; never names the leaked term, so it cannot feed the secret back. */
-const RETRY_WARNING =
+/** Generic retry warnings; they never name a leaked term, so they cannot feed a secret back. */
+const LEAK_WARNING =
   '\n\nNote: your previous answer mentioned details that are not in your list of facts you may share. ' +
   'Answer again using only the facts listed above.';
+const EMPTY_WARNING = '\n\nNote: your previous answer was empty. Answer the doctor in character, in one to three short sentences.';
+
+/** Said in character when the patient model returns nothing twice. */
+export const FALLBACK_REPLY = "Sorry, I didn't quite catch that. Could you say it again?";
 
 function blocked(state: SessionState): TurnResult {
   return { state, reply: SAFETY_MESSAGE, verdict: null, newlyUnlocked: [], guardTriggered: false, safetyBlocked: true };
 }
 
-function relevantFacts(patientCase: PatientCase, verdict: JudgeVerdict, newlyUnlocked: string[]): string[] {
-  return patientCase.facts
-    .filter(
-      (f) => newlyUnlocked.includes(f.id) || (isPublic(f) && verdict.rubricItemIds.includes(f.rubricItemId)),
-    )
-    .map((f) => f.text);
+/** Facts the student reached this turn: newly unlocked ones, plus shareable facts they asked about again. */
+function relevantFacts(patientCase: PatientCase, state: SessionState, verdict: JudgeVerdict, newlyUnlocked: string[]): string[] {
+  const asked = (f: Fact) => verdict.rubricItemIds.includes(f.rubricItemId) || verdict.requestedFactIds.includes(f.id);
+  const shareable = (f: Fact) => isPublic(f) || state.unlockedFactIds.includes(f.id);
+  return patientCase.facts.filter((f) => newlyUnlocked.includes(f.id) || (shareable(f) && asked(f))).map((f) => f.text);
+}
+
+interface GuardedReply {
+  reply: string;
+  guardTriggered: boolean;
+}
+
+/** One retry when the reply is empty or says a locked term; then an in-character fallback or redaction. */
+async function respondGuarded(patient: PatientClient, base: PatientInput, forbidden: readonly string[]): Promise<GuardedReply> {
+  const first = await patient.respond(base);
+  const firstBlank = first.trim() === '';
+  if (!firstBlank && guardReply(first, forbidden).ok) return { reply: first, guardTriggered: false };
+  const retry = await patient.respond({ ...base, context: base.context + (firstBlank ? EMPTY_WARNING : LEAK_WARNING) });
+  if (retry.trim() === '') return { reply: FALLBACK_REPLY, guardTriggered: !firstBlank };
+  const retryGuard = guardReply(retry, forbidden);
+  return { reply: retryGuard.ok ? retry : retryGuard.sanitized, guardTriggered: !firstBlank || !retryGuard.ok };
 }
 
 export async function runTurn(
@@ -2186,7 +2264,8 @@ export async function runTurn(
 ): Promise<TurnResult> {
   if (looksLikeSelfDisclosure(studentInput)) return blocked(state);
 
-  const verdict = await judge.evaluate({ patientCase, state, studentInput, history });
+  // The judge is an external model: validate its output before it touches state.
+  const verdict = JudgeVerdictSchema.parse(await judge.evaluate({ patientCase, state, studentInput, history }));
   if (verdict.selfDisclosure) return blocked(state);
 
   const afterVerdict = applyVerdict(state, verdict, patientCase.rubric.map((r) => r.id));
@@ -2200,31 +2279,22 @@ export async function runTurn(
     context: buildPatientContext(patientCase, nextState),
     studentInput,
     history,
-    relevantFacts: relevantFacts(patientCase, verdict, newlyUnlocked),
+    relevantFacts: relevantFacts(patientCase, nextState, verdict, newlyUnlocked),
   };
-  const forbidden = forbiddenTerms(patientCase, nextState);
+  const { reply, guardTriggered } = await respondGuarded(patient, base, forbiddenTerms(patientCase, nextState));
+  return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false };
+}
 
-  const first = await patient.respond(base);
-  if (guardReply(first, forbidden).ok) {
-    return { state: nextState, reply: first, verdict, newlyUnlocked, guardTriggered: false, safetyBlocked: false };
-  }
-  const retry = await patient.respond({ ...base, context: base.context + RETRY_WARNING });
-  const retryGuard = guardReply(retry, forbidden);
-  return {
-    state: nextState,
-    reply: retryGuard.ok ? retry : retryGuard.sanitized,
-    verdict,
-    newlyUnlocked,
-    guardTriggered: true,
-    safetyBlocked: false,
-  };
+/** The next conversation history. A blocked turn is dropped, so real symptoms never reach a model. */
+export function appendTurn(history: readonly ConversationTurn[], student: string, result: TurnResult): ConversationTurn[] {
+  return result.safetyBlocked ? [...history] : [...history, { student, patient: result.reply }];
 }
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/orchestrator.test.ts`
-Expected: PASS (7 tests).
+Expected: PASS (13 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -2242,6 +2312,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 **Files:**
 - Create: `src/report.ts`
 - Test: `tests/report.test.ts`
+
+Design note (pre-review): thresholds compare the unrounded ratio (11/13 = 0.846 is Satisfactory, not Good), and a domain with no items has no ratio and is skipped instead of counting as a perfect score.
 
 - [ ] **Step 1: Write the failing test `tests/report.test.ts`**
 
@@ -2281,21 +2353,25 @@ describe('computeReport', () => {
     expect(computeReport(c, { ...initialSessionState(), unlockedFactIds: ['f_concern'] }).concernElicited).toBe(true);
   });
 
-  it('scores an empty domain as 1 and always flags management as incomplete', () => {
+  it('gives an empty domain no ratio and always flags management as incomplete', () => {
     const r = computeReport(c, initialSessionState());
-    expect(r.domains.management).toEqual({ covered: 0, total: 0, ratio: 1 });
+    expect(r.domains.management).toEqual({ covered: 0, total: 0, ratio: null });
     expect(r.managementIncomplete).toBe(true);
   });
 });
 
 describe('globalJudgement', () => {
-  const cases: Array<[number, number, number, GlobalJudgement]> = [
+  const cases: Array<[number | null, number | null, number, GlobalJudgement]> = [
     [0.9, 0.9, 0, 'Good'],
     [0.7, 0.9, 0, 'Satisfactory'],
     [0.5, 0.9, 0, 'Borderline'],
     [0.2, 0.9, 0, 'Unsatisfactory'],
     [0.9, 0.9, 1, 'Borderline'],
     [0.2, 0.2, 1, 'Unsatisfactory'],
+    // 11/13 is 0.846: it would round to 0.85, but it is below the Good threshold.
+    [11 / 13, 0.9, 0, 'Satisfactory'],
+    [null, 0.9, 0, 'Good'],
+    [null, null, 0, 'Unsatisfactory'],
   ];
   it.each(cases)('data gathering %s, interpersonal %s, %s critical misses -> %s', (dg, ip, cm, expected) => {
     expect(globalJudgement(dg, ip, cm)).toBe(expected);
@@ -2327,7 +2403,8 @@ export interface ItemResult {
 export interface DomainScore {
   covered: number;
   total: number;
-  ratio: number;
+  /** Covered divided by total, unrounded; null when the case has no items in this domain. */
+  ratio: number | null;
 }
 
 export interface SessionReport {
@@ -2346,20 +2423,38 @@ export interface SessionReport {
   jargonCount: number;
 }
 
+export const GOOD_THRESHOLD = 0.85;
+export const SATISFACTORY_THRESHOLD = 0.65;
+export const BORDERLINE_THRESHOLD = 0.45;
+
 function domainScore(items: ItemResult[], domain: Domain): DomainScore {
   const inDomain = items.filter((i) => i.domain === domain);
   const covered = inDomain.filter((i) => i.covered).length;
-  const total = inDomain.length;
-  return { covered, total, ratio: total === 0 ? 1 : Math.round((covered / total) * 100) / 100 };
+  return { covered, total: inDomain.length, ratio: inDomain.length === 0 ? null : covered / inDomain.length };
 }
 
-/** Deterministic: the weaker of the two scored domains decides; a critical miss caps at Borderline. */
-export function globalJudgement(dataGathering: number, interpersonal: number, criticalMissCount: number): GlobalJudgement {
-  const floor = Math.min(dataGathering, interpersonal);
-  let g: GlobalJudgement =
-    floor >= 0.85 ? 'Good' : floor >= 0.65 ? 'Satisfactory' : floor >= 0.45 ? 'Borderline' : 'Unsatisfactory';
-  if (criticalMissCount > 0 && (g === 'Good' || g === 'Satisfactory')) g = 'Borderline';
-  return g;
+function judgementFor(ratio: number): GlobalJudgement {
+  if (ratio >= GOOD_THRESHOLD) return 'Good';
+  if (ratio >= SATISFACTORY_THRESHOLD) return 'Satisfactory';
+  if (ratio >= BORDERLINE_THRESHOLD) return 'Borderline';
+  return 'Unsatisfactory';
+}
+
+/**
+ * Deterministic: the weaker of the scored domains decides, on the unrounded ratio. A domain
+ * with no items is skipped; with none scored the result is Unsatisfactory. A critical miss
+ * caps the result at Borderline.
+ */
+export function globalJudgement(
+  dataGathering: number | null,
+  interpersonal: number | null,
+  criticalMissCount: number,
+): GlobalJudgement {
+  const scored = [dataGathering, interpersonal].filter((r): r is number => r !== null);
+  if (scored.length === 0) return 'Unsatisfactory';
+  const judgement = judgementFor(Math.min(...scored));
+  const capped = criticalMissCount > 0 && (judgement === 'Good' || judgement === 'Satisfactory');
+  return capped ? 'Borderline' : judgement;
 }
 
 export function computeReport(patientCase: PatientCase, state: SessionState): SessionReport {
@@ -2399,7 +2494,7 @@ export function computeReport(patientCase: PatientCase, state: SessionState): Se
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/report.test.ts`
-Expected: PASS (11 tests).
+Expected: PASS (14 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -2506,6 +2601,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Create: `src/offline.ts`
 - Test: `tests/offline.test.ts`
 
+Design note (pre-review): a blank offline cue never matches (an empty string is contained in every input); trust deltas are named constants.
+
 - [ ] **Step 1: Write the failing test `tests/offline.test.ts`**
 
 ```ts
@@ -2555,6 +2652,15 @@ describe('offline mode', () => {
     expect((await judge.evaluate({ ...input, studentInput: 'Do you smoke?' })).questionStyle).toBe('closed');
     expect((await judge.evaluate({ ...input, studentInput: "I'm sorry to hear that." })).questionStyle).toBe('none');
   });
+
+  it('never matches a blank cue', async () => {
+    const withBlank = {
+      ...c,
+      rubric: c.rubric.map((r) => (r.id === 'haemoptysis' ? { ...r, offlineCues: ['blood', '', '  '] } : r)),
+    };
+    const v = await offlineJudge().evaluate({ patientCase: withBlank, state: initialSessionState(), history: [], studentInput: 'Hello' });
+    expect(v.rubricItemIds).not.toContain('haemoptysis');
+  });
 });
 ```
 
@@ -2572,6 +2678,14 @@ import type { JudgeVerdict } from './types.js';
 const EMPATHY = /\b(sorry|understand|that sounds|must be)\b/i;
 const OPEN = /^(what|how|tell me|could you tell|can you tell|describe)\b/i;
 const NOT_SURE = "I'm not sure, I haven't really noticed anything like that.";
+const EMPATHY_TRUST_DELTA = 10;
+const DEFAULT_TRUST_DELTA = 2;
+
+/** A blank cue would match every question, so it never counts. */
+function matchesCue(text: string, cue: string): boolean {
+  const trimmed = cue.trim().toLowerCase();
+  return trimmed !== '' && text.includes(trimmed);
+}
 
 /**
  * Deterministic keyword judge for zero-cost development and demos.
@@ -2582,7 +2696,7 @@ export function offlineJudge(): JudgeClient {
     async evaluate({ patientCase, studentInput }): Promise<JudgeVerdict> {
       const text = studentInput.toLowerCase();
       const rubricItemIds = patientCase.rubric
-        .filter((r) => r.offlineCues.some((cue) => text.includes(cue.toLowerCase())))
+        .filter((r) => r.offlineCues.some((cue) => matchesCue(text, cue)))
         .map((r) => r.id);
       const trimmed = studentInput.trim();
       const questionStyle: JudgeVerdict['questionStyle'] = OPEN.test(trimmed)
@@ -2599,7 +2713,7 @@ export function offlineJudge(): JudgeClient {
         interrupted: false,
         jargon: false,
         selfDisclosure: false,
-        trustDelta: empathy ? 10 : 2,
+        trustDelta: empathy ? EMPATHY_TRUST_DELTA : DEFAULT_TRUST_DELTA,
         reasoning: 'offline keyword judge',
       };
     },
@@ -2619,7 +2733,7 @@ export function offlinePatient(): PatientClient {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/offline.test.ts`
-Expected: PASS (2 tests).
+Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -2639,6 +2753,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Test: `tests/validateCase.test.ts`
 
 Design note (after plan review): checks reuse the output guard's matcher, so a term the guard would redact at runtime is exactly a term flagged here (including terms ending in punctuation such as C.O.P.D.). The prompt-leak check is generic: for each locked fact it builds the real patient prompt at every trust level with every other fact unlocked, so the persona, the fixed instructions (e.g. a guarded term "medicines") and other facts' text are all covered. Checks are split into small functions to keep each under 50 lines.
+
+Design note (pre-review): also errors on blank offline cues or guarded terms, on a rubric with no data-gathering or interpersonal items, and on a concern whose minTrust is at or below the starting trust (it would unlock on the first turn).
 
 - [ ] **Step 1: Write the failing test `tests/validateCase.test.ts`**
 
@@ -2698,6 +2814,29 @@ describe('validateCase', () => {
     );
   });
 
+  it('flags blank offline cues and blank guarded terms', () => {
+    const bad = loadDemoCase();
+    bad.rubric[3]!.offlineCues = ['blood', ' '];
+    bad.facts[1]!.guardedTerms = ['six weeks', ''];
+    const r = validateCase(bad);
+    expect(r.errors).toContain('rubric item haemoptysis has a blank offline cue, which would match every question');
+    expect(r.errors).toContain('fact f_duration has a blank guarded term');
+  });
+
+  it('flags a rubric with no interpersonal items', () => {
+    const bad = loadDemoCase();
+    bad.rubric = bad.rubric.map((r) => ({ ...r, domain: r.domain === 'interpersonal' ? 'data_gathering' : r.domain }));
+    expect(validateCase(bad).errors).toContain('rubric has no interpersonal items, so the global judgement cannot score it');
+  });
+
+  it('flags a concern that would unlock on the first turn', () => {
+    const bad = loadDemoCase();
+    bad.facts[4]!.minTrust = 20;
+    expect(validateCase(bad).errors).toContain(
+      'concern fact f_concern has minTrust 20, at or below the starting trust of 30, so it unlocks on the first turn',
+    );
+  });
+
   it('warns about a concern fact without minTrust', () => {
     const bad = loadDemoCase();
     delete bad.facts[4]!.minTrust;
@@ -2728,7 +2867,7 @@ Expected: FAIL — cannot resolve `../src/validateCase.js`.
 import type { Fact, PatientCase } from './types.js';
 import { guardReply } from './patientGuard.js';
 import { buildPatientContext } from './patientContext.js';
-import { initialSessionState } from './state.js';
+import { initialSessionState, INITIAL_TRUST } from './state.js';
 
 export interface CaseIssues {
   errors: string[];
@@ -2760,6 +2899,34 @@ function factReferenceErrors(c: PatientCase): string[] {
     if (!rubricIds.has(f.rubricItemId)) errors.push(`fact ${f.id} points to unknown rubric item ${f.rubricItemId}`);
   }
   return errors;
+}
+
+/** A blank offline cue matches every question, and a blank guarded term protects nothing. */
+function blankEntryErrors(c: PatientCase): string[] {
+  const cues = c.rubric
+    .filter((r) => r.offlineCues.some((cue) => cue.trim() === ''))
+    .map((r) => `rubric item ${r.id} has a blank offline cue, which would match every question`);
+  const terms = c.facts
+    .filter((f) => f.guardedTerms.some((t) => t.trim() === ''))
+    .map((f) => `fact ${f.id} has a blank guarded term`);
+  return [...cues, ...terms];
+}
+
+/** The global judgement is scored on data gathering and interpersonal skills, so both need items. */
+function scoredDomainErrors(c: PatientCase): string[] {
+  return (['data_gathering', 'interpersonal'] as const)
+    .filter((d) => !c.rubric.some((r) => r.domain === d))
+    .map((d) => `rubric has no ${d} items, so the global judgement cannot score it`);
+}
+
+/** A concern at or below the starting trust unlocks on the first turn, whatever is asked. */
+function earlyConcernErrors(c: PatientCase): string[] {
+  return c.facts
+    .filter((f) => f.kind === 'concern' && f.minTrust !== undefined && f.minTrust <= INITIAL_TRUST)
+    .map(
+      (f) =>
+        `concern fact ${f.id} has minTrust ${f.minTrust}, at or below the starting trust of ${INITIAL_TRUST}, so it unlocks on the first turn`,
+    );
 }
 
 /**
@@ -2820,6 +2987,9 @@ export function validateCase(c: PatientCase): CaseIssues {
   const errors = [
     ...duplicateRubricIds(c),
     ...factReferenceErrors(c),
+    ...blankEntryErrors(c),
+    ...scoredDomainErrors(c),
+    ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
     ...openingTextErrors(c),
   ];
@@ -2834,7 +3004,7 @@ export function validateCase(c: PatientCase): CaseIssues {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/validateCase.test.ts`
-Expected: PASS (9 tests).
+Expected: PASS (12 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -2850,21 +3020,124 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ### Task 13: Command-line tools
 
 **Files:**
-- Create: `src/cli/checkCase.ts`, `src/cli/play.ts`
+- Create: `src/cli/loadCaseFile.ts`, `src/cli/checkCase.ts`, `src/cli/play.ts`
+- Test: `tests/loadCaseFile.test.ts`
 
-- [ ] **Step 1: Create `src/cli/checkCase.ts`**
+Design note (pre-review): both tools load cases through `loadCaseFile`, which turns a missing file, bad JSON or
+schema problems into one readable message (exit code 2) instead of a stack trace. `play` refuses a case that fails
+`validateCase`, keeps history immutable and drops safety-blocked turns from it (`appendTurn`), shows the safety
+message as a tool notice rather than the patient's line, checks the clock before judging a line, catches a failed
+turn without losing the session, and always prints the report.
+
+- [ ] **Step 1: Write the failing test `tests/loadCaseFile.test.ts`**
+
+```ts
+import { describe, it, expect, afterAll } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { loadCaseFile } from '../src/cli/loadCaseFile.js';
+import { loadDemoRaw } from './loadCase.js';
+
+const dir = mkdtempSync(join(tmpdir(), 'osce-case-'));
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+function write(name: string, text: string): string {
+  const path = join(dir, name);
+  writeFileSync(path, text);
+  return path;
+}
+
+describe('loadCaseFile', () => {
+  it('loads a valid case', () => {
+    const r = loadCaseFile(write('ok.json', JSON.stringify(loadDemoRaw())));
+    expect(r.ok && r.patientCase.id).toBe('demo-cough');
+  });
+
+  it('reports a missing file without a stack trace', () => {
+    const r = loadCaseFile(join(dir, 'missing.json'));
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.message).toContain('file not found');
+  });
+
+  it('reports invalid JSON', () => {
+    const r = loadCaseFile(write('bad.json', '{ "id": '));
+    expect(!r.ok && r.message).toContain('Invalid JSON in');
+  });
+
+  it('lists schema problems as one line per field', () => {
+    const r = loadCaseFile(write('zero.json', JSON.stringify({ ...loadDemoRaw(), durationSeconds: 0 })));
+    expect(!r.ok && r.message).toContain('does not match the case format');
+    expect(!r.ok && r.message).toContain('durationSeconds:');
+  });
+});
+```
+
+- [ ] **Step 2: Run the test to verify it fails**
+
+Run: `npx vitest run tests/loadCaseFile.test.ts`
+Expected: FAIL — cannot resolve `../src/cli/loadCaseFile.js`.
+
+- [ ] **Step 3: Create `src/cli/loadCaseFile.ts`**
 
 ```ts
 import { readFileSync } from 'node:fs';
-import { parseCase } from '../types.js';
+import { PatientCaseSchema, type PatientCase } from '../types.js';
+
+export type LoadResult = { ok: true; patientCase: PatientCase } | { ok: false; message: string };
+
+function readText(path: string): LoadResult | string {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch (e) {
+    const reason = (e as NodeJS.ErrnoException).code === 'ENOENT' ? 'file not found' : (e as Error).message;
+    return { ok: false, message: `Cannot read case file ${path}: ${reason}` };
+  }
+}
+
+function parseJson(path: string, text: string): { ok: true; value: unknown } | { ok: false; message: string } {
+  try {
+    return { ok: true, value: JSON.parse(text) as unknown };
+  } catch (e) {
+    return { ok: false, message: `Invalid JSON in ${path}: ${(e as Error).message}` };
+  }
+}
+
+/** Reads and parses a case file, turning file, JSON and schema problems into one readable message. */
+export function loadCaseFile(path: string): LoadResult {
+  const text = readText(path);
+  if (typeof text !== 'string') return text;
+  const json = parseJson(path, text);
+  if (!json.ok) return json;
+  const parsed = PatientCaseSchema.safeParse(json.value);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`);
+    return { ok: false, message: [`Case file ${path} does not match the case format:`, ...issues].join('\n') };
+  }
+  return { ok: true, patientCase: parsed.data };
+}
+```
+
+Run: `npx vitest run tests/loadCaseFile.test.ts`
+Expected: PASS (4 tests).
+
+- [ ] **Step 4: Create `src/cli/checkCase.ts`**
+
+```ts
 import { validateCase } from '../validateCase.js';
+import { loadCaseFile } from './loadCaseFile.js';
 
 const path = process.argv[2];
 if (!path) {
   console.error('Usage: npm run check-case -- <case.json>');
   process.exit(2);
 }
-const patientCase = parseCase(JSON.parse(readFileSync(path, 'utf8')));
+const loaded = loadCaseFile(path);
+if (!loaded.ok) {
+  console.error(loaded.message);
+  process.exit(2);
+}
+const { patientCase } = loaded;
 const { errors, warnings } = validateCase(patientCase);
 for (const w of warnings) console.log(`warning: ${w}`);
 for (const e of errors) console.log(`error: ${e}`);
@@ -2876,29 +3149,40 @@ console.log(
 process.exit(errors.length ? 1 : 0);
 ```
 
-- [ ] **Step 2: Run the case checker on the demo case**
-
 Run: `npm run check-case -- cases/demo-cough.json`
 Expected: last line `OK: demo-cough (5 facts, 7 rubric items)`, exit code 0.
+Run: `npm run check-case -- cases/nope.json`
+Expected: `Cannot read case file cases/nope.json: file not found`, exit code 2.
 
-- [ ] **Step 3: Create `src/cli/play.ts`**
-
-Use the readline async line iterator, not `rl.question`: with piped input, `question` drops lines that arrive between prompts and never resolves after stdin closes (found in a sandbox dry run).
+- [ ] **Step 5: Create `src/cli/play.ts`**
 
 ```ts
-import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { stdin as input, stdout as output } from 'node:process';
-import { parseCase } from '../types.js';
 import { initialSessionState } from '../state.js';
-import { runTurn } from '../orchestrator.js';
+import { appendTurn, runTurn } from '../orchestrator.js';
 import { offlineJudge, offlinePatient } from '../offline.js';
 import { computeReport } from '../report.js';
 import { formatReport } from '../formatReport.js';
+import { validateCase } from '../validateCase.js';
+import { loadCaseFile } from './loadCaseFile.js';
 import type { ConversationTurn } from '../llm.js';
+import type { SessionState } from '../types.js';
 
 const path = process.argv[2] ?? 'cases/demo-cough.json';
-const patientCase = parseCase(JSON.parse(readFileSync(path, 'utf8')));
+const loaded = loadCaseFile(path);
+if (!loaded.ok) {
+  console.error(loaded.message);
+  process.exit(2);
+}
+const patientCase = loaded.patientCase;
+const { errors } = validateCase(patientCase);
+if (errors.length) {
+  console.error(`Case ${patientCase.id} failed validation (run npm run check-case for details):`);
+  for (const e of errors) console.error(`  ${e}`);
+  process.exit(1);
+}
+
 const judge = offlineJudge();
 const patient = offlinePatient();
 // The async line iterator buffers input, so piped lines are never dropped while a turn runs.
@@ -2909,49 +3193,65 @@ console.log('(offline mode; type /end to finish)\n');
 console.log(`${patientCase.patient.name}: ${patientCase.patient.openingLine}`);
 
 const started = Date.now();
-let state = initialSessionState();
-const history: ConversationTurn[] = [];
+let state: SessionState = initialSessionState();
+let history: readonly ConversationTurn[] = [];
 
-/** Shows the prompt with the time left; returns false once time is up. */
-function promptWithClock(): boolean {
-  const left = patientCase.durationSeconds - Math.floor((Date.now() - started) / 1000);
-  if (left <= 0) return false;
+function secondsLeft(): number {
+  return patientCase.durationSeconds - Math.floor((Date.now() - started) / 1000);
+}
+
+function promptWithClock(): void {
+  const left = secondsLeft();
   rl.setPrompt(`[${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}] You: `);
   rl.prompt();
-  return true;
 }
 
-let timeUp = !promptWithClock();
-if (!timeUp) {
-  for await (const raw of rl) {
-    const line = raw.trim();
-    if (line === '/end') break;
-    if (line) {
-      const r = await runTurn(patientCase, state, line, judge, patient, history);
-      state = r.state;
-      history.push({ student: line, patient: r.reply });
-      console.log(`${patientCase.patient.name}: ${r.reply}`);
-    }
-    if (!promptWithClock()) {
-      timeUp = true;
-      break;
-    }
+/** One turn. A model or network error is reported and leaves the session unchanged. */
+async function playTurn(line: string): Promise<void> {
+  try {
+    const r = await runTurn(patientCase, state, line, judge, patient, [...history]);
+    state = r.state;
+    history = appendTurn(history, line, r);
+    // The safety message comes from the tool, not the patient, so it is not shown as their line.
+    console.log(r.safetyBlocked ? `\n[Practice paused] ${r.reply}\n` : `${patientCase.patient.name}: ${r.reply}`);
+  } catch (e) {
+    console.error(`(Something went wrong with the model, so nothing was recorded. Please ask again.) ${(e as Error).message}`);
   }
 }
-rl.close();
-if (timeUp) console.log('\nTime is up.');
-console.log('\n' + formatReport(computeReport(patientCase, state)));
+
+let timeUp = secondsLeft() <= 0;
+try {
+  if (!timeUp) {
+    promptWithClock();
+    for await (const raw of rl) {
+      const line = raw.trim();
+      if (line === '/end') break;
+      // Check the clock before judging, so a question typed after time is up is not scored.
+      timeUp = secondsLeft() <= 0;
+      if (timeUp) break;
+      if (line) await playTurn(line);
+      timeUp = secondsLeft() <= 0;
+      if (timeUp) break;
+      promptWithClock();
+    }
+  }
+} finally {
+  rl.close();
+  if (timeUp) console.log('\nTime is up.');
+  console.log('\n' + formatReport(computeReport(patientCase, state)));
+}
 ```
 
-- [ ] **Step 4: Run a scripted offline session**
+- [ ] **Step 6: Run a scripted offline session**
 
 Run: `printf 'What brings you in today?\nDo you smoke?\nHave you coughed up any blood?\n/end\n' | npm run play`
-Expected: output contains `Alan Price: I've had a cough that just won't go away.`, then `...twenty a day...`, then `...streak of blood...`, and a report whose items include `[x] turn 3  Asks about coughing up blood`.
+Expected: output contains `Alan Price: I've had a cough that just won't go away.`, then `...twenty a day...`, then
+`...streak of blood...`, and a report whose items include `[x] turn 3  Asks about coughing up blood`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/cli/checkCase.ts src/cli/play.ts
+git add src/cli/loadCaseFile.ts src/cli/checkCase.ts src/cli/play.ts tests/loadCaseFile.test.ts
 git commit -m "feat: check-case and offline play command-line tools
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
@@ -2987,3 +3287,17 @@ Expected: three patient replies (cough, twenty a day, streak of blood), then the
 
 Run: `git status --short && git log --oneline`
 Expected: empty status; history runs from the scaffold commit to the CLI tools commit, including review-fix and plan-sync commits.
+
+---
+
+## Notes for Plan 2 (from Plan 1 reviews)
+
+- **Token usage:** `UsageReport`/`UsageSink` in `src/llm.ts` are not wired yet. Pass a sink into the client
+  factories so a guarded retry (two patient calls) is counted.
+- **Timeouts and cancellation:** real clients need an `AbortSignal`/timeout and a typed error. `runTurn` stays
+  throwing and state-safe; callers (CLI, web) catch per turn, as `play.ts` does.
+- **Opening line:** add the patient's opening line to the history the patient model sees.
+- **Report details:** blocked turns do not count in `turnsUsed`, so a report "turn N" can differ from what the
+  candidate saw; "Explores concerns" can read as missed while the concern was volunteered through trust.
+- **Safety regex scope is frozen** (see Task 6). Plan 3 measures the judge's `selfDisclosure` recall on
+  `eval/fixtures/safety-blind-heldout.json`. Plan 4 decides whether a block is a soft prompt the candidate can dismiss.
