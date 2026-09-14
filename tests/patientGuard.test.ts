@@ -122,6 +122,11 @@ describe('guardReply', () => {
     expect(guardReply('It was 2² times, and there was blood…', ['blood']).sanitized).toBe('It was 2² times, and there was ...…');
   });
 
+  it('redacts every copy when a term appears both plainly and hidden', () => {
+    expect(guardReply('I saw blood, yes bl\u200Bood', ['blood']).sanitized).toBe('I saw ..., yes ...');
+    expect(guardReply('blood and ｂｌｏｏｄ', ['blood']).sanitized).toBe('... and ...');
+  });
+
   it('collapses terms with different spacing to one', () => {
     const r = guardReply('six weeks ago', ['six weeks', 'six  weeks']);
     expect(r.leaked).toEqual(['six weeks']);

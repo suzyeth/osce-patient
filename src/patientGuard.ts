@@ -100,12 +100,12 @@ export function guardReply(reply: string, forbidden: readonly string[]): GuardRe
   const sortedTerms = [...normalised].sort((a, b) => b.length - a.length);
   const regex = buildMatcher(sortedTerms);
 
-  // Detect on the folded text, so hidden variants are caught; redact the original wording when it
-  // catches the same terms, so "2²" or "…" next to a redaction keep their meaning.
+  // Keep the original wording (so "2²" or "…" next to a redaction keep their meaning) only when
+  // nothing is left once the redacted text is folded. Otherwise redact the folded text, so a hidden
+  // copy such as a zero-width "bl-ood" next to a plain "blood" never stays on screen.
   const original = redact(reply, regex, sortedTerms);
-  const folded = foldReply(reply);
-  const viaFold = folded === reply ? original : redact(folded, regex, sortedTerms);
-  const chosen = viaFold.matched.size > original.matched.size ? viaFold : original;
+  const residue = redact(foldReply(original.sanitized), regex, sortedTerms).matched.size;
+  const chosen = residue === 0 ? original : redact(foldReply(reply), regex, sortedTerms);
   const leaked = normalised.filter((term) => chosen.matched.has(term));
   return { ok: chosen.matched.size === 0, leaked, sanitized: chosen.sanitized };
 }
