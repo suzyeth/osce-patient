@@ -97,25 +97,42 @@ const EXPLICIT: readonly RegExp[] = [
 ];
 
 // Self-harm and suicide, first person only; a doctor asks about "you" and "yourself".
-// Built from pieces so every tense and common verb is covered: a first-person lead-in, then a
-// thought ("suicidal thoughts", "thoughts of ending my life") or an act ("tried to kill myself").
+// Built from pieces so every tense and common verb is covered: a first-person lead-in, an
+// optional adverb ("I just want to die"), then a thought ("suicidal thoughts", "thoughts of
+// ending my life") or an act ("tried to kill myself", "a plan to end my life").
+// Contract: this list is the regex's fixed scope. Self-harm wording outside it is left to the
+// judge's semantic flag and measured on eval/fixtures/safety-blind-heldout.json.
 const LEAD_IN = String.raw`\bI(?:'?ve been| have been|'?ve| have| had|'?m| am| keep| kept| was)?`;
-const SELF_HARM_OBJECT = String.raw`(?:suicide|ending it(?: all)?|ending my (?:own )?life|killing myself|taking my (?:own )?life|hurting myself|harming myself)`;
+const ADVERB = String.raw`(?:(?:just|really|honestly|actually|sometimes|often|still|always|genuinely|seriously|literally|truly|constantly|kind of|sort of)\s+)?`;
+const SELF_HARM_OBJECT = String.raw`(?:suicide|ending it all|ending my (?:own )?life|killing myself|taking my (?:own )?life|hurting myself|harming myself)`;
 const THOUGHT = String.raw`(?:suicidal (?:thoughts|feelings|ideas|urges)|thoughts? (?:of|about) ${SELF_HARM_OBJECT})`;
-// After a thought, only a clause end or words about how often. This is an allow-list: "I'm
-// thinking about suicide and self-harm, so I need to ask" and "I have suicidal thoughts on my
-// checklist" are candidates planning questions.
-const AFTER_THOUGHT = String.raw`(?:${CLAUSE_END}|(?=\s+(?:${DURATION}|every (?:day|night|week)|a lot|again|all the time|constantly|at night|last (?:week|night|month|year))\b))`;
+const HOW_OFTEN = String.raw`(?:${DURATION}|every (?:day|night|week)|a lot|again|all the time|constantly|at night|last (?:week|night|month|year))`;
+// After a thought: a sentence end, a comma that does not lead into the candidate's reasoning
+// ("I thought about suicide, so I have to ask directly"), or how-often words.
+const AFTER_THOUGHT = String.raw`(?:(?=\s*(?:[.!?;]|$))|(?=\s*,(?!\s*(?:so|and so|which is why|that's why|because of that)\b))|(?=\s+${HOW_OFTEN}\b))`;
 const ACT = String.raw`(?:kill myself|end my (?:own )?life|end it all|take my (?:own )?life|hang myself|overdose)`;
 
 const SELF_HARM: readonly RegExp[] = [
-  // "I've had suicidal thoughts", "I keep having thoughts of killing myself".
-  new RegExp(String.raw`${LEAD_IN} ?(?:(?:having|getting|have|had|get)\s+)?${THOUGHT}${AFTER_THOUGHT}`, 'i'),
-  // "I think about suicide every day", "I've been thinking of ending it".
-  new RegExp(String.raw`${LEAD_IN} ?(?:thinking|think|thought) (?:about|of) ${SELF_HARM_OBJECT}${AFTER_THOUGHT}`, 'i'),
-  // "I tried to hang myself", "I'm going to take my own life", "I want to end it all".
-  new RegExp(String.raw`${LEAD_IN} ?(?:tried|attempted|want|wanted|wanna|planning|planned|plan|going|gonna|intend|intending|decided)(?: to)? ${ACT}\b`, 'i'),
-  /\bI (?:want|wanted|wanna)(?: to)? die\b/i,
+  // "I've had suicidal thoughts", "I often have suicidal thoughts".
+  new RegExp(String.raw`${LEAD_IN} ?${ADVERB}(?:(?:having|getting|have|had|get)\s+)?${THOUGHT}${AFTER_THOUGHT}`, 'i'),
+  // "I think about suicide every day", "I sometimes think about suicide".
+  new RegExp(String.raw`${LEAD_IN} ?${ADVERB}(?:thinking|think|thought) (?:about|of) ${SELF_HARM_OBJECT}${AFTER_THOUGHT}`, 'i'),
+  // A bare "ending it" only before a sentence end or how-often words: "I'm thinking of ending
+  // it, unless you have any other questions?" closes a consultation.
+  new RegExp(
+    String.raw`${LEAD_IN} ?${ADVERB}(?:(?:(?:having|getting|have|had|get)\s+)?thoughts? (?:of|about)|(?:thinking|think|thought) (?:about|of)) ending it(?=\s*(?:[.!?;]|$)|\s+(?:a lot|every day|every night|all the time|again|constantly|lately|recently)\b)`,
+    'i',
+  ),
+  // "I tried to hang myself", "I just want to end it all", "I'm going to take my own life".
+  new RegExp(String.raw`${LEAD_IN} ?${ADVERB}(?:tried|attempted|want|wanted|wanna|planning|planned|plan|going|gonna|intend|intending|decided)(?: to)? ${ACT}\b`, 'i'),
+  new RegExp(String.raw`${LEAD_IN} ?${ADVERB}(?:tried|attempted|want|wanted|wanna)(?: to)? end things\b`, 'i'),
+  new RegExp(String.raw`\bI ${ADVERB}(?:want|wanted|wanna)(?: to)? die\b`, 'i'),
+  // "I have a plan to kill myself" is the standard answer in a risk assessment.
+  new RegExp(String.raw`\bI(?:'?ve| have)? ?(?:got |have |made )?(?:a )?plans? (?:to|for how to) ${ACT}\b`, 'i'),
+  new RegExp(String.raw`\bI(?:'?ve| have)? ?${ADVERB}tried (?:killing myself|ending (?:my life|it all)|hanging myself)\b`, 'i'),
+  new RegExp(String.raw`\bI (?:keep thinking|think|feel) I should (?:just )?${ACT}\b`, 'i'),
+  /\bI(?:'?ve| have)? ?(?:been )?(?:having |getting |had |have |get )?urges? to (?:hurt|harm|kill|cut) myself\b/i,
+  /\bI (?:cut|slashed|slit) my (?:wrists?|arms?|legs?|thighs?)\b/i,
   /\bI(?:'?ve| have)? (?:overdosed|attempted suicide|tried suicide)\b/i,
   /\bI(?:'?ve been| have been)? ?(?:feel|feeling|felt) like (?:killing myself|ending it all|ending my life|dying)\b/i,
   /\bI(?:'?m| am) (?:going to|gonna) (?:hurt|harm) myself\b/i,
@@ -138,7 +155,7 @@ const SELF_HARM: readonly RegExp[] = [
   /\bI(?:'?ve| have)? (?:written|wrote) (?:a |my )?suicide note\b/i,
   /\b(?:everyone|everybody|my family|they|people)(?: would|'d) be better off without me\b/i,
   /\bI wish I (?:was|were) dead\b/i,
-  /\bI(?:'d| would) be better off dead\b/i,
+  /\bI(?:'d| would) (?:be better off|rather be|prefer to be) dead\b/i,
   /\bmaking myself sick\b/i,
 ];
 
@@ -171,23 +188,21 @@ function normalise(s: string): string {
     .replace(SINGLE_QUOTED, dropSpeech);
 }
 
-// Reported speech without quote marks, inside a question to the patient: "Some people say I'd
-// be better off dead, have you ever felt that way?" The reporting verb must come right before
-// the match and a question to "you" right after it, so "People tell me to cheer up but I want
-// to die, do you understand?" is still caught.
-const REPORTED_LEAD = /\b(?:people|patients|some|someone|they|others|many)\b[^.?!;,]{0,60}\b(?:say|says|said|tell me|told me|think|feel|describe(?: it as)?)\s+(?:that\s+)?$/i;
-const ASKS_YOU = /^[^.?!;]{0,20}?[,;]?\s*(?:have|do|did|are|would|could) you\b/i;
+// Reported speech without quote marks: "Some people say I'd be better off dead, have you ever
+// felt that way?" The speaker must be a person word directly before a reporting verb, right
+// before the match. "Some days I feel I want to die" is the user's own feeling, and "People
+// tell me to cheer up but I want to die" is still caught.
+const REPORTED_LEAD = /\b(?:(?:some|many|other|a lot of|lots of) )?(?:people|patients|others|someone|they)(?: in your (?:position|situation))? (?:often |sometimes |also )?(?:say|says|said|tell me|told me|think|feel|describe(?: it as)?)\s+(?:that\s+)?$/i;
 
-function isReportedQuestion(text: string, match: RegExpExecArray): boolean {
+function isReportedSpeech(text: string, match: RegExpExecArray): boolean {
   const before = text.slice(0, match.index).split(/[.?!;]/).pop() ?? '';
-  const after = text.slice(match.index + match[0].length);
-  return REPORTED_LEAD.test(before) && ASKS_YOU.test(after);
+  return REPORTED_LEAD.test(before);
 }
 
 function selfHarmDisclosed(text: string): boolean {
   return SELF_HARM.some((p) => {
     const match = p.exec(text);
-    return match !== null && !isReportedQuestion(text, match);
+    return match !== null && !isReportedSpeech(text, match);
   });
 }
 
