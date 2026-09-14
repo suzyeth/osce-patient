@@ -2829,12 +2829,20 @@ describe('validateCase', () => {
     expect(validateCase(bad).errors).toContain('rubric has no interpersonal items, so the global judgement cannot score it');
   });
 
-  it('flags a concern that would unlock on the first turn', () => {
-    const bad = loadDemoCase();
-    bad.facts[4]!.minTrust = 20;
-    expect(validateCase(bad).errors).toContain(
-      'concern fact f_concern has minTrust 20, at or below the starting trust of 30, so it unlocks on the first turn',
-    );
+  it('flags a concern that the first turn could unlock', () => {
+    for (const minTrust of [20, 32, 50]) {
+      const bad = loadDemoCase();
+      bad.facts[4]!.minTrust = minTrust;
+      expect(validateCase(bad).errors).toContain(
+        `concern fact f_concern has minTrust ${minTrust}, which the starting trust of 30 plus one turn (up to +20) can reach, so it can unlock on the first turn`,
+      );
+    }
+  });
+
+  it('accepts a concern that needs more than one turn of rapport', () => {
+    const ok = loadDemoCase();
+    ok.facts[4]!.minTrust = 51;
+    expect(validateCase(ok).errors.some((e) => e.includes('f_concern has minTrust'))).toBe(false);
   });
 
   it('warns about a concern fact without minTrust', () => {
@@ -2867,7 +2875,7 @@ Expected: FAIL — cannot resolve `../src/validateCase.js`.
 import type { Fact, PatientCase } from './types.js';
 import { guardReply } from './patientGuard.js';
 import { buildPatientContext } from './patientContext.js';
-import { initialSessionState, INITIAL_TRUST } from './state.js';
+import { initialSessionState, INITIAL_TRUST, MAX_TRUST_DELTA } from './state.js';
 
 export interface CaseIssues {
   errors: string[];
@@ -2919,13 +2927,17 @@ function scoredDomainErrors(c: PatientCase): string[] {
     .map((d) => `rubric has no ${d} items, so the global judgement cannot score it`);
 }
 
-/** A concern at or below the starting trust unlocks on the first turn, whatever is asked. */
+/**
+ * A concern the starting trust plus one turn of rapport can reach unlocks on the first turn.
+ * The offline judge always adds some trust, and the model judge can add up to MAX_TRUST_DELTA.
+ */
 function earlyConcernErrors(c: PatientCase): string[] {
+  const firstTurnReach = INITIAL_TRUST + MAX_TRUST_DELTA;
   return c.facts
-    .filter((f) => f.kind === 'concern' && f.minTrust !== undefined && f.minTrust <= INITIAL_TRUST)
+    .filter((f) => f.kind === 'concern' && f.minTrust !== undefined && f.minTrust <= firstTurnReach)
     .map(
       (f) =>
-        `concern fact ${f.id} has minTrust ${f.minTrust}, at or below the starting trust of ${INITIAL_TRUST}, so it unlocks on the first turn`,
+        `concern fact ${f.id} has minTrust ${f.minTrust}, which the starting trust of ${INITIAL_TRUST} plus one turn (up to +${MAX_TRUST_DELTA}) can reach, so it can unlock on the first turn`,
     );
 }
 
@@ -3004,7 +3016,7 @@ export function validateCase(c: PatientCase): CaseIssues {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/validateCase.test.ts`
-Expected: PASS (12 tests).
+Expected: PASS (13 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -3054,6 +3066,11 @@ describe('loadCaseFile', () => {
     expect(r.ok && r.patientCase.id).toBe('demo-cough');
   });
 
+  it('loads a case saved with a UTF-8 byte-order mark', () => {
+    const r = loadCaseFile(write('bom.json', '\uFEFF' + JSON.stringify(loadDemoRaw())));
+    expect(r.ok && r.patientCase.id).toBe('demo-cough');
+  });
+
   it('reports a missing file without a stack trace', () => {
     const r = loadCaseFile(join(dir, 'missing.json'));
     expect(r.ok).toBe(false);
@@ -3086,7 +3103,7 @@ import { PatientCaseSchema, type PatientCase } from '../types.js';
 
 export type LoadResult = { ok: true; patientCase: PatientCase } | { ok: false; message: string };
 
-function readText(path: string): LoadResult | string {
+function readText(path: string): string | { ok: false; message: string } {
   try {
     return readFileSync(path, 'utf8');
   } catch (e) {
@@ -3097,7 +3114,8 @@ function readText(path: string): LoadResult | string {
 
 function parseJson(path: string, text: string): { ok: true; value: unknown } | { ok: false; message: string } {
   try {
-    return { ok: true, value: JSON.parse(text) as unknown };
+    // Some Windows editors save a byte-order mark, which JSON.parse rejects.
+    return { ok: true, value: JSON.parse(text.replace(/^\uFEFF/, '')) as unknown };
   } catch (e) {
     return { ok: false, message: `Invalid JSON in ${path}: ${(e as Error).message}` };
   }
@@ -3119,7 +3137,7 @@ export function loadCaseFile(path: string): LoadResult {
 ```
 
 Run: `npx vitest run tests/loadCaseFile.test.ts`
-Expected: PASS (4 tests).
+Expected: PASS (5 tests).
 
 - [ ] **Step 4: Create `src/cli/checkCase.ts`**
 
@@ -3215,7 +3233,8 @@ async function playTurn(line: string): Promise<void> {
     // The safety message comes from the tool, not the patient, so it is not shown as their line.
     console.log(r.safetyBlocked ? `\n[Practice paused] ${r.reply}\n` : `${patientCase.patient.name}: ${r.reply}`);
   } catch (e) {
-    console.error(`(Something went wrong with the model, so nothing was recorded. Please ask again.) ${(e as Error).message}`);
+    const firstLine = (e as Error).message.split('\n')[0] ?? '';
+    console.error(`(Something went wrong with the model, so nothing was recorded. Please ask again.) ${firstLine}`);
   }
 }
 
