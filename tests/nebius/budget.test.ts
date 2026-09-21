@@ -61,6 +61,20 @@ describe('createBudget', () => {
     expect(() => createBudget(limits(file)).check(0.001)).toThrow(BudgetError);
   });
 
+  it.each([
+    ['an empty object', '{}'],
+    ['an array', '[]'],
+    ['no day', '{"spentUsd": 0.4}'],
+    ['a mangled day', '{"day": "21/09/2026", "spentUsd": 0.4}'],
+    ['a negative spend', '{"day": "2026-09-21", "spentUsd": -1}'],
+    ['a day in the future', '{"day": "2026-09-22", "spentUsd": 0.1}'],
+    ['an old day with no spend', '{"day": "2026-09-20"}'],
+  ])('treats a ledger with %s as corrupt instead of starting from zero', (_label, text) => {
+    const file = freshFile();
+    writeFileSync(file, text);
+    expect(() => createBudget(limits(file), day('2026-09-21T09:00:00Z')).check(0.001)).toThrow(/corrupt/);
+  });
+
   it('stops when the spend cannot be saved', () => {
     const unwritable = join(dir, 'no-such-folder', 'budget.json');
     expect(() => createBudget(limits(unwritable)).record(0.001)).toThrow(/could not save/);

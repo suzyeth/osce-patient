@@ -22,6 +22,8 @@ export interface Budget {
   daySpentUsd(): number;
 }
 
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 function dayOf(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -45,11 +47,14 @@ function readSpent(file: string, day: string): number {
   } catch {
     throw corrupt(file);
   }
-  if (parsed === null || typeof parsed !== 'object') throw corrupt(file);
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) throw corrupt(file);
   const record = parsed as { day?: unknown; spentUsd?: unknown };
-  if (record.day !== day) return 0;
-  if (typeof record.spentUsd !== 'number' || !Number.isFinite(record.spentUsd)) throw corrupt(file);
-  return record.spentUsd;
+  // Validate the whole record before comparing days, so a damaged file never counts as a new day.
+  // A day after today means the clock went back, which is also treated as damage.
+  if (typeof record.day !== 'string' || !DAY_PATTERN.test(record.day) || record.day > day) throw corrupt(file);
+  const spent = record.spentUsd;
+  if (typeof spent !== 'number' || !Number.isFinite(spent) || spent < 0) throw corrupt(file);
+  return record.day === day ? spent : 0;
 }
 
 /** Writes a temporary file and renames it, so a crash never leaves a half-written ledger. */
