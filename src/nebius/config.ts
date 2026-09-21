@@ -1,0 +1,107 @@
+import { z } from 'zod';
+
+/** Token Factory model ids, checked against the catalogue on 2026-09-20. */
+export const MODELS = {
+  nano: 'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B',
+  lightning: 'nvidia/Nemotron-3_5-Lightning',
+  super: 'nvidia/nemotron-3-super-120b-a12b',
+  ultra: 'nvidia/Nemotron-3-Ultra-550b-a55b',
+} as const;
+
+export interface Price {
+  /** US dollars per million input tokens. */
+  input: number;
+  /** US dollars per million output tokens; reasoning tokens are billed as output. */
+  output: number;
+}
+
+/** Catalogue prices on 2026-09-20. */
+export const PRICES: Readonly<Record<string, Price>> = {
+  [MODELS.nano]: { input: 0.06, output: 0.24 },
+  [MODELS.lightning]: { input: 0.06, output: 0.24 },
+  [MODELS.super]: { input: 0.3, output: 0.9 },
+  [MODELS.ultra]: { input: 1, output: 3 },
+};
+
+/** An unknown model is priced at the most expensive rate, so the budget errs on the safe side. */
+export const FALLBACK_PRICE: Price = { input: 1, output: 3 };
+
+const ConfigSchema = z.object({
+  apiKey: z.string().min(1, 'NEBIUS_API_KEY is missing: put it in .env'),
+  baseUrl: z.string().url(),
+  judgeModel: z.string().min(1),
+  patientModel: z.string().min(1),
+  timeoutMs: z.number().int().positive(),
+  maxRetries: z.number().int().min(0).max(5),
+  judgeMaxTokens: z.number().int().positive(),
+  patientMaxTokens: z.number().int().positive(),
+  judgeThinking: z.boolean(),
+  patientThinking: z.boolean(),
+  sessionBudgetUsd: z.number().positive(),
+  dailyBudgetUsd: z.number().positive(),
+  budgetFile: z.string().min(1),
+});
+
+export type NebiusConfig = z.infer<typeof ConfigSchema>;
+
+const DEFAULTS = {
+  baseUrl: 'https://api.tokenfactory.nebius.com/v1',
+  // A 10-line check on 2026-09-21 (reasoning off): Lightning 9/10 exact at 0.4 s, Super 8/10 at 1.2 s,
+  // Nano 7/10 with missed items. Super with reasoning on scored 10/10 at about 3 s per call.
+  judgeModel: MODELS.lightning,
+  patientModel: MODELS.super,
+  timeoutMs: 30_000,
+  maxRetries: 2,
+  // Reasoning tokens count as output, so leave headroom beyond the visible answer.
+  judgeMaxTokens: 800,
+  patientMaxTokens: 400,
+  // Reasoning off by default: with it on, a judge call took 4 to 6 seconds and could run out of tokens.
+  judgeThinking: false,
+  patientThinking: false,
+  sessionBudgetUsd: 0.05,
+  dailyBudgetUsd: 0.5,
+  budgetFile: '.osce-budget.json',
+} as const;
+
+function num(value: string | undefined, fallback: number): number {
+  return value === undefined || value.trim() === '' ? fallback : Number(value);
+}
+
+/** "on" or "off"; anything else is rejected by the schema as a non-boolean. */
+function flag(value: string | undefined, fallback: boolean): boolean | string {
+  if (value === undefined || value.trim() === '') return fallback;
+  const v = value.trim().toLowerCase();
+  return v === 'on' ? true : v === 'off' ? false : value;
+}
+
+/** Reads settings from the environment. Error messages never contain the key. */
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): NebiusConfig {
+  return ConfigSchema.parse({
+    apiKey: env.NEBIUS_API_KEY ?? '',
+    baseUrl: env.NEBIUS_BASE_URL || DEFAULTS.baseUrl,
+    judgeModel: env.OSCE_JUDGE_MODEL || DEFAULTS.judgeModel,
+    patientModel: env.OSCE_PATIENT_MODEL || DEFAULTS.patientModel,
+    timeoutMs: num(env.OSCE_TIMEOUT_MS, DEFAULTS.timeoutMs),
+    maxRetries: num(env.OSCE_MAX_RETRIES, DEFAULTS.maxRetries),
+    judgeMaxTokens: num(env.OSCE_JUDGE_MAX_TOKENS, DEFAULTS.judgeMaxTokens),
+    patientMaxTokens: num(env.OSCE_PATIENT_MAX_TOKENS, DEFAULTS.patientMaxTokens),
+    judgeThinking: flag(env.OSCE_JUDGE_THINKING, DEFAULTS.judgeThinking),
+    patientThinking: flag(env.OSCE_PATIENT_THINKING, DEFAULTS.patientThinking),
+    sessionBudgetUsd: num(env.OSCE_SESSION_BUDGET_USD, DEFAULTS.sessionBudgetUsd),
+    dailyBudgetUsd: num(env.OSCE_DAILY_BUDGET_USD, DEFAULTS.dailyBudgetUsd),
+    budgetFile: env.OSCE_BUDGET_FILE || DEFAULTS.budgetFile,
+  });
+}
+
+/** Loads .env into process.env when it exists; a missing file is fine. */
+export function loadDotEnv(path = '.env'): void {
+  try {
+    process.loadEnvFile(path);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+}
+
+export function priceOf(model: string): Price {
+  return PRICES[model] ?? FALLBACK_PRICE;
+}
