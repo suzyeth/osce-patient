@@ -1,0 +1,15 @@
+{
+  "caseId": "demo-cough",
+  "questions": [
+    "Have you had any chest pain?",
+    "Have you lost any weight recently?",
+    "Do you get sweaty at night?",
+    "Have you travelled abroad lately?",
+    "Do you have any pets at home?",
+    "Are you taking any medicines at the moment?",
+    "Do you have any allergies?",
+    "How much alcohol do you drink in a week?",
+    "Has anyone else at home been unwell?",
+    "Have you had a temperature?"
+  ]
+}
