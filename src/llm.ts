@@ -1,5 +1,8 @@
 import type { JudgeVerdict, PatientCase, SessionState } from './types.js';
 
+// Model-agnostic interfaces. Offline doubles live in offline.ts; Nemotron clients, their usage
+// accounting and spend caps live in src/nebius/.
+
 export interface ConversationTurn {
   student: string;
   patient: string;
@@ -28,11 +31,3 @@ export interface PatientInput {
 export interface PatientClient {
   respond(input: PatientInput): Promise<string>;
 }
-
-export interface UsageReport {
-  label: 'judge' | 'patient';
-  input: number;
-  output: number;
-}
-
-export type UsageSink = (u: UsageReport) => void;
