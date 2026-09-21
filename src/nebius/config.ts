@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 
 /** Token Factory model ids, checked against the catalogue on 2026-09-20. */
 export const MODELS = {
@@ -28,7 +28,11 @@ export const FALLBACK_PRICE: Price = { input: 1, output: 3 };
 
 const ConfigSchema = z.object({
   apiKey: z.string().min(1, 'NEBIUS_API_KEY is missing: put it in .env'),
-  baseUrl: z.string().url(),
+  // The bearer key goes to this address, so it must be encrypted in transit.
+  baseUrl: z
+    .string()
+    .url()
+    .refine((u) => u.startsWith('https://'), 'NEBIUS_BASE_URL must use https'),
   judgeModel: z.string().min(1),
   patientModel: z.string().min(1),
   timeoutMs: z.number().int().positive(),
@@ -91,6 +95,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): NebiusConfig {
     dailyBudgetUsd: num(env.OSCE_DAILY_BUDGET_USD, DEFAULTS.dailyBudgetUsd),
     budgetFile: env.OSCE_BUDGET_FILE || DEFAULTS.budgetFile,
   });
+}
+
+/** One readable line for a settings problem; zod's own message is multi-line JSON. */
+export function describeConfigError(e: unknown): string {
+  if (e instanceof ZodError) return e.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ');
+  return e instanceof Error ? (e.message.split('\n')[0] ?? 'unknown error') : 'unknown error';
 }
 
 /** Loads .env into process.env when it exists; a missing file is fine. */

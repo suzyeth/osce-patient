@@ -34,7 +34,8 @@ export function extractJson(text: string): unknown {
 /**
  * Fills fields that do not affect scoring when the model leaves them out, keeps only rubric ids
  * that exist in the case, and caps them per turn. rubricItemIds, selfDisclosure and trustDelta
- * must be present, or the verdict is rejected.
+ * must be present, or the verdict is rejected. The judge never sees fact ids, so any it returns
+ * are invented or injected and are dropped.
  */
 export function coerceVerdict(raw: unknown, knownRubricIds: readonly string[]): JudgeVerdict {
   const obj = (raw !== null && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -44,7 +45,6 @@ export function coerceVerdict(raw: unknown, knownRubricIds: readonly string[]): 
         .slice(0, MAX_ITEMS_PER_TURN)
     : undefined;
   return JudgeVerdictSchema.parse({
-    requestedFactIds: [],
     questionStyle: 'none',
     empathy: false,
     interrupted: false,
@@ -52,6 +52,7 @@ export function coerceVerdict(raw: unknown, knownRubricIds: readonly string[]): 
     reasoning: '',
     ...obj,
     rubricItemIds,
+    requestedFactIds: [],
   });
 }
 

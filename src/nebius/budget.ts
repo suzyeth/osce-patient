@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 
 export class BudgetError extends Error {
   constructor(message: string) {
@@ -16,7 +16,7 @@ export interface BudgetLimits {
 export interface Budget {
   /** Throws BudgetError when a call costing up to estimateUsd would pass the session or daily cap. */
   check(estimateUsd: number): void;
-  /** Adds what a finished call actually cost to the session and to today's file. */
+  /** Adds what a call cost to the session and to today's file; throws BudgetError if it cannot be saved. */
   record(costUsd: number): void;
   sessionSpentUsd(): number;
   daySpentUsd(): number;
@@ -24,6 +24,10 @@ export interface Budget {
 
 function dayOf(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+function corrupt(file: string): BudgetError {
+  return new BudgetError(`the budget file ${file} is corrupt; check today's spend before deleting it`);
 }
 
 /** Today's recorded spend. A missing file means nothing spent; an unreadable one stops spending. */
@@ -35,22 +39,34 @@ function readSpent(file: string, day: string): number {
     if ((e as NodeJS.ErrnoException).code === 'ENOENT') return 0;
     throw new BudgetError(`cannot read the budget file ${file}`);
   }
-  let parsed: { day?: unknown; spentUsd?: unknown };
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(text) as { day?: unknown; spentUsd?: unknown };
+    parsed = JSON.parse(text);
   } catch {
-    throw new BudgetError(`the budget file ${file} is corrupt; check today's spend before deleting it`);
+    throw corrupt(file);
   }
-  if (parsed.day !== day) return 0;
-  if (typeof parsed.spentUsd !== 'number' || !Number.isFinite(parsed.spentUsd)) {
-    throw new BudgetError(`the budget file ${file} is corrupt; check today's spend before deleting it`);
+  if (parsed === null || typeof parsed !== 'object') throw corrupt(file);
+  const record = parsed as { day?: unknown; spentUsd?: unknown };
+  if (record.day !== day) return 0;
+  if (typeof record.spentUsd !== 'number' || !Number.isFinite(record.spentUsd)) throw corrupt(file);
+  return record.spentUsd;
+}
+
+/** Writes a temporary file and renames it, so a crash never leaves a half-written ledger. */
+function writeSpent(file: string, day: string, spentUsd: number): void {
+  const temporary = `${file}.tmp`;
+  try {
+    writeFileSync(temporary, JSON.stringify({ day, spentUsd }));
+    renameSync(temporary, file);
+  } catch {
+    throw new BudgetError(`could not save today's spend to ${file}, so no more calls are made`);
   }
-  return parsed.spentUsd;
 }
 
 /**
  * The one stateful module: a spend ledger. The session total lives in this closure and the daily
- * total in a small JSON file, so the daily cap holds across runs on the same day.
+ * total in a small JSON file, so the daily cap holds across runs on the same day. Two sessions
+ * running at the same moment can each overshoot by one call; that is acceptable for a single-user CLI.
  */
 export function createBudget(limits: BudgetLimits, now: () => Date = () => new Date()): Budget {
   let session = 0;
@@ -65,9 +81,10 @@ export function createBudget(limits: BudgetLimits, now: () => Date = () => new D
       }
     },
     record(costUsd) {
+      if (!Number.isFinite(costUsd) || costUsd < 0) throw new BudgetError(`refusing to record an invalid cost (${costUsd})`);
       session += costUsd;
       const day = today();
-      writeFileSync(limits.budgetFile, JSON.stringify({ day, spentUsd: readSpent(limits.budgetFile, day) + costUsd }));
+      writeSpent(limits.budgetFile, day, readSpent(limits.budgetFile, day) + costUsd);
     },
     sessionSpentUsd: () => session,
     daySpentUsd: () => readSpent(limits.budgetFile, today()),

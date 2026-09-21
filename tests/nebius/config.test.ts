@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FALLBACK_PRICE, loadConfig, MODELS, priceOf } from '../../src/nebius/config.js';
+import { describeConfigError, FALLBACK_PRICE, loadConfig, MODELS, priceOf } from '../../src/nebius/config.js';
 
 describe('loadConfig', () => {
   it('uses safe defaults when only the key is set', () => {
@@ -32,6 +32,10 @@ describe('loadConfig', () => {
     expect(c.maxRetries).toBe(0);
   });
 
+  it('refuses a base address that is not https, because the key is sent there', () => {
+    expect(() => loadConfig({ NEBIUS_API_KEY: 'k', NEBIUS_BASE_URL: 'http://api.example/v1' })).toThrow(/https/);
+  });
+
   it('explains a missing key', () => {
     expect(() => loadConfig({})).toThrow(/NEBIUS_API_KEY/);
   });
@@ -45,6 +49,20 @@ describe('loadConfig', () => {
     }
     expect(message).not.toBe('');
     expect(message).not.toContain('secret-key-123');
+  });
+});
+
+describe('describeConfigError', () => {
+  it('turns a settings error into one readable line', () => {
+    let error: unknown;
+    try {
+      loadConfig({});
+    } catch (e) {
+      error = e;
+    }
+    const line = describeConfigError(error);
+    expect(line).toContain('apiKey: NEBIUS_API_KEY is missing');
+    expect(line).not.toContain('\n');
   });
 });
 

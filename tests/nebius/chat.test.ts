@@ -15,17 +15,22 @@ const OK_BODY = {
   usage: { prompt_tokens: 100, completion_tokens: 20 },
 };
 
-const openBudget = (): Budget => {
-  let spent = 0;
-  return {
-    check() {},
-    record(cost) {
-      spent += cost;
+/** A budget that never refuses and counts what happens to it. */
+function countingBudget(refuseOnCheck = Number.POSITIVE_INFINITY) {
+  const log = { checks: 0, records: [] as number[] };
+  const budget: Budget = {
+    check() {
+      log.checks += 1;
+      if (log.checks >= refuseOnCheck) throw new BudgetError('this session has reached its $0.05 cap');
     },
-    sessionSpentUsd: () => spent,
-    daySpentUsd: () => spent,
+    record(cost) {
+      log.records.push(cost);
+    },
+    sessionSpentUsd: () => log.records.reduce((a, b) => a + b, 0),
+    daySpentUsd: () => log.records.reduce((a, b) => a + b, 0),
   };
-};
+  return { budget, log };
+}
 
 const REQUEST: ChatRequest = {
   label: 'patient',
@@ -35,7 +40,7 @@ const REQUEST: ChatRequest = {
   temperature: 0.7,
 };
 
-function setup(responses: Array<Response | Error>, budget: Budget = openBudget()) {
+function setup(responses: Array<Response | Error>, budget: Budget = countingBudget().budget) {
   const calls: Array<{ url: string; init: RequestInit }> = [];
   const waits: number[] = [];
   const usages: CallUsage[] = [];
@@ -89,44 +94,65 @@ describe('createChat', () => {
   });
 
   it('records usage and cost from the response', async () => {
-    const { chat, usages } = setup([jsonResponse(OK_BODY)]);
+    const { budget, log } = countingBudget();
+    const { chat, usages } = setup([jsonResponse(OK_BODY)], budget);
     await chat(REQUEST);
     expect(usages).toHaveLength(1);
     expect(usages[0]).toMatchObject({ label: 'patient', inputTokens: 100, outputTokens: 20 });
     expect(usages[0]!.costUsd).toBeCloseTo((100 * 0.3 + 20 * 0.9) / 1_000_000, 12);
+    expect(log.records).toEqual([usages[0]!.costUsd]);
   });
 
-  it('retries a rate limit, honouring Retry-After', async () => {
-    const { chat, calls, waits } = setup([jsonResponse({}, 429, { 'retry-after': '2' }), jsonResponse(OK_BODY)]);
+  it('ignores nonsense usage numbers from the server', async () => {
+    const body = { ...OK_BODY, usage: { prompt_tokens: -5, completion_tokens: 'lots' } };
+    const { chat, usages } = setup([jsonResponse(body)]);
+    await chat(REQUEST);
+    expect(usages[0]!.inputTokens).toBeGreaterThan(0);
+    expect(usages[0]!.outputTokens).toBe(REQUEST.maxTokens);
+    expect(Number.isFinite(usages[0]!.costUsd)).toBe(true);
+  });
+
+  it('retries a rate limit, honouring Retry-After, without charging for it', async () => {
+    const { budget, log } = countingBudget();
+    const { chat, calls, waits } = setup([jsonResponse({}, 429, { 'retry-after': '2' }), jsonResponse(OK_BODY)], budget);
     const result = await chat(REQUEST);
     expect(result.content).toBe('Hello');
     expect(calls).toHaveLength(2);
     expect(waits).toEqual([2000]);
+    expect(log.records).toHaveLength(1);
   });
 
-  it('retries timeouts, then gives up with a readable error', async () => {
-    const { chat, calls } = setup([timeoutError(), timeoutError(), timeoutError()]);
+  it('charges the estimate for timed-out attempts and checks the budget before each retry', async () => {
+    const { budget, log } = countingBudget();
+    const { chat, calls } = setup([timeoutError(), timeoutError(), timeoutError()], budget);
     await expect(chat(REQUEST)).rejects.toThrow('the model did not answer in time');
     expect(calls).toHaveLength(3);
+    expect(log.records).toHaveLength(3);
+    expect(log.records.every((cost) => cost > 0)).toBe(true);
+    expect(log.checks).toBe(3);
   });
 
-  it('does not retry a client error and never puts the key in the error', async () => {
-    const { chat, calls } = setup([jsonResponse({ error: 'bad request' }, 400)]);
+  it('stops retrying when the budget runs out between attempts', async () => {
+    const { budget } = countingBudget(2);
+    const { chat, calls } = setup([timeoutError(), jsonResponse(OK_BODY)], budget);
+    await expect(chat(REQUEST)).rejects.toBeInstanceOf(BudgetError);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('does not retry or charge a client error, and never puts the key in the error', async () => {
+    const { budget, log } = countingBudget();
+    const { chat, calls } = setup([jsonResponse({ error: 'bad request' }, 400)], budget);
     const error = await chat(REQUEST).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(NebiusError);
     expect((error as NebiusError).status).toBe(400);
     expect(String(error)).not.toContain(KEY);
     expect(calls).toHaveLength(1);
+    expect(log.records).toHaveLength(0);
   });
 
   it('refuses before calling when the budget is exhausted', async () => {
-    const closed: Budget = {
-      ...openBudget(),
-      check() {
-        throw new BudgetError('this session has reached its $0.05 cap');
-      },
-    };
-    const { chat, calls } = setup([jsonResponse(OK_BODY)], closed);
+    const { budget } = countingBudget(1);
+    const { chat, calls } = setup([jsonResponse(OK_BODY)], budget);
     await expect(chat(REQUEST)).rejects.toBeInstanceOf(BudgetError);
     expect(calls).toHaveLength(0);
   });

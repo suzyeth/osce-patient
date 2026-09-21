@@ -54,4 +54,21 @@ describe('createBudget', () => {
     writeFileSync(file, '{oops');
     expect(() => createBudget(limits(file)).check(0.001)).toThrow(/corrupt/);
   });
+
+  it('treats a ledger holding JSON null as corrupt, not as a crash', () => {
+    const file = freshFile();
+    writeFileSync(file, 'null');
+    expect(() => createBudget(limits(file)).check(0.001)).toThrow(BudgetError);
+  });
+
+  it('stops when the spend cannot be saved', () => {
+    const unwritable = join(dir, 'no-such-folder', 'budget.json');
+    expect(() => createBudget(limits(unwritable)).record(0.001)).toThrow(/could not save/);
+  });
+
+  it('refuses to record a cost that is not a real amount', () => {
+    const b = createBudget(limits(freshFile()));
+    expect(() => b.record(Number.NaN)).toThrow(BudgetError);
+    expect(() => b.record(-1)).toThrow(BudgetError);
+  });
 });

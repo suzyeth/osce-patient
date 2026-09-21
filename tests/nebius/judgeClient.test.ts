@@ -60,6 +60,12 @@ describe('createNemotronJudge', () => {
     expect(v.rubricItemIds).toHaveLength(MAX_ITEMS_PER_TURN);
   });
 
+  it('ignores fact ids the model makes up, because it never sees any', async () => {
+    const reply = JSON.stringify({ rubricItemIds: [], requestedFactIds: ['f_blood'], selfDisclosure: false, trustDelta: 0 });
+    const { chat } = fakeChat([{ content: reply }]);
+    expect((await judgeWith(chat).evaluate(INPUT)).requestedFactIds).toEqual([]);
+  });
+
   it('repairs once after an unusable reply', async () => {
     const { chat, requests } = fakeChat([{ content: 'not json at all' }, { content: GOOD }]);
     const v = await judgeWith(chat).evaluate(INPUT);
