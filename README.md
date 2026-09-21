@@ -42,10 +42,26 @@ npm run play -- path/to/case.json          # another case (it must pass check-ca
 npm run check-case -- cases/demo-cough.json # authoring checks: errors block use, warnings are advice
 ```
 
+### Online mode (Nemotron on Nebius Token Factory)
+
+Copy `.env.example` to `.env` and put your Token Factory key in `NEBIUS_API_KEY`. Then:
+
+```bash
+npm run smoke                               # three scripted turns against the real models, capped at $0.02
+npm run play -- --online                    # a timed session with the Nemotron judge and patient
+```
+
+By default the judge is Nemotron 3.5 Lightning and the patient is Nemotron 3 Super 120B, both with reasoning
+off so a turn takes about a second. `OSCE_JUDGE_MODEL` and `OSCE_JUDGE_THINKING=on` switch to a slower, more
+careful judge (see `.env.example`). Every call is checked
+against a per-session cap ($0.05) and a daily cap ($0.50) before it is sent; the daily total is kept in
+`.osce-budget.json` so it holds across runs. Token Factory has no hard spending limit of its own, so these caps
+are the safeguard. Reasoning text returned by the models is discarded and never shown or logged.
+
 ## Status
 
-Plan 1 (the offline core engine) is complete. Next: Nemotron judge and patient clients on Nebius Token Factory
-and a case pipeline from open transcripts (Plan 2), an evaluation harness (Plan 3), and a web app (Plan 4).
+Plan 1 (the offline core engine) and Plan 2 (Nemotron clients with spend caps) are complete. Next: a case
+pipeline from open transcripts, an evaluation harness (Plan 3), and a web app (Plan 4).
 
 ## Licence
 
