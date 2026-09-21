@@ -1,7 +1,8 @@
 import type { PatientCase, SessionState } from './types.js';
 import { isPublic } from './gates.js';
 
-function opennessLine(trust: number): string {
+/** How openly the patient talks at a given trust level; shared with the evaluation control version. */
+export function opennessLine(trust: number): string {
   if (trust >= 70) return 'You feel at ease with this doctor and talk openly.';
   if (trust >= 45) return 'You are fairly comfortable and answer fully.';
   if (trust >= 25) return 'You are a little nervous and keep your answers short.';
