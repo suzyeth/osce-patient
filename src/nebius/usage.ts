@@ -2,7 +2,7 @@ import { priceOf } from './config.js';
 
 /** What one model call used and cost. */
 export interface CallUsage {
-  label: 'judge' | 'patient';
+  label: 'judge' | 'patient' | 'grader';
   model: string;
   inputTokens: number;
   outputTokens: number;

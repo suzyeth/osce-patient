@@ -8,7 +8,7 @@ export interface ChatMessage {
 }
 
 export interface ChatRequest {
-  label: 'judge' | 'patient';
+  label: CallUsage['label'];
   model: string;
   messages: readonly ChatMessage[];
   maxTokens: number;
