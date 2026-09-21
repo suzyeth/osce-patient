@@ -6,3 +6,4 @@ coverage/
 !.env.example
 data/raw/
 .osce-budget.json
+.osce-budget.json.tmp

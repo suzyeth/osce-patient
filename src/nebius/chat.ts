@@ -76,6 +76,14 @@ function isTimeout(e: unknown): boolean {
   return name === 'TimeoutError' || name === 'AbortError';
 }
 
+// Failures before the request left this machine: nothing can have been generated or billed.
+const UNSENT_CODES = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN']);
+
+function neverSent(e: unknown): boolean {
+  const code = ((e as { cause?: { code?: unknown } }).cause ?? {}).code;
+  return typeof code === 'string' && UNSENT_CODES.has(code);
+}
+
 function backoffMs(tryNo: number, retryAfter: string | null): number {
   const seconds = retryAfter === null ? Number.NaN : Number(retryAfter);
   if (Number.isFinite(seconds) && seconds >= 0) return Math.min(seconds * 1000, MAX_BACKOFF_MS);
@@ -112,7 +120,7 @@ async function attemptOnce(deps: ChatDeps, body: string): Promise<Outcome> {
     });
   } catch (e) {
     const message = isTimeout(e) ? 'the model did not answer in time' : 'network error reaching Token Factory';
-    return { ok: false, error: new NebiusError(message, null, true), retryAfter: null, billable: true };
+    return { ok: false, error: new NebiusError(message, null, true), retryAfter: null, billable: !neverSent(e) };
   }
   if (!res.ok) {
     const error = new NebiusError(`Token Factory returned HTTP ${res.status}`, res.status, RETRIABLE_STATUS.has(res.status));

@@ -132,6 +132,16 @@ describe('createChat', () => {
     expect(log.checks).toBe(3);
   });
 
+  it('retries but does not charge attempts that never reached the server', async () => {
+    const refused = Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+    const unresolved = Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } });
+    const { budget, log } = countingBudget();
+    const { chat, calls } = setup([refused, unresolved, jsonResponse(OK_BODY)], budget);
+    await chat(REQUEST);
+    expect(calls).toHaveLength(3);
+    expect(log.records).toHaveLength(1);
+  });
+
   it('stops retrying when the budget runs out between attempts', async () => {
     const { budget } = countingBudget(2);
     const { chat, calls } = setup([timeoutError(), jsonResponse(OK_BODY)], budget);
