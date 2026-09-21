@@ -1,0 +1,24 @@
+{
+  "caseId": "demo-cough",
+  "labelledBy": "EXAMPLE ONLY: author labels showing the format. The agreement figure comes from a person's labels, not this file.",
+  "conversations": [
+    {
+      "id": "example-1",
+      "turns": [
+        { "student": "Hello, I'm one of the doctors. Is it okay if I ask you some questions?", "patient": "Yes, go ahead.", "items": ["intro_consent"] },
+        { "student": "What brings you in today?", "patient": "It's this cough, it just won't go away.", "items": ["open_question"] },
+        { "student": "I'm sorry to hear that. When did it start?", "patient": "About six weeks ago, after a cold.", "items": ["onset_duration"] },
+        { "student": "Have you coughed up any blood?", "patient": "Last week there was a streak of blood.", "items": ["haemoptysis"] }
+      ]
+    },
+    {
+      "id": "example-2",
+      "turns": [
+        { "student": "Hi, what can I do for you?", "patient": "It's this cough, really.", "items": ["open_question"] },
+        { "student": "Do you smoke?", "patient": "Twenty a day since I was eighteen.", "items": ["smoking"] },
+        { "student": "Is there anything you're worried it might be?", "patient": "My dad had lung cancer.", "items": ["ice_concerns"] },
+        { "student": "Okay, let me summarise, and then do you have any questions?", "patient": "No, that's all.", "items": ["closing"] }
+      ]
+    }
+  ]
+}
