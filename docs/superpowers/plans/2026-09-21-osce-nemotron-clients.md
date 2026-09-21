@@ -487,6 +487,20 @@ describe('createBudget', () => {
     expect(() => createBudget(limits(file)).check(0.001)).toThrow(BudgetError);
   });
 
+  it.each([
+    ['an empty object', '{}'],
+    ['an array', '[]'],
+    ['no day', '{"spentUsd": 0.4}'],
+    ['a mangled day', '{"day": "21/09/2026", "spentUsd": 0.4}'],
+    ['a negative spend', '{"day": "2026-09-21", "spentUsd": -1}'],
+    ['a day in the future', '{"day": "2026-09-22", "spentUsd": 0.1}'],
+    ['an old day with no spend', '{"day": "2026-09-20"}'],
+  ])('treats a ledger with %s as corrupt instead of starting from zero', (_label, text) => {
+    const file = freshFile();
+    writeFileSync(file, text);
+    expect(() => createBudget(limits(file), day('2026-09-21T09:00:00Z')).check(0.001)).toThrow(/corrupt/);
+  });
+
   it('stops when the spend cannot be saved', () => {
     const unwritable = join(dir, 'no-such-folder', 'budget.json');
     expect(() => createBudget(limits(unwritable)).record(0.001)).toThrow(/could not save/);
@@ -532,6 +546,8 @@ export interface Budget {
   daySpentUsd(): number;
 }
 
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 function dayOf(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -555,11 +571,14 @@ function readSpent(file: string, day: string): number {
   } catch {
     throw corrupt(file);
   }
-  if (parsed === null || typeof parsed !== 'object') throw corrupt(file);
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) throw corrupt(file);
   const record = parsed as { day?: unknown; spentUsd?: unknown };
-  if (record.day !== day) return 0;
-  if (typeof record.spentUsd !== 'number' || !Number.isFinite(record.spentUsd)) throw corrupt(file);
-  return record.spentUsd;
+  // Validate the whole record before comparing days, so a damaged file never counts as a new day.
+  // A day after today means the clock went back, which is also treated as damage.
+  if (typeof record.day !== 'string' || !DAY_PATTERN.test(record.day) || record.day > day) throw corrupt(file);
+  const spent = record.spentUsd;
+  if (typeof spent !== 'number' || !Number.isFinite(spent) || spent < 0) throw corrupt(file);
+  return record.day === day ? spent : 0;
 }
 
 /** Writes a temporary file and renames it, so a crash never leaves a half-written ledger. */
@@ -605,7 +624,7 @@ export function createBudget(limits: BudgetLimits, now: () => Date = () => new D
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run tests/nebius/budget.test.ts`
-Expected: PASS (8 tests). Then `npx tsc --noEmit` exits 0.
+Expected: PASS (15 tests). Then `npx tsc --noEmit` exits 0.
 
 - [ ] **Step 5: Commit**
 
@@ -2055,7 +2074,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 10: Full verification
 
-- [ ] **Step 1:** `npm test`. Expected: 21 files, 729 tests, all passing.
+- [ ] **Step 1:** `npm test`. Expected: 21 files, 736 tests, all passing.
 - [ ] **Step 2:** `npm run typecheck`. Expected: exit 0.
 - [ ] **Step 3:** `npm run check-case -- cases/demo-cough.json`. Expected: `OK: demo-cough (5 facts, 7 rubric items)`.
 - [ ] **Step 4:** `git status --short` is empty, `.env` and `.osce-budget.json` are not tracked (`git check-ignore .env .osce-budget.json` prints both), and `git grep -nE "NEBIUS_API_KEY=[A-Za-z0-9]"` finds nothing (no key committed; the placeholder in `.env.example` is empty).
@@ -2068,4 +2087,6 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - **Case pipeline plan:** Fareez 2022 transcripts to draft cases, `check-case`, and a model-based paraphrase-leak check for generated personas (Plan 1 note).
 - **Patient opening line** is still not in the patient model's history (Plan 1 note).
 - **Usage summary undercounts failed attempts.** A timed-out or 5xx attempt is charged to the budget ledger at its estimate, but it has no usage record, so the end-of-session "Model use" line can read slightly low. The cap itself is exact.
+- **Estimates are Latin-text based.** Input is estimated at chars/4 x 1.5, so mostly non-Latin text (for example Chinese) can cost more than its checked estimate, overshooting the cap by at most one call (well under a cent). Estimate from UTF-8 bytes if non-English cases are added.
+- **The ledger path is relative to the working directory.** `npm run` always uses the package root; running the CLI from elsewhere starts a separate ledger.
 - **Streaming** is not used: the output guard needs the whole reply before anything is shown.
