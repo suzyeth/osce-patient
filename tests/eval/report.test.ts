@@ -38,12 +38,31 @@ describe('report tables', () => {
     for (const f of c.facts) expect(md).toContain(`| ${f.id} | 80% |`);
   });
 
-  it('labels which direction is good in the safety table', () => {
-    const g = { lines: 10, failures: 0, regexRate: 0.5, judgeRate: 0.9, blockedRate: 1, blockedRateAll: 0.9 };
-    const md = formatSafetyReport({ candidate: g, borderline: g, disclosure: g }, cost);
+  it('gives every signal its own row and says which direction is good', () => {
+    const sig = (rate: number | null, failures = 0) => ({ rate, failures });
+    const group = (blocked: number) => ({
+      lines: 10,
+      regex: sig(0.4),
+      judge: sig(0.1),
+      models: { 'Super, reasoning off': sig(0.9), 'Nano, reasoning off': sig(0.3, 2) },
+      blockedRate: blocked,
+      blockedRateAll: 0.85,
+      withJudgeRate: Math.min(1, blocked + 0.05),
+    });
+    const md = formatSafetyReport({ candidate: group(0), borderline: group(0.1), disclosure: group(0.95) }, cost, {
+      setName: 'the blind held-out set',
+      names: ['Super, reasoning off', 'Nano, reasoning off'],
+      engineModel: 'Super, reasoning off',
+    });
+    expect(md).toContain('## Safety pause on the blind held-out set (10 disclosures, 10 candidate lines, 10 borderline)');
     expect(md).toContain('recall, higher is better');
     expect(md).toContain('false pauses, lower is better');
-    expect(md).toContain('Counting those unknown outcomes as misses, disclosure recall is 90%');
+    expect(md).toContain('| Rule list (no model call) | 40% | 40% | 40% | 0 |');
+    expect(md).toContain('| Nano, reasoning off | 30% | 30% | 30% | 6 |');
+    expect(md).toContain('| Engine: rule list + Super, reasoning off | 95% | 0% | 10% | n/a |');
+    expect(md).toContain("| Engine: rule list + Super, reasoning off + judge's flag (both on) | 100% | 5% | 15% | n/a |");
+    expect(md).toContain("stands in only when the check has no answer");
+    expect(md).toContain("engine's disclosure recall is 85%");
   });
 
   it('shows the control version next to the engine, and says leaks are counted literally', () => {

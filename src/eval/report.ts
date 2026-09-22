@@ -5,7 +5,7 @@ import type { AttackSummary } from './attackEval.js';
 import type { summariseFaithfulness, summariseOffCase } from './honestyEval.js';
 import type { JudgeEvalSummary } from './judgeEval.js';
 import { mean, pct, percentile } from './metrics.js';
-import type { SafetyGroup, SafetyGroupSummary } from './safetyEval.js';
+import type { SafetyGroup, SafetyGroupSummary, SignalSummary } from './safetyEval.js';
 
 export interface CostSummary {
   calls: number;
@@ -69,20 +69,45 @@ export function formatJudgeReport(
   ].join('\n\n');
 }
 
-export function formatSafetyReport(summary: Record<SafetyGroup, SafetyGroupSummary>, cost: CostSummary): string {
-  const row = (label: string, s: SafetyGroupSummary) => [label, String(s.lines), pct(s.regexRate), pct(s.judgeRate), pct(s.blockedRate), String(s.failures)];
+export interface SafetyReportMeta {
+  /** Which set was measured, e.g. "the blind held-out set" or "the development set". */
+  setName: string;
+  /** Names of the checks measured, in table order. */
+  names: readonly string[];
+  /** The check the engine would use, if any. */
+  engineModel?: string;
+}
+
+export function formatSafetyReport(summary: Record<SafetyGroup, SafetyGroupSummary>, cost: CostSummary, meta: SafetyReportMeta): string {
+  const counts = `${summary.disclosure.lines} disclosures, ${summary.candidate.lines} candidate lines, ${summary.borderline.lines} borderline`;
+  const signalRow = (label: string, pick: (s: SafetyGroupSummary) => SignalSummary) => [
+    label,
+    pct(pick(summary.disclosure).rate),
+    pct(pick(summary.candidate).rate),
+    pct(pick(summary.borderline).rate),
+    String(pick(summary.disclosure).failures + pick(summary.candidate).failures + pick(summary.borderline).failures),
+  ];
+  const engineLabel = meta.engineModel === undefined ? 'Engine: rule list only' : `Engine: rule list + ${meta.engineModel}`;
+  const combined = (label: string, pick: (s: SafetyGroupSummary) => number | null) => [
+    label,
+    pct(pick(summary.disclosure)),
+    pct(pick(summary.candidate)),
+    pct(pick(summary.borderline)),
+    'n/a',
+  ];
+  const rows = [
+    signalRow('Rule list (no model call)', (s) => s.regex),
+    ...meta.names.map((name) => signalRow(name, (s) => s.models[name] ?? { rate: null, failures: 0 })),
+    signalRow("Judge's own flag", (s) => s.judge),
+    combined(engineLabel, (s) => s.blockedRate),
+    combined(`${engineLabel} + judge's flag (both on)`, (s) => s.withJudgeRate),
+  ];
   return [
-    '## Safety pause on the blind set',
-    table(
-      ['Lines', 'Count', 'Rule check', 'Judge', 'Either (what the engine does)', 'Judge failures'],
-      [
-        row('Real disclosures (recall, higher is better)', summary.disclosure),
-        row('Candidate lines (false pauses, lower is better)', summary.candidate),
-        row('Borderline (reported only)', summary.borderline),
-      ],
-    ),
-    'The judge column leaves out lines where the judge failed. "Either" leaves out lines whose outcome is unknown: the judge failed and the rule check did not fire.',
-    `Counting those unknown outcomes as misses, disclosure recall is ${pct(summary.disclosure.blockedRateAll)} (a session would not have paused on them).`,
+    `## Safety pause on ${meta.setName} (${counts})`,
+    table(['Signal', 'Disclosures (recall, higher is better)', 'Candidate lines (false pauses, lower is better)', 'Borderline (reported only)', 'Failed calls'], rows),
+    'Each signal is asked on every line, so the rows are comparable. A signal\'s rate covers the lines it answered; the engine row leaves out lines whose outcome is unknown because a signal it uses failed.',
+    "A session pauses on the rule list or the check. The judge's own flag stands in only when the check has no answer, so the last row is what both signals together would do, not what a session does.",
+    `Counting those unknown outcomes as misses, the engine's disclosure recall is ${pct(summary.disclosure.blockedRateAll)}.`,
     costLine(cost),
   ].join('\n\n');
 }
