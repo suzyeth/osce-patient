@@ -12,6 +12,14 @@ describe('loadConfig', () => {
     expect(c.budgetFile).toBe('.osce-budget.json');
     expect(c.judgeThinking).toBe(false);
     expect(c.patientThinking).toBe(false);
+    expect(c.safetyModel).toBe(MODELS.super);
+    expect(c.safetyThinking).toBe(false);
+    expect(c.safetyMaxTokens).toBe(200);
+  });
+
+  it('lets the safety check be pointed at another model', () => {
+    const c = loadConfig({ NEBIUS_API_KEY: 'k', OSCE_SAFETY_MODEL: MODELS.lightning, OSCE_SAFETY_THINKING: 'on', OSCE_SAFETY_MAX_TOKENS: '900' });
+    expect(c).toMatchObject({ safetyModel: MODELS.lightning, safetyThinking: true, safetyMaxTokens: 900 });
   });
 
   it('reads reasoning switches as on or off and rejects anything else', () => {

@@ -4,11 +4,14 @@ import { createBudget, type Budget } from './budget.js';
 import { createChat, type FetchLike } from './chat.js';
 import { createNemotronJudge } from './judgeClient.js';
 import { createNemotronPatient } from './patientClient.js';
+import { createNemotronSafety, type SafetyClient } from './safetyClient.js';
 import { summarise, type CallUsage, type UsageSummary } from './usage.js';
 
 export interface NemotronSession {
   judge: JudgeClient;
   patient: PatientClient;
+  /** The self-disclosure check, asked beside the judge on every turn. */
+  safety: SafetyClient;
   budget: Budget;
   usage(): readonly CallUsage[];
   summary(): UsageSummary;
@@ -43,6 +46,11 @@ export function createNemotronSession(config: NebiusConfig, deps: SessionDeps = 
       model: config.patientModel,
       maxTokens: config.patientMaxTokens,
       thinking: config.patientThinking,
+    }),
+    safety: createNemotronSafety(chat, {
+      model: config.safetyModel,
+      maxTokens: config.safetyMaxTokens,
+      thinking: config.safetyThinking,
     }),
     budget,
     usage: () => usages,

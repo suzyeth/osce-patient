@@ -37,6 +37,11 @@ interface Clients {
   label: string;
 }
 
+/** Offline mode has no safety model: the rule list and the judge's own flag are what run. */
+function safetyClient(clients: Clients) {
+  return clients.session?.safety;
+}
+
 function onlineConfig(): NebiusConfig {
   loadDotEnv();
   try {
@@ -82,7 +87,7 @@ function promptWithClock(): void {
 /** One turn. A model or network error is reported and leaves the session unchanged. */
 async function playTurn(line: string): Promise<void> {
   try {
-    const r = await runTurn(patientCase, state, line, clients.judge, clients.patient, [...history]);
+    const r = await runTurn(patientCase, state, line, clients.judge, clients.patient, [...history], safetyClient(clients));
     state = r.state;
     history = appendTurn(history, line, r);
     // The safety message comes from the tool, not the patient, so it is not shown as their line.
