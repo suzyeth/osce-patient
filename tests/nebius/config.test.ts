@@ -5,7 +5,7 @@ describe('loadConfig', () => {
   it('uses safe defaults when only the key is set', () => {
     const c = loadConfig({ NEBIUS_API_KEY: 'test-key' });
     expect(c.baseUrl).toBe('https://api.tokenfactory.nebius.com/v1');
-    expect(c.judgeModel).toBe(MODELS.lightning);
+    expect(c.judgeModel).toBe(MODELS.super);
     expect(c.patientModel).toBe(MODELS.super);
     expect(c.sessionBudgetUsd).toBe(0.05);
     expect(c.dailyBudgetUsd).toBe(0.5);

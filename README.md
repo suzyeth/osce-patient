@@ -51,9 +51,11 @@ npm run smoke                               # three scripted turns against the r
 npm run play -- --online                    # a timed session with the Nemotron judge and patient
 ```
 
-By default the judge is Nemotron 3.5 Lightning and the patient is Nemotron 3 Super 120B, both with reasoning
-off so a turn takes about a second. `OSCE_JUDGE_MODEL` and `OSCE_JUDGE_THINKING=on` switch to a slower, more
-careful judge (see `.env.example`). Every call is checked
+By default both the judge and the patient are Nemotron 3 Super 120B with reasoning off, so a turn takes
+about two seconds and a station costs well under a cent. The judge was chosen on the evaluation in
+`eval/results/demo-cough/judge.md`: Nemotron 3.5 Lightning is faster and cheaper but credited a rubric item
+on a third of the off-topic and injection lines, which unlocks facts nobody asked for, while Super credited
+none of them. `OSCE_JUDGE_MODEL` and `OSCE_JUDGE_THINKING=on` change that (see `.env.example`). Every call is checked
 against a per-session cap ($0.05) and a daily cap ($0.50) before it is sent; the daily total is kept in
 `.osce-budget.json` so it holds across runs. Token Factory has no hard spending limit of its own, so these caps
 are the safeguard. Reasoning text returned by the models is discarded and never shown or logged.

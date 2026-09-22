@@ -50,9 +50,11 @@ export type NebiusConfig = z.infer<typeof ConfigSchema>;
 
 const DEFAULTS = {
   baseUrl: 'https://api.tokenfactory.nebius.com/v1',
-  // A 10-line check on 2026-09-21 (reasoning off): Lightning 9/10 exact at 0.4 s, Super 8/10 at 1.2 s,
-  // Nano 7/10 with missed items. Super with reasoning on scored 10/10 at about 3 s per call.
-  judgeModel: MODELS.lightning,
+  // Chosen on the 50-line judge evaluation of 2026-09-22 (eval/results/demo-cough/judge.md).
+  // False unlocks, where an off-topic or injection line unlocks a fact, decided it: Lightning 33%,
+  // Nano 7%, Super 0%, Ultra 0%. Super (reasoning off) is 90% exact at 1.1 s and about half a cent
+  // per station; Lightning was faster and much looser, Ultra four times the price for +6% exact.
+  judgeModel: MODELS.super,
   patientModel: MODELS.super,
   timeoutMs: 30_000,
   maxRetries: 2,

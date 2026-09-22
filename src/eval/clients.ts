@@ -20,7 +20,7 @@ export interface JudgeSetting {
 export const JUDGE_SETTINGS: readonly JudgeSetting[] = [
   { name: 'Nano, reasoning off', model: MODELS.nano, thinking: false, maxTokens: 800 },
   { name: 'Lightning, reasoning off', model: MODELS.lightning, thinking: false, maxTokens: 800 },
-  { name: 'Super, reasoning off', model: MODELS.super, thinking: false, maxTokens: 800 },
+  { name: 'Super, reasoning off (default)', model: MODELS.super, thinking: false, maxTokens: 800 },
   { name: 'Super, reasoning on', model: MODELS.super, thinking: true, maxTokens: 2000 },
   { name: 'Ultra, reasoning off', model: MODELS.ultra, thinking: false, maxTokens: 800 },
 ];

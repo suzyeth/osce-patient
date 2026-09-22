@@ -40,7 +40,7 @@ describe('createNemotronSession', () => {
     const s = session.summary();
     expect(s.calls).toBe(2);
     expect(session.usage().map((u) => u.label)).toEqual(['judge', 'patient']);
-    expect(session.usage().map((u) => u.model)).toEqual([MODELS.lightning, MODELS.super]);
+    expect(session.usage().map((u) => u.model)).toEqual([MODELS.super, MODELS.super]);
     expect(s.costUsd).toBeGreaterThan(0);
     expect(session.budget.daySpentUsd()).toBeCloseTo(s.costUsd, 12);
   });
