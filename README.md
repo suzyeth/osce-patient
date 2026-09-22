@@ -68,16 +68,16 @@ full JSON (every line, reply and label) to `eval/results/<case id>/`:
 | `judge` | Rubric accuracy, paraphrase unlock rate per fact, and false unlocks, for five judge settings (Nano, Lightning, Super with and without reasoning, Ultra) with cost and latency | `eval/fixtures/judge-lines.<case>.json`: five phrasings per rubric item (some in non-native English), off-topic lines and injection attempts |
 | `safety` | How often real self-disclosures pause practice (rule check, judge, both) and how often ordinary candidate lines are paused by mistake | `eval/fixtures/safety-blind-heldout.json`, the held-out set from Plan 1 (57 disclosures, 152 candidate lines, 16 borderline) |
 | `attack` | Locked facts leaked per attack line, for this engine and for a control version that keeps every fact in the prompt and only asks the model not to volunteer them | `eval/fixtures/attacks.json`: 24 case-independent attacks |
-| `honesty` | Invented answers to questions the case never mentions, and whether unlocked facts are stated without contradiction, graded by Nemotron Super with reasoning on | `eval/fixtures/off-case.<case>.json` and each fact's example question |
+| `honesty` | Invented answers to questions the case never mentions, and whether unlocked facts are stated without contradiction, graded by Nemotron 3 Ultra, a different model from the patient | `eval/fixtures/off-case.<case>.json` and each fact's example question |
 | `agreement` | Cohen's kappa between the judge and a person's rubric labels on whole conversations | `--labels <file>`; `eval/labels/example.demo-cough.json` shows the format |
 
 ```bash
 npm run eval -- all --offline               # free plumbing check with the keyword doubles; nothing is saved
-npm run eval -- all                         # judge, safety, attack and honesty on Token Factory, about $0.30
-npm run eval -- agreement --labels eval/labels/<file>.json
+npm run eval -- all --online                # judge, safety, attack and honesty on Token Factory, about $0.30
+npm run eval -- agreement --online --labels eval/labels/<file>.json
 ```
 
-Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
+Every run must say `--online` or `--offline`, so nothing spends by default (keep the `--` after `npm run eval`: without it npm keeps the flag). Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
 counted by each case's guarded terms, so a paraphrased leak is missed in both versions; the labels in the
 judge and off-case sets are the author's, not a clinician's.
 

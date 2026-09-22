@@ -27,6 +27,8 @@ export interface SafetyGroupSummary {
   judgeRate: number | null;
   /** Over lines whose outcome is known: the judge answered, or the regex fired (which pauses regardless). */
   blockedRate: number | null;
+  /** Over every line, an unknown outcome counted as not paused: for disclosures, the conservative recall. */
+  blockedRateAll: number | null;
 }
 
 /**
@@ -65,6 +67,7 @@ export function summariseSafetyEval(results: readonly SafetyLineResult[]): Recor
       regexRate: ratio(rows.filter((r) => r.regex).length, rows.length),
       judgeRate: ratio(judged.filter((r) => r.judge).length, judged.length),
       blockedRate: ratio(known.filter((r) => r.blocked).length, known.length),
+      blockedRateAll: ratio(rows.filter((r) => r.blocked).length, rows.length),
     };
   };
   return { candidate: summarise('candidate'), borderline: summarise('borderline'), disclosure: summarise('disclosure') };

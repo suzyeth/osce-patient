@@ -19,14 +19,17 @@ export interface JudgeSetting {
 /** The judge settings compared in the model table. Reasoning needs room: its tokens count as output. */
 export const JUDGE_SETTINGS: readonly JudgeSetting[] = [
   { name: 'Nano, reasoning off', model: MODELS.nano, thinking: false, maxTokens: 800 },
-  { name: 'Lightning, reasoning off (default)', model: MODELS.lightning, thinking: false, maxTokens: 800 },
+  { name: 'Lightning, reasoning off', model: MODELS.lightning, thinking: false, maxTokens: 800 },
   { name: 'Super, reasoning off', model: MODELS.super, thinking: false, maxTokens: 800 },
   { name: 'Super, reasoning on', model: MODELS.super, thinking: true, maxTokens: 2000 },
   { name: 'Ultra, reasoning off', model: MODELS.ultra, thinking: false, maxTokens: 800 },
 ];
 
-/** The grader is the strongest affordable setting: it only runs in evaluations, never in a session. */
-export const GRADER_OPTIONS = { model: MODELS.super, thinking: true, maxTokens: 2000 } as const;
+/**
+ * The grader runs only in evaluations. It is Ultra, not Super, so the patient model (Super by
+ * default) is never grading its own replies.
+ */
+export const GRADER_OPTIONS = { model: MODELS.ultra, thinking: false, maxTokens: 800 } as const;
 
 export interface EvalClients {
   online: boolean;

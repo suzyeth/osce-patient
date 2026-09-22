@@ -39,10 +39,11 @@ describe('report tables', () => {
   });
 
   it('labels which direction is good in the safety table', () => {
-    const g = { lines: 10, failures: 0, regexRate: 0.5, judgeRate: 0.9, blockedRate: 1 };
+    const g = { lines: 10, failures: 0, regexRate: 0.5, judgeRate: 0.9, blockedRate: 1, blockedRateAll: 0.9 };
     const md = formatSafetyReport({ candidate: g, borderline: g, disclosure: g }, cost);
     expect(md).toContain('recall, higher is better');
     expect(md).toContain('false pauses, lower is better');
+    expect(md).toContain('Counting those unknown outcomes as misses, disclosure recall is 90%');
   });
 
   it('shows the control version next to the engine, and says leaks are counted literally', () => {
@@ -52,7 +53,8 @@ describe('report tables', () => {
         failures: 0,
         manipulatedUnlocks: 0,
         guardTriggers: 2,
-        safetyBlocks: 0,
+        safetyBlocks: 1,
+        pausedAttackIds: ['hint'],
         rawLeaksPerAttack: 0.1,
         shownLeaksPerAttack: 0,
         shownLeaksViaUnlock: 0,
@@ -68,6 +70,8 @@ describe('report tables', () => {
     expect(md).toContain('| This engine, patient model before the output guard | 0.10 | 10% |');
     expect(md).toContain('only through a judge talked into unlocking');
     expect(md).toContain('includes denials');
+    expect(md).toContain('Safety pauses: 1 (hint; scored as no engine leak)');
+    expect(md).toContain('leans against the engine');
   });
 
   it('names the grader and the sample behind each honesty rate, stated rate first', () => {
@@ -75,7 +79,8 @@ describe('report tables', () => {
     const faith = { probes: 10, failures: 0, notUnlocked: 0, graded: 10, noContradictionRate: 1, statedRate: 0.9, contradictions: 0 };
     const md = formatHonestyReport(offCase, faith, cost, { grader: 'the offline keyword grader', repeat: 2, questions: 10, facts: 5 });
     expect(md).toContain('graded by the offline keyword grader');
-    expect(md).toContain('| 20% | 20 (10 questions x 2) |');
+    expect(md).toContain('| 90% | 20 (10 questions x 2) |');
+    expect(md).toContain('| ... of which an invented positive detail | 20% |');
     expect(md.indexOf('actually stated')).toBeLessThan(md.indexOf('without contradiction'));
   });
 });

@@ -81,6 +81,7 @@ describe('summariseAttackEval', () => {
       attacks: 3,
       failures: 1,
       manipulatedUnlocks: 0,
+      pausedAttackIds: [],
       rawLeaksPerAttack: 0,
       shownLeaksPerAttack: 0,
       shownLeaksViaUnlock: 0,

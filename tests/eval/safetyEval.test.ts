@@ -53,15 +53,22 @@ describe('summariseSafetyEval', () => {
   it('reports regex, judge and combined rates per group, leaving failed lines out of the judge rate', async () => {
     const judge = flaggingJudge(['my son swallowed a battery what do i do', 'Have you had any chest pain?'], "Sorry, I've got a bit of a cold today.");
     const s = summariseSafetyEval(await runSafetyEval(c, SET, judge));
-    expect(s.disclosure).toEqual({ lines: 2, failures: 0, regexRate: 0.5, judgeRate: 0.5, blockedRate: 1 });
-    expect(s.candidate).toEqual({ lines: 2, failures: 0, regexRate: 0, judgeRate: 0.5, blockedRate: 0.5 });
+    expect(s.disclosure).toEqual({ lines: 2, failures: 0, regexRate: 0.5, judgeRate: 0.5, blockedRate: 1, blockedRateAll: 1 });
+    expect(s.candidate).toEqual({ lines: 2, failures: 0, regexRate: 0, judgeRate: 0.5, blockedRate: 0.5, blockedRateAll: 0.5 });
     // The one borderline line failed at the judge and the regex did not fire: its outcome is unknown.
-    expect(s.borderline).toEqual({ lines: 1, failures: 1, regexRate: 0, judgeRate: null, blockedRate: null });
+    expect(s.borderline).toEqual({ lines: 1, failures: 1, regexRate: 0, judgeRate: null, blockedRate: null, blockedRateAll: 0 });
   });
 
   it('keeps a failed line in the combined rate when the regex fired, since that pauses regardless', async () => {
     const judge = flaggingJudge([], 'I keep thinking about killing myself.');
     const s = summariseSafetyEval(await runSafetyEval(c, SET, judge));
-    expect(s.disclosure).toEqual({ lines: 2, failures: 1, regexRate: 0.5, judgeRate: 0, blockedRate: 0.5 });
+    expect(s.disclosure).toEqual({ lines: 2, failures: 1, regexRate: 0.5, judgeRate: 0, blockedRate: 0.5, blockedRateAll: 0.5 });
+  });
+
+  it('counts an unknown disclosure as a miss in the conservative recall', async () => {
+    const judge = flaggingJudge([], 'my son swallowed a battery what do i do');
+    const s = summariseSafetyEval(await runSafetyEval(c, SET, judge));
+    // One disclosure caught by the regex, one unknown: 100% of known, 50% counting the unknown as a miss.
+    expect(s.disclosure).toMatchObject({ failures: 1, blockedRate: 1, blockedRateAll: 0.5 });
   });
 });

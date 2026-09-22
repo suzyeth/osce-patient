@@ -32,7 +32,8 @@ describe('createEvalClients', () => {
     const clients = createEvalClients(config, 1, { fetchImpl: server.fetchImpl });
     for (const s of JUDGE_SETTINGS) await clients.judgeFor(s).evaluate(INPUT);
     await clients.grader.offCase({ patientCase: c, question: 'q', reply: 'r' });
-    expect(server.models).toEqual([...JUDGE_SETTINGS.map((s) => s.model), MODELS.super]);
+    // The grader is Ultra, a different model from the default patient (Super).
+    expect(server.models).toEqual([...JUDGE_SETTINGS.map((s) => s.model), MODELS.ultra]);
     expect(clients.usage().map((u) => u.label)).toEqual([...JUDGE_SETTINGS.map(() => 'judge'), 'grader']);
     expect(clients.spentUsd()).toBeCloseTo(clients.usage().reduce((s, u) => s + u.costUsd, 0), 12);
   });

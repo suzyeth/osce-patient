@@ -7,7 +7,7 @@ import { validateCase } from '../validateCase.js';
 import { BudgetError } from '../nebius/budget.js';
 import { describeConfigError, loadConfig, loadDotEnv, type NebiusConfig } from '../nebius/config.js';
 import { parseEvalArgs } from '../eval/args.js';
-import { createEvalClients, offlineEvalClients } from '../eval/clients.js';
+import { createEvalClients, GRADER_OPTIONS, offlineEvalClients } from '../eval/clients.js';
 import { EvalSetupError, runEvals } from '../eval/runner.js';
 import { loadCaseFile } from './loadCaseFile.js';
 
@@ -40,6 +40,17 @@ function onlineConfig(): NebiusConfig {
   }
 }
 
+/** What each table says it used; the offline doubles say so plainly. */
+function describeModels(config: NebiusConfig | null) {
+  const reasoning = (on: boolean) => `reasoning ${on ? 'on' : 'off'}`;
+  if (!config) return { judge: 'offline keyword judge', patient: 'offline scripted patient', grader: 'the offline keyword grader' };
+  return {
+    judge: `${config.judgeModel} (${reasoning(config.judgeThinking)}, ${config.judgeMaxTokens} tokens)`,
+    patient: `${config.patientModel} (${reasoning(config.patientThinking)}, ${config.patientMaxTokens} tokens)`,
+    grader: `${GRADER_OPTIONS.model} (${reasoning(GRADER_OPTIONS.thinking)}, ${GRADER_OPTIONS.maxTokens} tokens)`,
+  };
+}
+
 const config = args.offline ? null : onlineConfig();
 const clients = config ? createEvalClients(config, args.capUsd) : offlineEvalClients();
 if (config) console.log(`Online run on ${patientCase.id}: cap $${args.capUsd} for this run, daily cap $${config.dailyBudgetUsd}.\n`);
@@ -50,7 +61,7 @@ try {
     outDir: 'eval/results',
     now: () => new Date(),
     log: (text) => console.log(text),
-    models: { judge: config?.judgeModel ?? 'offline', patient: config?.patientModel ?? 'offline' },
+    models: describeModels(config),
   });
   if (saved.length) console.log(`Saved:\n  ${saved.join('\n  ')}`);
 } catch (e) {

@@ -21,7 +21,7 @@ function options(outDir: string, logs: string[]): RunOptions {
     outDir,
     now: () => new Date('2026-09-22T10:00:00Z'),
     log: (t) => logs.push(t),
-    models: { judge: config.judgeModel, patient: config.patientModel },
+    models: { judge: config.judgeModel, patient: config.patientModel, grader: 'grader-model' },
   };
 }
 
@@ -63,6 +63,21 @@ describe('runEvals', () => {
     const json = JSON.parse(readFileSync(saved[1]!, 'utf8')) as Record<string, unknown>;
     expect(json).toMatchObject({ evaluation: 'attack', caseId: 'demo-cough', runAt: '2026-09-22T10:00:00.000Z', capUsd: 1 });
     expect((json.cost as { calls: number }).calls).toBeGreaterThan(0);
+    // Models are named in the table and the file; the grader only where it graded.
+    expect(readFileSync(saved[0]!, 'utf8')).toContain(`Judge: ${config.judgeModel}`);
+    expect(json.models).toEqual({ judge: config.judgeModel, patient: config.patientModel });
+  });
+
+  it('checks every test set before the first model call, so a missing one costs nothing', async () => {
+    let calls = 0;
+    const counting = async () => {
+      calls += 1;
+      return fakeFetch();
+    };
+    const clients = createEvalClients(config, 1, { fetchImpl: counting });
+    const opts = { ...options(join(dir, 'missing'), []), fixturesDir: join(dir, 'no-fixtures') };
+    await expect(runEvals(args(['safety', 'attack']), c, clients, opts)).rejects.toBeInstanceOf(EvalSetupError);
+    expect(calls).toBe(0);
   });
 
   it('refuses to start when a fixture is missing', async () => {
