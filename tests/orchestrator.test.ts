@@ -90,7 +90,64 @@ describe('runTurn', () => {
     const patient = scriptedPatient('should not be called');
     const r = await runTurn(c, initialSessionState(), 'Something subtle', fakeJudge(verdict({ selfDisclosure: true })), patient);
     expect(r.safetyBlocked).toBe(true);
+    expect(r.blockedBy).toBe('judge');
     expect(patient.calls).toBe(0);
+  });
+
+  it('blocks when the safety model flags a line the rules and the judge missed', async () => {
+    const patient = scriptedPatient('should not be called');
+    const safety = { async check() { return { selfDisclosure: true, category: 'medicines' as const }; } };
+    const line = 'Can I take my citalopram with the antihistamine I bought?';
+    const r = await runTurn(c, initialSessionState(), line, fakeJudge(verdict()), patient, [], safety);
+    expect(r).toMatchObject({ safetyBlocked: true, blockedBy: 'model', reply: SAFETY_MESSAGE, verdict: null });
+    expect(patient.calls).toBe(0);
+    expect(r.state).toEqual(initialSessionState());
+  });
+
+  it('asks the safety model beside the judge, with the same line and history', async () => {
+    const seen: Array<{ studentInput: string; turns: number }> = [];
+    const safety = {
+      async check(input: { studentInput: string; history: readonly { student: string; patient: string }[] }) {
+        seen.push({ studentInput: input.studentInput, turns: input.history.length });
+        return { selfDisclosure: false, category: 'none' as const };
+      },
+    };
+    const history = [{ student: 'Hello', patient: 'Morning.' }];
+    const r = await runTurn(c, initialSessionState(), 'Do you smoke?', fakeJudge(verdict({ rubricItemIds: ['smoking'] })), scriptedPatient('Yes.'), history, safety);
+    expect(seen).toEqual([{ studentInput: 'Do you smoke?', turns: 1 }]);
+    expect(r.safetyBlocked).toBe(false);
+    expect(r.blockedBy).toBeNull();
+    expect(r.newlyUnlocked).toEqual(['f_smoking']);
+  });
+
+  it("trusts the safety model over the judge's own flag when it answered", async () => {
+    // On the blind set the judge's flag added no recall over the safety check and tripled false
+    // pauses, so a "no" from the check stands even when the judge flags the line.
+    const safety = { async check() { return { selfDisclosure: false, category: 'none' as const }; } };
+    const patient = scriptedPatient('Twenty a day.');
+    const r = await runTurn(c, initialSessionState(), 'Do you smoke?', fakeJudge(verdict({ selfDisclosure: true, rubricItemIds: ['smoking'] })), patient, [], safety);
+    expect(r.safetyBlocked).toBe(false);
+    expect(r.blockedBy).toBeNull();
+    expect(r.reply).toBe('Twenty a day.');
+  });
+
+  it('carries on when the safety model fails, because the rules and the judge still apply', async () => {
+    const safety = { async check(): Promise<never> { throw new Error('timeout'); } };
+    const patient = scriptedPatient('Twenty a day.');
+    const r = await runTurn(c, initialSessionState(), 'Do you smoke?', fakeJudge(verdict({ rubricItemIds: ['smoking'] })), patient, [], safety);
+    expect(r.safetyBlocked).toBe(false);
+    expect(r.reply).toBe('Twenty a day.');
+    // The rule list already ran, and a judge flag would still block.
+    const flagged = await runTurn(c, initialSessionState(), 'Do you smoke?', fakeJudge(verdict({ selfDisclosure: true })), patient, [], safety);
+    expect(flagged.blockedBy).toBe('judge');
+  });
+
+  it('does not call the safety model when the rules already paused practice', async () => {
+    let checks = 0;
+    const safety = { async check() { checks += 1; return { selfDisclosure: false, category: 'none' as const }; } };
+    const r = await runTurn(c, initialSessionState(), "I've been feeling dizzy, what do I have?", fakeJudge(verdict()), scriptedPatient('x'), [], safety);
+    expect(r.blockedBy).toBe('rule');
+    expect(checks).toBe(0);
   });
 
   it('rejects a malformed judge verdict before it touches state', async () => {
