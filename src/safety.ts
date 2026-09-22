@@ -11,6 +11,13 @@
  * phrase before the symptom, and only a clause end or a short list of words after it.
  * Quoted speech is ignored, because candidates reflect and quote what patients say.
  */
+// A doctor may mention their own state to explain themselves, then carry on: that is rapport,
+// not a request for help, and pausing a station for it is the most visible false alarm there is.
+// Both lookaheads stay inside the sentence, so a real request later in the line still counts.
+const DISMISSED = String.raw`(?![^.?!]*\b(?:it(?:'?s| is) (?:just|only)|nothing (?:serious|to worry)|but I(?:'?m| am) (?:fine|okay|ok)|I(?:'?m| am) fine to|don'?t worry)\b)`;
+// "I'm pregnant so I might need to sit down" explains a request for a chair, not for care.
+const NOT_A_REQUEST = String.raw`(?![^.?!]*\bso I (?:might|may|will|need|should|have to|am going to)\b)`;
+
 const SYMPTOM_NOUNS = String.raw`(?:pains?|aches?|headaches?|migraines?|dizziness|palpitations|nausea|vomiting|bleeding|blood|lumps?|rash(?:es)?|fevers?|temperature|numbness|tingling|cough|swelling|sore throat|diarrh(?:o)?ea|cramps?|breathlessness|shortness of breath|nosebleeds?)`;
 // After a first-person opener, "blood" and "temperature" are usually measurements or procedures
 // ("I've got blood in both bottles", "I keep getting a temperature on the tympanic"). Blood in
@@ -82,10 +89,10 @@ const EXPLICIT: readonly RegExp[] = [
   new RegExp(String.raw`\bwhat(?:'?s| is) wrong with me\b${CLAUSE_END}`, 'i'),
   /\bam I (?:ill|sick|dying)\b/i,
   new RegExp(String.raw`\bwhat (?:should|can) I take\b(?:${CLAUSE_END}|(?=\s+for (?:it|this|that|the pain)\b))`, 'i'),
-  /\bI(?:'?ve| have) been (?:coughing|vomiting|bleeding|wheezing|fainting|throwing up|in (?:a lot of |so much )?pain)\b/i,
+  new RegExp(String.raw`\bI(?:'?ve| have) been (?:coughing|vomiting|bleeding|wheezing|fainting|throwing up|in (?:a lot of |so much )?pain)\b${DISMISSED}`, 'i'),
   /\bI(?:'?m| am) in (?:a lot of |so much )?pain\b(?!\s+(?:team|clinic|service|management|medicine|department)\b)/i,
   /\bI can(?:'?t|not) (?:breathe|stop (?:coughing|vomiting|bleeding|shaking|crying))\b/i,
-  /\bI(?:'?m| am) (?:\d+ weeks |still |now |maybe |possibly )?pregnant\b/i,
+  new RegExp(String.raw`\bI(?:'?m| am) (?:\d+ weeks |still |now |maybe |possibly )?pregnant\b${DISMISSED}${NOT_A_REQUEST}`, 'i'),
   /\bI(?:'?m| am) (?:worried|scared|afraid|frightened) (?:that )?I (?:might |may |could )?(?:have|have got|'ve got|am having|'m having) (?:a )?(?:cancer|heart attack|stroke|tumour|tumor|blood clot)\b/i,
   /\bI (?:think|feel like) I(?:'?m| am| might| may| could)? (?:be |going to |about to )?(?:have |having )?(?:a )?(?:heart attack|panic attack|stroke|pass out|faint|be sick)\b/i,
   // Someone the user cares for, plus a request for advice.
@@ -159,10 +166,33 @@ const SELF_HARM: readonly RegExp[] = [
   /\bmaking myself sick\b/i,
 ];
 
-export const SAFETY_MESSAGE =
-  "This is a practice tool with a fictional patient, so it can't give advice about your own health. " +
-  "If you're unwell, contact NHS 111 or your GP, or call 999 in an emergency. " +
-  "If you're struggling or thinking about harming yourself, you can call Samaritans free on 116 123.";
+const PRACTICE_ONLY = "This is a practice tool with a fictional patient, so it can't give advice about real health. ";
+const NHS = "For you or anyone you're worried about, contact NHS 111 or a GP, or call 999 in an emergency. ";
+const SAMARITANS = "If you're struggling or thinking about harming yourself, you can call Samaritans free on 116 123, at any hour.";
+const PHARMACIST = 'A pharmacist can answer questions about medicines, doses and interactions, free and without an appointment. ';
+const ABUSE = 'If someone is hurting or frightening you, the National Domestic Abuse Helpline is free on 0808 2000 247, at any hour.';
+
+/** The message when the rule list pauses practice, and the fallback when no category is known. */
+export const SAFETY_MESSAGE = PRACTICE_ONLY + NHS + SAMARITANS;
+
+/**
+ * The same pause, worded for what was said. "If you're unwell" is wrong for someone asking about
+ * their child, and a medicines question is usually answered faster by a pharmacist than by 111.
+ */
+export function safetyMessageFor(category: string | null): string {
+  switch (category) {
+    case 'self_harm':
+      return PRACTICE_ONLY + SAMARITANS + ' ' + NHS.trim();
+    case 'abuse':
+      return PRACTICE_ONLY + ABUSE + ' ' + NHS.trim();
+    case 'medicines':
+      return PRACTICE_ONLY + PHARMACIST + NHS.trim();
+    case 'advice_for_other':
+      return PRACTICE_ONLY + NHS.trim();
+    default:
+      return SAFETY_MESSAGE;
+  }
+}
 
 // Quoted speech: at most 200 characters on one line, so a stray quote cannot hide the rest of
 // a message and the scan stays linear. A single quote opens only after a space, "(" or the

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { appendTurn, FALLBACK_REPLY, runTurn } from '../src/orchestrator.js';
 import { initialSessionState } from '../src/state.js';
-import { SAFETY_MESSAGE } from '../src/safety.js';
+import { SAFETY_MESSAGE, safetyMessageFor } from '../src/safety.js';
 import type { JudgeClient, PatientInput } from '../src/llm.js';
 import type { JudgeVerdict } from '../src/types.js';
 import { loadDemoCase } from './loadCase.js';
@@ -99,7 +99,10 @@ describe('runTurn', () => {
     const safety = { async check() { return { selfDisclosure: true, category: 'medicines' as const }; } };
     const line = 'Can I take my citalopram with the antihistamine I bought?';
     const r = await runTurn(c, initialSessionState(), line, fakeJudge(verdict()), patient, [], safety);
-    expect(r).toMatchObject({ safetyBlocked: true, blockedBy: 'model', reply: SAFETY_MESSAGE, verdict: null });
+    expect(r).toMatchObject({ safetyBlocked: true, blockedBy: 'model', blockedCategory: 'medicines', verdict: null });
+    // A medicines question is signposted to a pharmacist, not to "if you're unwell".
+    expect(r.reply).toBe(safetyMessageFor('medicines'));
+    expect(r.reply).toContain('pharmacist');
     expect(patient.calls).toBe(0);
     expect(r.state).toEqual(initialSessionState());
   });
@@ -118,6 +121,30 @@ describe('runTurn', () => {
     expect(r.safetyBlocked).toBe(false);
     expect(r.blockedBy).toBeNull();
     expect(r.newlyUnlocked).toEqual(['f_smoking']);
+  });
+
+  it('pauses on a confirmed disclosure even when the judge call fails', async () => {
+    const safety = { async check() { return { selfDisclosure: true, category: 'own_health' as const }; } };
+    const judge: JudgeClient = {
+      async evaluate() {
+        throw new Error('HTTP 503');
+      },
+    };
+    const patient = scriptedPatient('should not be called');
+    const line = 'my son swallowed a battery what do i do';
+    const r = await runTurn(c, initialSessionState(), line, judge, patient, [], safety);
+    expect(r).toMatchObject({ safetyBlocked: true, blockedBy: 'model', reply: SAFETY_MESSAGE });
+    expect(patient.calls).toBe(0);
+  });
+
+  it('still reports a judge failure when the safety check says nothing is wrong', async () => {
+    const safety = { async check() { return { selfDisclosure: false, category: 'none' as const }; } };
+    const judge: JudgeClient = {
+      async evaluate() {
+        throw new Error('HTTP 503');
+      },
+    };
+    await expect(runTurn(c, initialSessionState(), 'Do you smoke?', judge, scriptedPatient('x'), [], safety)).rejects.toThrow('HTTP 503');
   });
 
   it("trusts the safety model over the judge's own flag when it answered", async () => {

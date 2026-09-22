@@ -4,8 +4,8 @@ import { applyVerdict } from './state.js';
 import { isPublic, unlockFacts } from './gates.js';
 import { buildPatientContext } from './patientContext.js';
 import { forbiddenTerms, guardReply } from './patientGuard.js';
-import { looksLikeSelfDisclosure, SAFETY_MESSAGE } from './safety.js';
-import type { SafetyClient } from './nebius/safetyClient.js';
+import { looksLikeSelfDisclosure, SAFETY_MESSAGE, safetyMessageFor } from './safety.js';
+import type { DisclosureCategory, SafetyClient, SafetyCheck } from './nebius/safetyClient.js';
 
 export interface TurnResult {
   state: SessionState;
@@ -17,6 +17,8 @@ export interface TurnResult {
   safetyBlocked: boolean;
   /** Which check paused practice: the rule list, the safety model, or the judge's own flag. */
   blockedBy: 'rule' | 'model' | 'judge' | null;
+  /** What the safety model called it, when it is what paused practice: drives the signposting. */
+  blockedCategory: DisclosureCategory | null;
 }
 
 /** Generic retry warnings; they never name a leaked term, so they cannot feed a secret back. */
@@ -28,8 +30,17 @@ const EMPTY_WARNING = '\n\nNote: your previous answer was empty. Answer the doct
 /** Said in character when the patient model returns nothing twice. */
 export const FALLBACK_REPLY = "Sorry, I didn't quite catch that. Could you say it again?";
 
-function blocked(state: SessionState, blockedBy: 'rule' | 'model' | 'judge'): TurnResult {
-  return { state, reply: SAFETY_MESSAGE, verdict: null, newlyUnlocked: [], guardTriggered: false, safetyBlocked: true, blockedBy };
+function blocked(state: SessionState, blockedBy: 'rule' | 'model' | 'judge', category: DisclosureCategory | null = null): TurnResult {
+  return {
+    state,
+    reply: category === null ? SAFETY_MESSAGE : safetyMessageFor(category),
+    verdict: null,
+    newlyUnlocked: [],
+    guardTriggered: false,
+    safetyBlocked: true,
+    blockedBy,
+    blockedCategory: category,
+  };
 }
 
 /**
@@ -41,10 +52,10 @@ async function askSafetyModel(
   safety: SafetyClient | undefined,
   studentInput: string,
   history: readonly ConversationTurn[],
-): Promise<boolean | null> {
+): Promise<SafetyCheck | null> {
   if (!safety) return null;
   try {
-    return (await safety.check({ studentInput, history })).selfDisclosure;
+    return await safety.check({ studentInput, history });
   } catch {
     return null;
   }
@@ -84,15 +95,21 @@ export async function runTurn(
 ): Promise<TurnResult> {
   if (looksLikeSelfDisclosure(studentInput)) return blocked(state, 'rule');
 
-  // Both models are asked at once, so the safety check adds no waiting to the turn.
-  const [raw, flaggedByModel] = await Promise.all([
-    judge.evaluate({ patientCase, state, studentInput, history }),
+  // Both models are asked at once, so the safety check adds no waiting to the turn. The judge's
+  // outcome is settled rather than awaited, because a failed judge call must never swallow a
+  // disclosure the check has already confirmed.
+  const [judged, flaggedByModel] = await Promise.all([
+    judge.evaluate({ patientCase, state, studentInput, history }).then(
+      (value) => ({ ok: true as const, value }),
+      (error: unknown) => ({ ok: false as const, error }),
+    ),
     askSafetyModel(safety, studentInput, history),
   ]);
-  if (flaggedByModel === true) return blocked(state, 'model');
+  if (flaggedByModel?.selfDisclosure) return blocked(state, 'model', flaggedByModel.category);
+  if (!judged.ok) throw judged.error;
 
   // The judge is an external model: validate its output before it touches state.
-  const verdict = JudgeVerdictSchema.parse(raw);
+  const verdict = JudgeVerdictSchema.parse(judged.value);
   // The judge's own flag is the fallback for when the safety check had no answer. On the blind set
   // it added no recall over that check and tripled false pauses, so it does not override it.
   if (flaggedByModel === null && verdict.selfDisclosure) return blocked(state, 'judge');
@@ -111,7 +128,7 @@ export async function runTurn(
     relevantFacts: relevantFacts(patientCase, nextState, verdict, newlyUnlocked),
   };
   const { reply, guardTriggered } = await respondGuarded(patient, base, forbiddenTerms(patientCase, nextState));
-  return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false, blockedBy: null };
+  return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false, blockedBy: null, blockedCategory: null };
 }
 
 /** The next conversation history. A blocked turn is dropped, so its text is never sent to a model on a later turn. */

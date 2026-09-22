@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { looksLikeSelfDisclosure, SAFETY_MESSAGE } from '../src/safety.js';
+import { looksLikeSelfDisclosure, SAFETY_MESSAGE, safetyMessageFor } from '../src/safety.js';
 
 // Must always be caught: the original spec cases and every self-harm line from review.
 const FLAG = [
@@ -614,5 +614,52 @@ describe('SAFETY_MESSAGE', () => {
     expect(SAFETY_MESSAGE).toContain('NHS 111');
     expect(SAFETY_MESSAGE).toContain('999');
     expect(SAFETY_MESSAGE).toContain('Samaritans free on 116 123');
+  });
+});
+
+describe('rapport is not a disclosure', () => {
+  // A doctor explaining why they need a moment, or waving their own cold away, used to pause the
+  // station. These lines are paraphrases, written here, not taken from the held-out set.
+  it('does not flag a state the candidate mentions and then carries on from', () => {
+    for (const line of [
+      "Sorry, I'm pregnant so I may need to sit for this bit.",
+      'Apologies, I have been coughing since dawn, it is just a cold.',
+      "I've been coughing all morning, but I'm fine to carry on.",
+    ]) {
+      expect(looksLikeSelfDisclosure(line), line).toBe(false);
+    }
+  });
+
+  it('still flags the same words once they come with a symptom or a question', () => {
+    for (const line of [
+      'I am pregnant and bleeding',
+      "Real question: I'm 8 weeks pregnant and bleeding, is that normal?",
+      "I've been coughing for three weeks, should I be worried?",
+      "I've been vomiting since last night, what should I take?",
+    ]) {
+      expect(looksLikeSelfDisclosure(line), line).toBe(true);
+    }
+  });
+});
+
+describe('safetyMessageFor', () => {
+  it('leads with the service that fits what was said', () => {
+    expect(safetyMessageFor('self_harm')).toContain('Samaritans free on 116 123');
+    expect(safetyMessageFor('abuse')).toContain('National Domestic Abuse Helpline is free on 0808 2000 247');
+    expect(safetyMessageFor('medicines')).toContain('pharmacist');
+    // Someone asking about their child should not be told "if you're unwell".
+    expect(safetyMessageFor('advice_for_other')).toContain("anyone you're worried about");
+    expect(safetyMessageFor('advice_for_other')).not.toContain('Samaritans');
+  });
+
+  it('falls back to the full message when the category is unknown', () => {
+    expect(safetyMessageFor(null)).toBe(SAFETY_MESSAGE);
+    expect(safetyMessageFor('none')).toBe(SAFETY_MESSAGE);
+    // Every wording says what the tool is and offers a real route.
+    for (const category of ['self_harm', 'abuse', 'medicines', 'advice_for_other', 'own_health', null]) {
+      const message = safetyMessageFor(category);
+      expect(message).toContain('practice tool with a fictional patient');
+      expect(message).toMatch(/NHS 111|999|Samaritans|0808 2000 247/);
+    }
   });
 });
