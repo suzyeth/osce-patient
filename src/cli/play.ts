@@ -66,7 +66,14 @@ const clients = connect();
 const rl = createInterface({ input, output });
 
 console.log(patientCase.candidateBrief);
-console.log(`(${clients.label}; type /end to finish)\n`);
+console.log(`(${clients.label}; type /end to finish)`);
+if (!clients.session) {
+  // The rule list alone caught 40% of the held-out disclosures; the model check is what takes
+  // that to 100%, and it needs --online. Say so rather than let offline look like the safe default.
+  console.log('WARNING: offline mode runs the rule-based safety check only, which catches far less.');
+  console.log('         Use --online for a session with the model safety check.');
+}
+console.log('');
 console.log(`${patientCase.patient.name}: ${patientCase.patient.openingLine}`);
 
 const started = Date.now();
