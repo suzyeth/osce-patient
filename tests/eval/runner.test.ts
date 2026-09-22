@@ -32,6 +32,7 @@ const args = (evals: EvalArgs['evals'], extra: Partial<EvalArgs> = {}): EvalArgs
   capUsd: 1,
   repeat: 1,
   labelsPath: null,
+  setPath: null,
   ...extra,
 });
 

@@ -5,7 +5,7 @@ describe('parseEvalArgs', () => {
   it('fills defaults for a single evaluation', () => {
     expect(parseEvalArgs(['judge', '--online'])).toEqual({
       ok: true,
-      args: { evals: ['judge'], casePath: 'cases/demo-cough.json', offline: false, capUsd: DEFAULT_CAP_USD, repeat: 2, labelsPath: null },
+      args: { evals: ['judge'], casePath: 'cases/demo-cough.json', offline: false, capUsd: DEFAULT_CAP_USD, repeat: 2, labelsPath: null, setPath: null },
     });
   });
 
@@ -13,7 +13,7 @@ describe('parseEvalArgs', () => {
     const parsed = parseEvalArgs(['all', '--offline', '--cap', '0.25', '--repeat', '1', '--case', 'cases/x.json']);
     expect(parsed).toEqual({
       ok: true,
-      args: { evals: ['judge', 'safety', 'attack', 'honesty'], casePath: 'cases/x.json', offline: true, capUsd: 0.25, repeat: 1, labelsPath: null },
+      args: { evals: ['judge', 'safety', 'attack', 'honesty'], casePath: 'cases/x.json', offline: true, capUsd: 0.25, repeat: 1, labelsPath: null, setPath: null },
     });
   });
 
@@ -21,6 +21,13 @@ describe('parseEvalArgs', () => {
     // "npm run eval all --offline" (no "--") reaches the script as just ["all"]: npm keeps --offline.
     expect(parseEvalArgs(['all'])).toMatchObject({ ok: false, message: expect.stringContaining('not neither') });
     expect(parseEvalArgs(['all', '--online', '--offline'])).toMatchObject({ ok: false, message: expect.stringContaining('not both') });
+  });
+
+  it('takes another line set for safety', () => {
+    expect(parseEvalArgs(['safety', '--online', '--set', 'eval/fixtures/safety-dev.json'])).toMatchObject({
+      ok: true,
+      args: { setPath: 'eval/fixtures/safety-dev.json' },
+    });
   });
 
   it('needs labels for agreement', () => {

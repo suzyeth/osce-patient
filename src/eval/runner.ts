@@ -5,7 +5,7 @@ import type { PatientCase } from '../types.js';
 import { AgreementLabelsSchema, checkLabels, runAgreementEval, summariseAgreement } from './agreementEval.js';
 import type { EvalArgs, EvalName } from './args.js';
 import { runAttackEval, summariseAttackEval } from './attackEval.js';
-import { JUDGE_SETTINGS, type EvalClients } from './clients.js';
+import { JUDGE_SETTINGS, SAFETY_SETTINGS, type EvalClients } from './clients.js';
 import {
   AttackSetSchema,
   checkAgainstCase,
@@ -97,13 +97,19 @@ function preparers(args: EvalArgs, c: PatientCase, clients: EvalClients, opts: R
       };
     },
     safety() {
-      const set = need(fixture('safety-blind-heldout.json'), SafetySetSchema);
+      const path = args.setPath ?? fixture('safety-blind-heldout.json');
+      const set = need(path, SafetySetSchema);
+      const settings = clients.online ? SAFETY_SETTINGS : [{ name: 'offline (no model)', model: 'offline', thinking: false, maxTokens: 0 }];
       return async () => {
         const start = mark();
-        const results = await runSafetyEval(c, set, clients.judge);
-        const summary = summariseSafetyEval(results);
+        const checks = settings.map((s) => ({ name: s.name, client: clients.safetyFor(s) }));
+        const names = checks.map((ch) => ch.name);
+        const engineModel = clients.configuredSafety ?? undefined;
+        const results = await runSafetyEval(c, set, clients.judge, checks);
+        const summary = summariseSafetyEval(results, { model: engineModel }, names);
+        const table = formatSafetyReport(summary, since(start), { setName: path, names, engineModel });
         // Per-line results are kept: a recall figure is only checkable against the lines behind it.
-        return { markdown: `${formatSafetyReport(summary, since(start))}\n\n${setup}`, data: { summary, results } };
+        return { markdown: `${table}\n\n${setup}`, data: { set: path, engineModel, summary, results } };
       };
     },
     attack() {
