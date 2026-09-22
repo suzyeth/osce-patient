@@ -100,8 +100,10 @@ function preparers(args: EvalArgs, c: PatientCase, clients: EvalClients, opts: R
       const set = need(fixture('safety-blind-heldout.json'), SafetySetSchema);
       return async () => {
         const start = mark();
-        const summary = summariseSafetyEval(await runSafetyEval(c, set, clients.judge));
-        return { markdown: `${formatSafetyReport(summary, since(start))}\n\n${setup}`, data: { summary } };
+        const results = await runSafetyEval(c, set, clients.judge);
+        const summary = summariseSafetyEval(results);
+        // Per-line results are kept: a recall figure is only checkable against the lines behind it.
+        return { markdown: `${formatSafetyReport(summary, since(start))}\n\n${setup}`, data: { summary, results } };
       };
     },
     attack() {
