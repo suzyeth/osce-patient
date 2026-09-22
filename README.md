@@ -21,8 +21,13 @@ case (`cases/demo-cough.json`) is synthetic.
   facts only. An output guard then checks every reply for the guarded terms of locked facts, retries once and
   redacts if needed. The honest boundary: a model can still guess, which is why the guard exists, and a case
   author can still leak a fact through a paraphrase, which `check-case` cannot catch.
-- **Safety block.** A high-precision check runs before any model call and pauses the session on real-symptom
-  or self-harm wording; the judge model's semantic flag covers the rest. Blocked turns never reach the patient model and never enter later history.
+- **Safety pause.** A high-precision rule list runs before any model call and pauses the session on
+  real-symptom or self-harm wording. Beside it, a separate check (`src/nebius/safetyClient.ts`) asks a model
+  whether the line is a request for real help, for the user or for someone they name; it runs at the same time
+  as the judge, so it costs no extra waiting. On the held-out set of 225 lines the two together pause on 100%
+  of real disclosures and on 1% of ordinary candidate lines (`eval/results/demo-cough/safety.md`). The judge's
+  own flag stands in only when that check has no answer. Paused turns never reach the patient model and never
+  enter later history.
 - **Deterministic report.** Covered items with the turn they were first covered, missed critical items (which cap
   the global judgement at Borderline), an example question for every miss, and scores for data gathering and
   interpersonal skills. Clinical management is only partly scored in this version.
@@ -68,7 +73,7 @@ full JSON (every line, reply and label) to `eval/results/<case id>/`:
 | Evaluation | What it measures | Test set |
 |---|---|---|
 | `judge` | Rubric accuracy, paraphrase unlock rate per fact, and false unlocks, for five judge settings (Nano, Lightning, Super with and without reasoning, Ultra) with cost and latency | `eval/fixtures/judge-lines.<case>.json`: five phrasings per rubric item (some in non-native English), off-topic lines and injection attempts |
-| `safety` | How often real self-disclosures pause practice (rule check, judge, both) and how often ordinary candidate lines are paused by mistake | `eval/fixtures/safety-blind-heldout.json`, the held-out set from Plan 1 (57 disclosures, 152 candidate lines, 16 borderline) |
+| `safety` | How often each signal pauses practice on a real disclosure, and how often on an ordinary candidate line: the rule list, each candidate model for the check, the judge's flag, and what a session would do | `eval/fixtures/safety-blind-heldout.json`, the held-out set from Plan 1 (57 disclosures, 152 candidate lines, 16 borderline); `--set eval/fixtures/safety-dev.json` is the development set used to write the prompt |
 | `attack` | Locked facts leaked per attack line, for this engine and for a control version that keeps every fact in the prompt and only asks the model not to volunteer them | `eval/fixtures/attacks.json`: 24 case-independent attacks |
 | `honesty` | Invented answers to questions the case never mentions, and whether unlocked facts are stated without contradiction, graded by Nemotron 3 Ultra, a different model from the patient | `eval/fixtures/off-case.<case>.json` and each fact's example question |
 | `agreement` | Cohen's kappa between the judge and a person's rubric labels on whole conversations | `--labels <file>`; `eval/labels/example.demo-cough.json` shows the format |
@@ -77,11 +82,14 @@ full JSON (every line, reply and label) to `eval/results/<case id>/`:
 npm run eval -- all --offline               # free plumbing check with the keyword doubles; nothing is saved
 npm run eval -- all --online                # judge, safety, attack and honesty on Token Factory, about $0.30
 npm run eval -- agreement --online --labels eval/labels/<file>.json
+npm run eval -- safety --online --set eval/fixtures/safety-dev.json   # the development set, about $0.03
 ```
 
 Every run must say `--online` or `--offline`, so nothing spends by default (keep the `--` after `npm run eval`: without it npm keeps the flag). Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
 counted by each case's guarded terms, so a paraphrased leak is missed in both versions; the labels in the
-judge and off-case sets are the author's, not a clinician's.
+judge and off-case sets are the author's, not a clinician's. The safety check's prompt was written against
+`eval/fixtures/safety-dev.json`; the held-out set was measured before that prompt was revised and once after,
+so it is no longer untouched, and the misses from the first run shaped the development set.
 
 ## Status
 
