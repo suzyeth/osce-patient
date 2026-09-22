@@ -60,7 +60,7 @@ const DEFAULTS = {
   judgeModel: MODELS.super,
   patientModel: MODELS.super,
   // The self-disclosure check runs beside the judge; the setting is chosen on the safety
-  // evaluation (eval/results/safety/). It answers with one short JSON object, so 200 tokens is plenty.
+  // evaluation (eval/results/<case>/safety.md). It answers with one short JSON object, so 200 tokens is plenty.
   safetyModel: MODELS.super,
   timeoutMs: 30_000,
   maxRetries: 2,

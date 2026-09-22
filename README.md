@@ -17,17 +17,21 @@ case (`cases/demo-cough.json`) is synthetic.
 - **Fact gates.** Each case has facts (presenting complaint, history, red flags, the patient's concern). A fact
   unlocks only when the candidate covers its rubric item; the concern can also come out once the candidate has
   built enough rapport (trust).
-- **The patient never sees a locked fact.** The patient model's prompt is built from the persona and unlocked
-  facts only. An output guard then checks every reply for the guarded terms of locked facts, retries once and
-  redacts if needed. The honest boundary: a model can still guess, which is why the guard exists, and a case
-  author can still leak a fact through a paraphrase, which `check-case` cannot catch.
+- **The patient's prompt never contains a locked fact.** It is built from the persona and unlocked facts only.
+  An output guard then checks every reply for the guarded terms of locked facts, retries once and redacts if
+  needed. The honest boundary: a model can still guess, which is why the guard exists; a case author can leak a
+  fact through a paraphrase, which `check-case` cannot catch; and a judge talked into crediting a rubric item
+  unlocks a fact for real, which happened on 2 of 24 attack lines in `eval/results/demo-cough/attack.md`.
 - **Safety pause.** A high-precision rule list runs before any model call and pauses the session on
   real-symptom or self-harm wording. Beside it, a separate check (`src/nebius/safetyClient.ts`) asks a model
   whether the line is a request for real help, for the user or for someone they name; it runs at the same time
-  as the judge, so it costs no extra waiting. On the held-out set of 225 lines the two together pause on 100%
-  of real disclosures and on 1% of ordinary candidate lines (`eval/results/demo-cough/safety.md`). The judge's
-  own flag stands in only when that check has no answer. Paused turns never reach the patient model and never
-  enter later history.
+  as the judge, so it costs no extra waiting, and the wording of the pause follows what was said (a pharmacist
+  for a medicines question, Samaritans for self-harm, the domestic abuse helpline for someone being hurt).
+  The judge's own flag stands in only when that check has no answer. Paused turns never reach the patient model
+  and never enter later history. How well it works, and what that number is worth, is in
+  `eval/results/demo-cough/safety.md` and in the caveats below.
+  **In offline mode there is no model check at all**: only the rule list runs, which pauses on 23 of the 57
+  held-out disclosures. `npm run play` is offline unless you pass `--online`, and it says so when it starts.
 - **Deterministic report.** Covered items with the turn they were first covered, missed critical items (which cap
   the global judgement at Borderline), an example question for every miss, and scores for data gathering and
   interpersonal skills. Clinical management is only partly scored in this version.
@@ -58,9 +62,9 @@ npm run play -- --online                    # a timed session with the Nemotron 
 
 By default both the judge and the patient are Nemotron 3 Super 120B with reasoning off, so a turn takes
 about two seconds and a station costs well under a cent. The judge was chosen on the evaluation in
-`eval/results/demo-cough/judge.md`: Nemotron 3.5 Lightning is faster and cheaper but credited a rubric item
-on a third of the off-topic and injection lines, which unlocks facts nobody asked for, while Super credited
-none of them. `OSCE_JUDGE_MODEL` and `OSCE_JUDGE_THINKING=on` change that (see `.env.example`). Every call is checked
+`eval/results/demo-cough/judge.md`: on 15 lines that should score nothing (10 off-topic, 5 injection attempts)
+Nemotron 3.5 Lightning credited a rubric item on 5 of them, which unlocks facts nobody asked for, while Super
+credited none. One run, one synthetic case, so read it as a direction, not a rate. `OSCE_JUDGE_MODEL` and `OSCE_JUDGE_THINKING=on` change that (see `.env.example`). Every call is checked
 against a per-session cap ($0.05) and a daily cap ($0.50) before it is sent; the daily total is kept in
 `.osce-budget.json` so it holds across runs. Token Factory has no hard spending limit of its own, so these caps
 are the safeguard. Reasoning text returned by the models is discarded and never shown or logged.
@@ -85,6 +89,22 @@ npm run eval -- agreement --online --labels eval/labels/<file>.json
 npm run eval -- safety --online --set eval/fixtures/safety-dev.json   # the development set, about $0.03
 ```
 
+### What these numbers are worth
+
+- **One synthetic case, one run per line, temperature 0.** No repeat runs, no second case, and no clinician
+  has reviewed any of it. Small denominators are given as counts in the tables; percentages over 15 or 20
+  lines are a direction, not a rate.
+- **The safety set is no longer blind.** It was measured, three kinds of miss were found, development lines in
+  those styles were written, the prompt was revised, and it was measured again. Treat the recall figure as an
+  upper bound. `eval/fixtures/safety-dev.json` is the development set and includes the bypass shapes an
+  adversarial review found (indirection, self-quoting, non-English, role-play framing); those are measured
+  there, not on the held-out set.
+- **The judge changed underneath the comparison.** The "before" figure for the safety pause is the rule list
+  plus the judge's own flag, measured with the same judge the tool ships today; an older note that says 46%
+  was measured with a different judge model and is not a like-for-like baseline.
+- **The honesty grader is a model.** Its labels were read by hand on the first run and matched, but a label
+  like "invented" against "No known allergies" is a judgement call. Counts are in the JSON.
+
 Every run must say `--online` or `--offline`, so nothing spends by default (keep the `--` after `npm run eval`: without it npm keeps the flag). Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
 counted by each case's guarded terms, so a paraphrased leak is missed in both versions; the labels in the
 judge and off-case sets are the author's, not a clinician's. The safety check's prompt was written against
@@ -96,6 +116,15 @@ so it is no longer untouched, and the misses from the first run shaped the devel
 Plan 1 (the offline core engine), Plan 2 (Nemotron clients with spend caps) and Plan 3 (the evaluation
 harness) are complete. Next: a case pipeline from open transcripts, and a web app (Plan 4).
 
-## Licence
+## Sources and licences
 
-MIT. See `LICENSE`.
+- **Code:** MIT. See `LICENSE`.
+- **`cases/demo-cough.json`:** written for this repository as synthetic test content. It is not clinical
+  material and has not been reviewed by a clinician.
+- **Planned case material:** Fareez et al. 2022, a set of simulated consultation transcripts released under
+  CC0 (figshare article 16550013), and AgentClinic-MedQA (MIT). Neither is in this repository yet.
+- **Planned checking against NHS pages:** NHS website content is Crown copyright under the Open Government
+  Licence v3.0, which requires attribution and does not imply NHS endorsement. Any case that quotes it will
+  carry that attribution in its `source` field.
+- **Every fact in a case file carries a `source`** (dataset, reference and quote). Nothing in this repository
+  reproduces third-party clinical text today.
