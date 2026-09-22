@@ -1,0 +1,171 @@
+import type { JudgeClient, PatientClient, ConversationTurn } from '../llm.js';
+import type { PatientCase } from '../types.js';
+import type { SafetyClient } from '../nebius/safetyClient.js';
+import { appendTurn, runTurn } from '../orchestrator.js';
+import { computeReport, type SessionReport } from '../report.js';
+import { initialSessionState } from '../state.js';
+import { checkAccess, checkTurn, type WebLimits } from './limits.js';
+import { openSession, sealSession, SessionCookieError, toSessionState, toStored, type StoredSession } from './sessionCookie.js';
+
+export const SESSION_COOKIE = 'osce_station';
+
+/** One station's clients, built per request so each station gets its own spending cap. */
+export interface StationClients {
+  judge: JudgeClient;
+  patient: PatientClient;
+  safety?: SafetyClient;
+  /** What this request spent, read after the turn. */
+  spentUsd(): number;
+}
+
+export interface WebDeps {
+  limits: WebLimits;
+  secret: string;
+  /** The cases a visitor may start, by id. */
+  cases: Record<string, PatientCase>;
+  /** Null when the site is running without models: only the sample report is served. */
+  clientsFor: ((remainingUsd: number) => StationClients) | null;
+  now: () => number;
+  /** A finished station to show anyone without a code. */
+  sampleReport: () => { caseTitle: string; report: SessionReport; transcript: ConversationTurn[] };
+}
+
+function json(body: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(body), {
+    ...init,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(init.headers ?? {}) },
+  });
+}
+
+function cookieHeader(value: string, maxAgeSeconds: number): string {
+  // Lax is enough: every call is same-site from the page, and it keeps the cookie off other sites.
+  return `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAgeSeconds}`;
+}
+
+function readCookie(request: Request): string | null {
+  const header = request.headers.get('cookie');
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name === SESSION_COOKIE) return rest.join('=');
+  }
+  return null;
+}
+
+async function body(request: Request): Promise<Record<string, unknown>> {
+  try {
+    const parsed: unknown = await request.json();
+    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+function secondsLeft(patientCase: PatientCase, stored: StoredSession, now: number): number {
+  return Math.max(0, patientCase.durationSeconds - Math.floor((now - stored.startedAt) / 1000));
+}
+
+async function start(request: Request, deps: WebDeps): Promise<Response> {
+  const input = await body(request);
+  const refusal = checkAccess(deps.limits, text(input.code));
+  if (refusal) return json({ error: refusal.message, reason: refusal.reason }, { status: 403 });
+  if (!deps.clientsFor) return json({ error: 'This site is running without models right now.', reason: 'offline' }, { status: 503 });
+
+  const caseId = text(input.caseId) || Object.keys(deps.cases)[0] || '';
+  const patientCase = deps.cases[caseId];
+  if (!patientCase) return json({ error: 'No such case.', reason: 'unknown_case' }, { status: 404 });
+
+  const stored = toStored(patientCase.id, deps.now(), initialSessionState(), [], 0);
+  return json(
+    {
+      caseId: patientCase.id,
+      title: patientCase.title,
+      brief: patientCase.candidateBrief,
+      patientName: patientCase.patient.name,
+      openingLine: patientCase.patient.openingLine,
+      durationSeconds: patientCase.durationSeconds,
+      secondsLeft: patientCase.durationSeconds,
+      reviewStatus: patientCase.reviewStatus,
+      maxTurns: deps.limits.maxTurns,
+    },
+    { headers: { 'set-cookie': cookieHeader(sealSession(stored, deps.secret), patientCase.durationSeconds + 600) } },
+  );
+}
+
+interface Station {
+  stored: StoredSession;
+  patientCase: PatientCase;
+}
+
+function station(request: Request, deps: WebDeps): Station | Response {
+  const cookie = readCookie(request);
+  if (!cookie) return json({ error: 'This station has not been started.', reason: 'no_session' }, { status: 401 });
+  let stored: StoredSession;
+  try {
+    stored = openSession(cookie, deps.secret);
+  } catch (e) {
+    const message = e instanceof SessionCookieError ? 'This station could not be resumed. Please start again.' : 'Unexpected session error.';
+    return json({ error: message, reason: 'bad_session' }, { status: 400 });
+  }
+  const patientCase = deps.cases[stored.caseId];
+  if (!patientCase) return json({ error: 'That case is no longer available.', reason: 'unknown_case' }, { status: 410 });
+  return { stored, patientCase };
+}
+
+async function turn(request: Request, deps: WebDeps): Promise<Response> {
+  const found = station(request, deps);
+  if (found instanceof Response) return found;
+  const { stored, patientCase } = found;
+  if (!deps.clientsFor) return json({ error: 'This site is running without models right now.', reason: 'offline' }, { status: 503 });
+
+  const input = text((await body(request)).input);
+  const left = secondsLeft(patientCase, stored, deps.now());
+  const refusal = checkTurn(deps.limits, { secondsLeft: left, turnsUsed: stored.state.turnsUsed, spentUsd: stored.spentUsd, input });
+  if (refusal) return json({ error: refusal.message, reason: refusal.reason, secondsLeft: left }, { status: 429 });
+
+  const clients = deps.clientsFor(deps.limits.sessionBudgetUsd - stored.spentUsd);
+  const history: ConversationTurn[] = stored.history.map((t) => ({ student: t.student, patient: t.patient }));
+  let result;
+  try {
+    result = await runTurn(patientCase, toSessionState(stored), input.trim(), clients.judge, clients.patient, history, clients.safety);
+  } catch {
+    // The station is untouched, so the candidate can simply ask again.
+    return json({ error: 'Something went wrong with the model, so nothing was recorded. Please ask again.', reason: 'model_error', secondsLeft: left }, { status: 502 });
+  }
+
+  const nextHistory = appendTurn(history, input.trim(), result);
+  const next = toStored(patientCase.id, stored.startedAt, result.state, nextHistory, stored.spentUsd + clients.spentUsd());
+  return json(
+    {
+      reply: result.reply,
+      paused: result.safetyBlocked,
+      secondsLeft: secondsLeft(patientCase, next, deps.now()),
+      turnsUsed: next.state.turnsUsed,
+      maxTurns: deps.limits.maxTurns,
+    },
+    { headers: { 'set-cookie': cookieHeader(sealSession(next, deps.secret), patientCase.durationSeconds + 600) } },
+  );
+}
+
+async function report(request: Request, deps: WebDeps): Promise<Response> {
+  const found = station(request, deps);
+  if (found instanceof Response) return found;
+  const { stored, patientCase } = found;
+  const computed = computeReport(patientCase, toSessionState(stored));
+  return json(
+    { caseTitle: patientCase.title, reviewStatus: patientCase.reviewStatus, report: computed },
+    { headers: { 'set-cookie': cookieHeader('', 0) } },
+  );
+}
+
+/** The whole API. Anything not listed is a 404, including GET on a POST route. */
+export async function handleApi(request: Request, deps: WebDeps): Promise<Response> {
+  const path = new URL(request.url).pathname;
+  if (request.method === 'POST' && path === '/api/start') return start(request, deps);
+  if (request.method === 'POST' && path === '/api/turn') return turn(request, deps);
+  if (request.method === 'POST' && path === '/api/report') return report(request, deps);
+  if (request.method === 'GET' && path === '/api/sample') return json(deps.sampleReport());
+  return json({ error: 'Not found.', reason: 'not_found' }, { status: 404 });
+}

@@ -1,0 +1,114 @@
+:root {
+  --bg: #0f1115;
+  --card: #171a21;
+  --line: #262b36;
+  --text: #e7e9ee;
+  --muted: #9aa3b2;
+  --accent: #6aa9ff;
+  --good: #59c28a;
+  --bad: #e8795a;
+  --warn: #e3b341;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --line: #e2e5ea;
+    --text: #1a1d23;
+    --muted: #5b6472;
+    --accent: #1f6feb;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+header, main, footer { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 28px; }
+h1 { font-size: 1.4rem; margin: 0 0 8px; }
+h2 { font-size: 1.15rem; margin: 0 0 8px; }
+h3 { font-size: 1rem; margin: 20px 0 8px; }
+
+.banner {
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.muted { color: var(--muted); font-size: 0.9rem; }
+.error { color: var(--bad); font-size: 0.92rem; }
+
+form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0 0; }
+label { color: var(--muted); font-size: 0.9rem; }
+input[type="text"], input[type="password"] {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #06101f;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.secondary { background: transparent; border-color: var(--line); color: var(--text); font-weight: 500; }
+button.link { background: none; border: none; color: var(--accent); padding: 0; font-weight: 500; text-decoration: underline; cursor: pointer; }
+button[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+.stationTop { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+.brief { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 70%; }
+.clock { text-align: right; font-variant-numeric: tabular-nums; }
+.clock span { font-size: 1.5rem; font-weight: 600; }
+.clock small { display: block; color: var(--muted); font-size: 0.8rem; }
+.clock.low span { color: var(--bad); }
+
+.log { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 46vh; overflow-y: auto; }
+.log li { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); }
+.log .you { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.log .patient { background: var(--bg); }
+.log .paused { background: color-mix(in srgb, var(--warn) 14%, transparent); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.log .who { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 2px; }
+
+.scores { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.score { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 150px; }
+.score b { display: block; font-size: 1.3rem; }
+.score small { color: var(--muted); }
+
+.items { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.items li { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.95rem; }
+.items .tick { color: var(--good); font-weight: 700; margin-right: 6px; }
+.items .cross { color: var(--bad); font-weight: 700; margin-right: 6px; }
+.items .critical { border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
+.items .hint { display: block; color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+
+footer { color: var(--muted); font-size: 0.85rem; padding-bottom: 32px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
