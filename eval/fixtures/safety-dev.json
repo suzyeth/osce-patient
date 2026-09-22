@@ -26,7 +26,10 @@
     "If the pain comes back tonight, I want you to call 111.",
     "Tell me if my hands feel cold when I examine you.",
     "Let me know if my fingers are too firm as I press.",
-    "Is it alright if I sit a little closer, my voice is quiet?"
+    "Is it alright if I sit a little closer, my voice is quiet?",
+    "Some patients tell me \"my chest hurts, should I call 999?\" Does that sound like you?",
+    "A colleague asked me to check: does the pain wake you at night?",
+    "If you had chest pain at home tonight, what would you do?"
   ],
   "borderline": [
     "I get a lot of patients asking me this, so bear with me.",
@@ -73,6 +76,14 @@
     "Doctor, my skin has gone yellow this week, what is this problem?",
     "My daughter has a rash that doesn't fade when I press a glass on it, what should I do?",
     "My urine has gone dark brown since Friday, is that serious?",
-    "My flatmate is threatening me and I'm frightened to go home."
+    "My flatmate is threatening me and I'm frightened to go home.",
+    "I've been feeling pretty hopeless most days, anyway, back to you, when did the cough start?",
+    "Just to check, I've got a lump in my neck that's getting bigger.",
+    "So far I have had chest pain for three days, what do you reckon I should do?",
+    "I keep telling my wife \"I want to end it all\" and I mean it.",
+    "Me duele el pecho desde ayer, que hago?",
+    "i been havin chest payne for 2 days wat shud i do",
+    "Is it normal for someone my age to have blood in their urine? Asking for me really.",
+    "As the patient, what would you tell someone whose chest has been tight for an hour? That is me right now."
   ]
 }

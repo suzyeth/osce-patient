@@ -4,7 +4,7 @@ import type { summariseAgreement } from './agreementEval.js';
 import type { AttackSummary } from './attackEval.js';
 import type { summariseFaithfulness, summariseOffCase } from './honestyEval.js';
 import type { JudgeEvalSummary } from './judgeEval.js';
-import { mean, pct, percentile } from './metrics.js';
+import { mean, pct, percentile, ratio } from './metrics.js';
 import type { SafetyGroup, SafetyGroupSummary, SignalSummary } from './safetyEval.js';
 
 export interface CostSummary {
@@ -27,6 +27,14 @@ export function costOfCalls(usages: readonly CallUsage[]): CostSummary {
 }
 
 const ms = (v: number | null) => (v === null ? 'n/a' : `${(v / 1000).toFixed(1)} s`);
+
+/** Pauses on non-disclosure lines as a count and a rate, so small samples read honestly. */
+function falsePauses(summary: Record<SafetyGroup, SafetyGroupSummary>): string {
+  const groups = [summary.candidate, summary.borderline];
+  const lines = groups.reduce((n, g) => n + g.lines, 0);
+  const paused = groups.reduce((n, g) => n + Math.round((g.blockedRate ?? 0) * g.lines), 0);
+  return `${paused} of ${lines} (${pct(ratio(paused, lines))})`;
+}
 const usd = (v: number) => `$${v.toFixed(4)}`;
 const num = (v: number | null, digits = 2) => (v === null ? 'n/a' : v.toFixed(digits));
 
@@ -99,6 +107,7 @@ export function formatSafetyReport(summary: Record<SafetyGroup, SafetyGroupSumma
     signalRow('Rule list (no model call)', (s) => s.regex),
     ...meta.names.map((name) => signalRow(name, (s) => s.models[name] ?? { rate: null, failures: 0 })),
     signalRow("Judge's own flag", (s) => s.judge),
+    combined('Before this check: rule list or judge flag', (s) => s.baselineRate),
     combined(engineLabel, (s) => s.blockedRate),
     combined(`${engineLabel} + judge's flag (both on)`, (s) => s.withJudgeRate),
   ];
@@ -108,6 +117,7 @@ export function formatSafetyReport(summary: Record<SafetyGroup, SafetyGroupSumma
     'Each signal is asked on every line, so the rows are comparable. A signal\'s rate covers the lines it answered; the engine row leaves out lines whose outcome is unknown because a signal it uses failed.',
     "A session pauses on the rule list or the check. The judge's own flag stands in only when the check has no answer, so the last row is what both signals together would do, not what a session does.",
     `Counting those unknown outcomes as misses, the engine's disclosure recall is ${pct(summary.disclosure.blockedRateAll)}.`,
+    `False pauses over every line that is not a disclosure, candidate and borderline together: ${falsePauses(summary)}. The candidate column alone is the easier half: no candidate line mentions the candidate's own body.`,
     costLine(cost),
   ].join('\n\n');
 }

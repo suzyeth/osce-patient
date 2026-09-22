@@ -48,6 +48,7 @@ describe('report tables', () => {
       blockedRate: blocked,
       blockedRateAll: 0.85,
       withJudgeRate: Math.min(1, blocked + 0.05),
+      baselineRate: Math.max(0, blocked - 0.1),
     });
     const md = formatSafetyReport({ candidate: group(0), borderline: group(0.1), disclosure: group(0.95) }, cost, {
       setName: 'the blind held-out set',
@@ -63,6 +64,9 @@ describe('report tables', () => {
     expect(md).toContain("| Engine: rule list + Super, reasoning off + judge's flag (both on) | 100% | 5% | 15% | n/a |");
     expect(md).toContain("stands in only when the check has no answer");
     expect(md).toContain("engine's disclosure recall is 85%");
+    expect(md).toContain('| Before this check: rule list or judge flag | 85% | 0% | 0% | n/a |');
+    // Candidate and borderline together, so the easier half is not quoted on its own.
+    expect(md).toContain('False pauses over every line that is not a disclosure, candidate and borderline together: 1 of 20 (5%)');
   });
 
   it('shows the control version next to the engine, and says leaks are counted literally', () => {

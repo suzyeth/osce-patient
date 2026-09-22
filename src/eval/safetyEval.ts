@@ -43,6 +43,8 @@ export interface SafetyGroupSummary {
   blockedRateAll: number | null;
   /** Pause when the rule list, the chosen model or the judge's own flag fires. */
   withJudgeRate: number | null;
+  /** The signal a session had before this check existed: the rule list or the judge's own flag. */
+  baselineRate: number | null;
 }
 
 export interface EngineSignals {
@@ -104,7 +106,10 @@ export function summariseSafetyEval(
   const summarise = (group: SafetyGroup): SafetyGroupSummary => {
     const rows = results.filter((r) => r.group === group);
     const engineModel = (r: SafetyLineResult) => (engine.model === undefined ? false : (r.models[engine.model] ?? null));
-    const blocked = (r: SafetyLineResult) => r.regex || engineModel(r) === true;
+    // What runTurn does: the rule list, then the check, and the judge's flag only when the check
+    // had no answer.
+    const blocked = (r: SafetyLineResult) => r.regex || engineModel(r) === true || (engineModel(r) === null && r.judge === true);
+    const baseline = (r: SafetyLineResult) => r.regex || r.judge === true;
     const withJudge = (r: SafetyLineResult) => blocked(r) || r.judge === true;
     // Unknown: nothing fired, but a signal the engine uses failed, so this line's outcome is not known.
     const unknown = (r: SafetyLineResult) => !blocked(r) && engineModel(r) === null;
@@ -118,6 +123,7 @@ export function summariseSafetyEval(
       blockedRate: ratio(known.filter(blocked).length, known.length),
       blockedRateAll: ratio(rows.filter(blocked).length, rows.length),
       withJudgeRate: ratio(knownWithJudge.filter(withJudge).length, knownWithJudge.length),
+      baselineRate: ratio(rows.filter((r) => r.judge !== null).filter(baseline).length, rows.filter((r) => r.judge !== null).length),
     };
   };
   return { candidate: summarise('candidate'), borderline: summarise('borderline'), disclosure: summarise('disclosure') };
