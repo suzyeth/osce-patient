@@ -1,17 +1,17 @@
 {
   "evaluation": "judge",
   "caseId": "demo-cough",
-  "runAt": "2026-09-22T17:27:12.542Z",
+  "runAt": "2026-09-23T19:05:51.533Z",
   "models": {
-    "judge": "nvidia/Nemotron-3_5-Lightning (reasoning off, 800 tokens)",
+    "judge": "nvidia/nemotron-3-super-120b-a12b (reasoning off, 800 tokens)",
     "patient": "nvidia/nemotron-3-super-120b-a12b (reasoning off, 400 tokens)"
   },
   "capUsd": 0.4,
   "cost": {
     "calls": 250,
-    "costUsd": 0.08391548000000001,
-    "meanLatencyMs": 1340,
-    "p95LatencyMs": 3656
+    "costUsd": 0.08415062000000005,
+    "meanLatencyMs": 1243,
+    "p95LatencyMs": 3448
   },
   "data": {
     "labelledBy": "author (not clinically reviewed); lines marked non-native imitate common non-native English phrasings",
@@ -24,9 +24,9 @@
         "summary": {
           "lines": 50,
           "failures": 0,
-          "exactRate": 0.36,
-          "precision": 0.6666666666666666,
-          "recall": 0.11428571428571428,
+          "exactRate": 0.4,
+          "precision": 0.75,
+          "recall": 0.17142857142857143,
           "factUnlock": [
             {
               "factId": "f_presenting",
@@ -41,12 +41,12 @@
             {
               "factId": "f_blood",
               "rubricItemId": "haemoptysis",
-              "rate": 0.4
+              "rate": 0.6
             },
             {
               "factId": "f_smoking",
               "rubricItemId": "smoking",
-              "rate": 0
+              "rate": 0.2
             },
             {
               "factId": "f_concern",
@@ -55,14 +55,14 @@
             }
           ],
           "falseUnlockRate": 0.06666666666666667,
-          "meanLatencyMs": 969.06,
-          "p95LatencyMs": 1122
+          "meanLatencyMs": 704.52,
+          "p95LatencyMs": 1179
         },
         "cost": {
           "calls": 50,
-          "costUsd": 0.002562419999999999,
-          "meanLatencyMs": 967,
-          "p95LatencyMs": 1121
+          "costUsd": 0.00256314,
+          "meanLatencyMs": 703,
+          "p95LatencyMs": 1178
         },
         "results": [
           {
@@ -77,7 +77,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1102,
+            "latencyMs": 883,
             "failure": null
           },
           {
@@ -92,7 +92,7 @@
               "intro_consent"
             ],
             "extra": [],
-            "latencyMs": 992,
+            "latencyMs": 638,
             "failure": null
           },
           {
@@ -107,7 +107,7 @@
               "intro_consent"
             ],
             "extra": [],
-            "latencyMs": 889,
+            "latencyMs": 655,
             "failure": null
           },
           {
@@ -122,7 +122,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 902,
+            "latencyMs": 646,
             "failure": null
           },
           {
@@ -137,7 +137,7 @@
               "intro_consent"
             ],
             "extra": [],
-            "latencyMs": 941,
+            "latencyMs": 695,
             "failure": null
           },
           {
@@ -152,7 +152,7 @@
               "open_question"
             ],
             "extra": [],
-            "latencyMs": 814,
+            "latencyMs": 574,
             "failure": null
           },
           {
@@ -167,7 +167,7 @@
               "open_question"
             ],
             "extra": [],
-            "latencyMs": 800,
+            "latencyMs": 671,
             "failure": null
           },
           {
@@ -182,7 +182,7 @@
               "open_question"
             ],
             "extra": [],
-            "latencyMs": 828,
+            "latencyMs": 573,
             "failure": null
           },
           {
@@ -197,7 +197,7 @@
               "open_question"
             ],
             "extra": [],
-            "latencyMs": 924,
+            "latencyMs": 600,
             "failure": null
           },
           {
@@ -212,7 +212,7 @@
               "open_question"
             ],
             "extra": [],
-            "latencyMs": 873,
+            "latencyMs": 2587,
             "failure": null
           },
           {
@@ -227,7 +227,7 @@
               "onset_duration"
             ],
             "extra": [],
-            "latencyMs": 893,
+            "latencyMs": 569,
             "failure": null
           },
           {
@@ -242,7 +242,7 @@
               "onset_duration"
             ],
             "extra": [],
-            "latencyMs": 1122,
+            "latencyMs": 2525,
             "failure": null
           },
           {
@@ -257,7 +257,7 @@
               "onset_duration"
             ],
             "extra": [],
-            "latencyMs": 1064,
+            "latencyMs": 623,
             "failure": null
           },
           {
@@ -272,7 +272,7 @@
               "onset_duration"
             ],
             "extra": [],
-            "latencyMs": 931,
+            "latencyMs": 605,
             "failure": null
           },
           {
@@ -287,11 +287,26 @@
               "onset_duration"
             ],
             "extra": [],
-            "latencyMs": 1015,
+            "latencyMs": 686,
             "failure": null
           },
           {
             "text": "Have you noticed any blood when you cough?",
+            "kind": "paraphrase",
+            "expected": [
+              "haemoptysis"
+            ],
+            "actual": [],
+            "exact": false,
+            "missed": [
+              "haemoptysis"
+            ],
+            "extra": [],
+            "latencyMs": 560,
+            "failure": null
+          },
+          {
+            "text": "When you cough, does anything red come up?",
             "kind": "paraphrase",
             "expected": [
               "haemoptysis"
@@ -302,22 +317,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 992,
-            "failure": null
-          },
-          {
-            "text": "When you cough, does anything red come up?",
-            "kind": "paraphrase",
-            "expected": [
-              "haemoptysis"
-            ],
-            "actual": [],
-            "exact": false,
-            "missed": [
-              "haemoptysis"
-            ],
-            "extra": [],
-            "latencyMs": 1072,
+            "latencyMs": 671,
             "failure": null
           },
           {
@@ -326,13 +326,13 @@
             "expected": [
               "haemoptysis"
             ],
-            "actual": [],
-            "exact": false,
-            "missed": [
+            "actual": [
               "haemoptysis"
             ],
+            "exact": true,
+            "missed": [],
             "extra": [],
-            "latencyMs": 877,
+            "latencyMs": 607,
             "failure": null
           },
           {
@@ -347,7 +347,7 @@
               "haemoptysis"
             ],
             "extra": [],
-            "latencyMs": 995,
+            "latencyMs": 619,
             "failure": null
           },
           {
@@ -362,7 +362,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 980,
+            "latencyMs": 593,
             "failure": null
           },
           {
@@ -377,7 +377,7 @@
               "smoking"
             ],
             "extra": [],
-            "latencyMs": 890,
+            "latencyMs": 651,
             "failure": null
           },
           {
@@ -386,13 +386,13 @@
             "expected": [
               "smoking"
             ],
-            "actual": [],
-            "exact": false,
-            "missed": [
+            "actual": [
               "smoking"
             ],
+            "exact": true,
+            "missed": [],
             "extra": [],
-            "latencyMs": 907,
+            "latencyMs": 580,
             "failure": null
           },
           {
@@ -407,7 +407,7 @@
               "smoking"
             ],
             "extra": [],
-            "latencyMs": 868,
+            "latencyMs": 567,
             "failure": null
           },
           {
@@ -422,7 +422,7 @@
               "smoking"
             ],
             "extra": [],
-            "latencyMs": 971,
+            "latencyMs": 554,
             "failure": null
           },
           {
@@ -437,7 +437,7 @@
               "smoking"
             ],
             "extra": [],
-            "latencyMs": 957,
+            "latencyMs": 1179,
             "failure": null
           },
           {
@@ -452,7 +452,7 @@
               "ice_concerns"
             ],
             "extra": [],
-            "latencyMs": 930,
+            "latencyMs": 569,
             "failure": null
           },
           {
@@ -467,7 +467,7 @@
               "ice_concerns"
             ],
             "extra": [],
-            "latencyMs": 854,
+            "latencyMs": 583,
             "failure": null
           },
           {
@@ -482,7 +482,7 @@
               "ice_concerns"
             ],
             "extra": [],
-            "latencyMs": 863,
+            "latencyMs": 578,
             "failure": null
           },
           {
@@ -497,7 +497,7 @@
               "ice_concerns"
             ],
             "extra": [],
-            "latencyMs": 1019,
+            "latencyMs": 575,
             "failure": null
           },
           {
@@ -512,7 +512,7 @@
               "ice_concerns"
             ],
             "extra": [],
-            "latencyMs": 1225,
+            "latencyMs": 596,
             "failure": null
           },
           {
@@ -527,7 +527,7 @@
               "closing"
             ],
             "extra": [],
-            "latencyMs": 948,
+            "latencyMs": 579,
             "failure": null
           },
           {
@@ -542,7 +542,7 @@
               "closing"
             ],
             "extra": [],
-            "latencyMs": 1093,
+            "latencyMs": 588,
             "failure": null
           },
           {
@@ -557,7 +557,7 @@
               "closing"
             ],
             "extra": [],
-            "latencyMs": 942,
+            "latencyMs": 605,
             "failure": null
           },
           {
@@ -572,7 +572,7 @@
               "closing"
             ],
             "extra": [],
-            "latencyMs": 959,
+            "latencyMs": 585,
             "failure": null
           },
           {
@@ -587,7 +587,7 @@
               "closing"
             ],
             "extra": [],
-            "latencyMs": 992,
+            "latencyMs": 554,
             "failure": null
           },
           {
@@ -598,7 +598,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 972,
+            "latencyMs": 570,
             "failure": null
           },
           {
@@ -609,7 +609,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 870,
+            "latencyMs": 563,
             "failure": null
           },
           {
@@ -620,7 +620,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1016,
+            "latencyMs": 585,
             "failure": null
           },
           {
@@ -631,7 +631,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 971,
+            "latencyMs": 565,
             "failure": null
           },
           {
@@ -642,7 +642,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 924,
+            "latencyMs": 567,
             "failure": null
           },
           {
@@ -653,7 +653,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 937,
+            "latencyMs": 572,
             "failure": null
           },
           {
@@ -664,7 +664,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1075,
+            "latencyMs": 1093,
             "failure": null
           },
           {
@@ -675,7 +675,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1016,
+            "latencyMs": 582,
             "failure": null
           },
           {
@@ -686,7 +686,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 882,
+            "latencyMs": 575,
             "failure": null
           },
           {
@@ -697,7 +697,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 928,
+            "latencyMs": 585,
             "failure": null
           },
           {
@@ -708,7 +708,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1441,
+            "latencyMs": 549,
             "failure": null
           },
           {
@@ -719,7 +719,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 958,
+            "latencyMs": 595,
             "failure": null
           },
           {
@@ -730,7 +730,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 946,
+            "latencyMs": 540,
             "failure": null
           },
           {
@@ -741,7 +741,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1095,
+            "latencyMs": 706,
             "failure": null
           },
           {
@@ -758,7 +758,7 @@
               "haemoptysis",
               "ice_concerns"
             ],
-            "latencyMs": 998,
+            "latencyMs": 656,
             "failure": null
           }
         ]
@@ -772,13 +772,13 @@
           "lines": 50,
           "failures": 0,
           "exactRate": 0.82,
-          "precision": 0.6808510638297872,
-          "recall": 0.9142857142857143,
+          "precision": 0.7021276595744681,
+          "recall": 0.9428571428571428,
           "factUnlock": [
             {
               "factId": "f_presenting",
               "rubricItemId": "open_question",
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "factId": "f_duration",
@@ -801,15 +801,15 @@
               "rate": 0.8
             }
           ],
-          "falseUnlockRate": 0.3333333333333333,
-          "meanLatencyMs": 407.72,
-          "p95LatencyMs": 516
+          "falseUnlockRate": 0.4,
+          "meanLatencyMs": 377.92,
+          "p95LatencyMs": 433
         },
         "cost": {
           "calls": 50,
-          "costUsd": 0.002473859999999999,
-          "meanLatencyMs": 406,
-          "p95LatencyMs": 514
+          "costUsd": 0.00248298,
+          "meanLatencyMs": 376,
+          "p95LatencyMs": 431
         },
         "results": [
           {
@@ -824,7 +824,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 389,
+            "latencyMs": 417,
             "failure": null
           },
           {
@@ -839,7 +839,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 373,
+            "latencyMs": 371,
             "failure": null
           },
           {
@@ -854,7 +854,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 396,
+            "latencyMs": 372,
             "failure": null
           },
           {
@@ -869,7 +869,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 389,
+            "latencyMs": 364,
             "failure": null
           },
           {
@@ -884,7 +884,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 383,
+            "latencyMs": 378,
             "failure": null
           },
           {
@@ -893,13 +893,13 @@
             "expected": [
               "open_question"
             ],
-            "actual": [],
-            "exact": false,
-            "missed": [
+            "actual": [
               "open_question"
             ],
+            "exact": true,
+            "missed": [],
             "extra": [],
-            "latencyMs": 377,
+            "latencyMs": 362,
             "failure": null
           },
           {
@@ -914,7 +914,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 366,
+            "latencyMs": 434,
             "failure": null
           },
           {
@@ -929,7 +929,7 @@
               "open_question"
             ],
             "extra": [],
-            "latencyMs": 356,
+            "latencyMs": 350,
             "failure": null
           },
           {
@@ -947,7 +947,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 396,
+            "latencyMs": 379,
             "failure": null
           },
           {
@@ -962,7 +962,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 353,
+            "latencyMs": 346,
             "failure": null
           },
           {
@@ -977,7 +977,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 359,
+            "latencyMs": 376,
             "failure": null
           },
           {
@@ -992,7 +992,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 381,
+            "latencyMs": 372,
             "failure": null
           },
           {
@@ -1007,7 +1007,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 380,
+            "latencyMs": 401,
             "failure": null
           },
           {
@@ -1022,7 +1022,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 365,
+            "latencyMs": 353,
             "failure": null
           },
           {
@@ -1037,7 +1037,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 406,
+            "latencyMs": 375,
             "failure": null
           },
           {
@@ -1052,7 +1052,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 400,
+            "latencyMs": 392,
             "failure": null
           },
           {
@@ -1067,7 +1067,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 453,
+            "latencyMs": 353,
             "failure": null
           },
           {
@@ -1082,7 +1082,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 574,
+            "latencyMs": 351,
             "failure": null
           },
           {
@@ -1097,7 +1097,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 486,
+            "latencyMs": 370,
             "failure": null
           },
           {
@@ -1112,7 +1112,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 989,
+            "latencyMs": 371,
             "failure": null
           },
           {
@@ -1127,7 +1127,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 374,
+            "latencyMs": 346,
             "failure": null
           },
           {
@@ -1142,7 +1142,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 370,
+            "latencyMs": 371,
             "failure": null
           },
           {
@@ -1157,7 +1157,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 449,
+            "latencyMs": 355,
             "failure": null
           },
           {
@@ -1172,7 +1172,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 390,
+            "latencyMs": 371,
             "failure": null
           },
           {
@@ -1187,7 +1187,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 356,
+            "latencyMs": 429,
             "failure": null
           },
           {
@@ -1221,7 +1221,7 @@
             "extra": [
               "open_question"
             ],
-            "latencyMs": 365,
+            "latencyMs": 364,
             "failure": null
           },
           {
@@ -1236,7 +1236,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 360,
+            "latencyMs": 343,
             "failure": null
           },
           {
@@ -1251,7 +1251,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 489,
+            "latencyMs": 366,
             "failure": null
           },
           {
@@ -1266,7 +1266,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 446,
+            "latencyMs": 351,
             "failure": null
           },
           {
@@ -1281,7 +1281,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 391,
+            "latencyMs": 381,
             "failure": null
           },
           {
@@ -1296,7 +1296,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 375,
+            "latencyMs": 406,
             "failure": null
           },
           {
@@ -1311,7 +1311,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 430,
+            "latencyMs": 392,
             "failure": null
           },
           {
@@ -1326,7 +1326,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 371,
+            "latencyMs": 378,
             "failure": null
           },
           {
@@ -1341,7 +1341,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 377,
+            "latencyMs": 392,
             "failure": null
           },
           {
@@ -1352,18 +1352,24 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 379,
+            "latencyMs": 375,
             "failure": null
           },
           {
             "text": "Okay, thank you.",
             "kind": "off_topic",
             "expected": [],
-            "actual": [],
-            "exact": true,
+            "actual": [
+              "intro_consent",
+              "open_question"
+            ],
+            "exact": false,
             "missed": [],
-            "extra": [],
-            "latencyMs": 357,
+            "extra": [
+              "intro_consent",
+              "open_question"
+            ],
+            "latencyMs": 400,
             "failure": null
           },
           {
@@ -1374,7 +1380,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 337,
+            "latencyMs": 349,
             "failure": null
           },
           {
@@ -1385,7 +1391,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 362,
+            "latencyMs": 360,
             "failure": null
           },
           {
@@ -1396,7 +1402,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 346,
+            "latencyMs": 344,
             "failure": null
           },
           {
@@ -1407,7 +1413,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 339,
+            "latencyMs": 398,
             "failure": null
           },
           {
@@ -1415,20 +1421,14 @@
             "kind": "off_topic",
             "expected": [],
             "actual": [
-              "intro_consent",
-              "open_question",
-              "onset_duration",
-              "haemoptysis"
+              "onset_duration"
             ],
             "exact": false,
             "missed": [],
             "extra": [
-              "intro_consent",
-              "open_question",
-              "onset_duration",
-              "haemoptysis"
+              "onset_duration"
             ],
-            "latencyMs": 508,
+            "latencyMs": 389,
             "failure": null
           },
           {
@@ -1439,7 +1439,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 345,
+            "latencyMs": 369,
             "failure": null
           },
           {
@@ -1460,7 +1460,7 @@
               "onset_duration",
               "haemoptysis"
             ],
-            "latencyMs": 504,
+            "latencyMs": 464,
             "failure": null
           },
           {
@@ -1475,7 +1475,7 @@
             "extra": [
               "onset_duration"
             ],
-            "latencyMs": 516,
+            "latencyMs": 433,
             "failure": null
           },
           {
@@ -1486,7 +1486,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 357,
+            "latencyMs": 363,
             "failure": null
           },
           {
@@ -1497,7 +1497,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 363,
+            "latencyMs": 344,
             "failure": null
           },
           {
@@ -1514,7 +1514,7 @@
               "smoking",
               "haemoptysis"
             ],
-            "latencyMs": 380,
+            "latencyMs": 375,
             "failure": null
           },
           {
@@ -1525,7 +1525,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 386,
+            "latencyMs": 400,
             "failure": null
           },
           {
@@ -1542,13 +1542,13 @@
               "haemoptysis",
               "ice_concerns"
             ],
-            "latencyMs": 422,
+            "latencyMs": 430,
             "failure": null
           }
         ]
       },
       {
-        "setting": "Super, reasoning off",
+        "setting": "Super, reasoning off (default)",
         "model": "nvidia/nemotron-3-super-120b-a12b",
         "thinking": false,
         "maxTokens": 800,
@@ -1586,14 +1586,14 @@
             }
           ],
           "falseUnlockRate": 0,
-          "meanLatencyMs": 1080.44,
-          "p95LatencyMs": 1675
+          "meanLatencyMs": 978.22,
+          "p95LatencyMs": 1084
         },
         "cost": {
           "calls": 50,
-          "costUsd": 0.011184900000000001,
-          "meanLatencyMs": 1079,
-          "p95LatencyMs": 1671
+          "costUsd": 0.011192099999999996,
+          "meanLatencyMs": 976,
+          "p95LatencyMs": 1082
         },
         "results": [
           {
@@ -1608,7 +1608,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 956,
+            "latencyMs": 949,
             "failure": null
           },
           {
@@ -1623,7 +1623,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 906,
+            "latencyMs": 913,
             "failure": null
           },
           {
@@ -1638,7 +1638,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 928,
+            "latencyMs": 1057,
             "failure": null
           },
           {
@@ -1653,7 +1653,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 873,
+            "latencyMs": 897,
             "failure": null
           },
           {
@@ -1668,7 +1668,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 913,
+            "latencyMs": 892,
             "failure": null
           },
           {
@@ -1687,7 +1687,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 923,
+            "latencyMs": 918,
             "failure": null
           },
           {
@@ -1706,7 +1706,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 940,
+            "latencyMs": 954,
             "failure": null
           },
           {
@@ -1725,7 +1725,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 969,
+            "latencyMs": 956,
             "failure": null
           },
           {
@@ -1744,7 +1744,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 947,
+            "latencyMs": 954,
             "failure": null
           },
           {
@@ -1762,7 +1762,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 957,
+            "latencyMs": 942,
             "failure": null
           },
           {
@@ -1777,7 +1777,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 957,
+            "latencyMs": 978,
             "failure": null
           },
           {
@@ -1792,7 +1792,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 952,
+            "latencyMs": 967,
             "failure": null
           },
           {
@@ -1807,7 +1807,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1038,
+            "latencyMs": 1113,
             "failure": null
           },
           {
@@ -1822,7 +1822,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 991,
+            "latencyMs": 984,
             "failure": null
           },
           {
@@ -1837,7 +1837,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1498,
+            "latencyMs": 1002,
             "failure": null
           },
           {
@@ -1852,7 +1852,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1062,
+            "latencyMs": 1005,
             "failure": null
           },
           {
@@ -1867,7 +1867,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 964,
+            "latencyMs": 1064,
             "failure": null
           },
           {
@@ -1882,7 +1882,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 983,
+            "latencyMs": 1027,
             "failure": null
           },
           {
@@ -1897,7 +1897,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 993,
+            "latencyMs": 986,
             "failure": null
           },
           {
@@ -1912,7 +1912,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1030,
+            "latencyMs": 1049,
             "failure": null
           },
           {
@@ -1927,7 +1927,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1079,
+            "latencyMs": 986,
             "failure": null
           },
           {
@@ -1942,7 +1942,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 964,
+            "latencyMs": 954,
             "failure": null
           },
           {
@@ -1957,7 +1957,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 933,
+            "latencyMs": 996,
             "failure": null
           },
           {
@@ -1972,7 +1972,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 970,
+            "latencyMs": 987,
             "failure": null
           },
           {
@@ -1987,7 +1987,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2269,
+            "latencyMs": 1076,
             "failure": null
           },
           {
@@ -2002,7 +2002,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 964,
+            "latencyMs": 921,
             "failure": null
           },
           {
@@ -2017,7 +2017,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1026,
+            "latencyMs": 922,
             "failure": null
           },
           {
@@ -2032,7 +2032,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 904,
+            "latencyMs": 933,
             "failure": null
           },
           {
@@ -2047,7 +2047,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3838,
+            "latencyMs": 960,
             "failure": null
           },
           {
@@ -2062,7 +2062,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 919,
+            "latencyMs": 917,
             "failure": null
           },
           {
@@ -2077,7 +2077,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 953,
+            "latencyMs": 943,
             "failure": null
           },
           {
@@ -2092,7 +2092,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1147,
+            "latencyMs": 965,
             "failure": null
           },
           {
@@ -2122,7 +2122,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 962,
+            "latencyMs": 996,
             "failure": null
           },
           {
@@ -2137,7 +2137,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 941,
+            "latencyMs": 1008,
             "failure": null
           },
           {
@@ -2148,7 +2148,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 954,
+            "latencyMs": 976,
             "failure": null
           },
           {
@@ -2159,7 +2159,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 905,
+            "latencyMs": 899,
             "failure": null
           },
           {
@@ -2170,7 +2170,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 915,
+            "latencyMs": 987,
             "failure": null
           },
           {
@@ -2181,7 +2181,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 945,
+            "latencyMs": 965,
             "failure": null
           },
           {
@@ -2192,7 +2192,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1011,
+            "latencyMs": 1089,
             "failure": null
           },
           {
@@ -2203,7 +2203,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1675,
+            "latencyMs": 1041,
             "failure": null
           },
           {
@@ -2214,7 +2214,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 906,
+            "latencyMs": 903,
             "failure": null
           },
           {
@@ -2225,7 +2225,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1090,
+            "latencyMs": 1065,
             "failure": null
           },
           {
@@ -2236,7 +2236,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 955,
+            "latencyMs": 1084,
             "failure": null
           },
           {
@@ -2247,7 +2247,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1061,
+            "latencyMs": 919,
             "failure": null
           },
           {
@@ -2258,7 +2258,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 956,
+            "latencyMs": 919,
             "failure": null
           },
           {
@@ -2269,7 +2269,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 966,
+            "latencyMs": 970,
             "failure": null
           },
           {
@@ -2280,7 +2280,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1079,
+            "latencyMs": 944,
             "failure": null
           },
           {
@@ -2291,7 +2291,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 932,
+            "latencyMs": 958,
             "failure": null
           },
           {
@@ -2302,7 +2302,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1001,
+            "latencyMs": 999,
             "failure": null
           }
         ]
@@ -2346,14 +2346,14 @@
             }
           ],
           "falseUnlockRate": 0,
-          "meanLatencyMs": 3344.62,
-          "p95LatencyMs": 5932
+          "meanLatencyMs": 3212.96,
+          "p95LatencyMs": 4902
         },
         "cost": {
           "calls": 50,
-          "costUsd": 0.028119300000000003,
-          "meanLatencyMs": 3343,
-          "p95LatencyMs": 5931
+          "costUsd": 0.028262400000000014,
+          "meanLatencyMs": 3211,
+          "p95LatencyMs": 4900
         },
         "results": [
           {
@@ -2368,7 +2368,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2418,
+            "latencyMs": 2725,
             "failure": null
           },
           {
@@ -2383,7 +2383,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3498,
+            "latencyMs": 3452,
             "failure": null
           },
           {
@@ -2398,7 +2398,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2796,
+            "latencyMs": 2822,
             "failure": null
           },
           {
@@ -2413,7 +2413,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2678,
+            "latencyMs": 2608,
             "failure": null
           },
           {
@@ -2428,7 +2428,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3668,
+            "latencyMs": 2784,
             "failure": null
           },
           {
@@ -2443,7 +2443,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2109,
+            "latencyMs": 2162,
             "failure": null
           },
           {
@@ -2458,7 +2458,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 8537,
+            "latencyMs": 2947,
             "failure": null
           },
           {
@@ -2473,7 +2473,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 5932,
+            "latencyMs": 3220,
             "failure": null
           },
           {
@@ -2488,7 +2488,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 4862,
+            "latencyMs": 3025,
             "failure": null
           },
           {
@@ -2503,7 +2503,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3021,
+            "latencyMs": 2884,
             "failure": null
           },
           {
@@ -2518,7 +2518,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2072,
+            "latencyMs": 3935,
             "failure": null
           },
           {
@@ -2533,7 +2533,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2950,
+            "latencyMs": 3374,
             "failure": null
           },
           {
@@ -2548,7 +2548,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2712,
+            "latencyMs": 2598,
             "failure": null
           },
           {
@@ -2563,7 +2563,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3658,
+            "latencyMs": 3331,
             "failure": null
           },
           {
@@ -2578,7 +2578,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2901,
+            "latencyMs": 2997,
             "failure": null
           },
           {
@@ -2593,7 +2593,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3562,
+            "latencyMs": 3322,
             "failure": null
           },
           {
@@ -2608,7 +2608,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2923,
+            "latencyMs": 3847,
             "failure": null
           },
           {
@@ -2623,7 +2623,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3177,
+            "latencyMs": 4902,
             "failure": null
           },
           {
@@ -2638,7 +2638,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3689,
+            "latencyMs": 4372,
             "failure": null
           },
           {
@@ -2653,7 +2653,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3257,
+            "latencyMs": 3643,
             "failure": null
           },
           {
@@ -2668,7 +2668,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2862,
+            "latencyMs": 2960,
             "failure": null
           },
           {
@@ -2683,7 +2683,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3468,
+            "latencyMs": 3726,
             "failure": null
           },
           {
@@ -2698,7 +2698,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2733,
+            "latencyMs": 5552,
             "failure": null
           },
           {
@@ -2713,7 +2713,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3734,
+            "latencyMs": 3420,
             "failure": null
           },
           {
@@ -2728,7 +2728,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2832,
+            "latencyMs": 2961,
             "failure": null
           },
           {
@@ -2743,7 +2743,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 4012,
+            "latencyMs": 2797,
             "failure": null
           },
           {
@@ -2761,7 +2761,7 @@
             "extra": [
               "open_question"
             ],
-            "latencyMs": 4654,
+            "latencyMs": 3539,
             "failure": null
           },
           {
@@ -2776,7 +2776,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2520,
+            "latencyMs": 3239,
             "failure": null
           },
           {
@@ -2791,7 +2791,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3202,
+            "latencyMs": 6008,
             "failure": null
           },
           {
@@ -2806,7 +2806,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2608,
+            "latencyMs": 2706,
             "failure": null
           },
           {
@@ -2821,7 +2821,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3025,
+            "latencyMs": 3864,
             "failure": null
           },
           {
@@ -2836,7 +2836,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2709,
+            "latencyMs": 2730,
             "failure": null
           },
           {
@@ -2851,7 +2851,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3986,
+            "latencyMs": 4193,
             "failure": null
           },
           {
@@ -2866,7 +2866,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3195,
+            "latencyMs": 3790,
             "failure": null
           },
           {
@@ -2881,7 +2881,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3282,
+            "latencyMs": 3120,
             "failure": null
           },
           {
@@ -2892,7 +2892,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3318,
+            "latencyMs": 2752,
             "failure": null
           },
           {
@@ -2903,7 +2903,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 4320,
+            "latencyMs": 3208,
             "failure": null
           },
           {
@@ -2914,7 +2914,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2633,
+            "latencyMs": 2232,
             "failure": null
           },
           {
@@ -2925,7 +2925,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3036,
+            "latencyMs": 2118,
             "failure": null
           },
           {
@@ -2936,7 +2936,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3029,
+            "latencyMs": 2892,
             "failure": null
           },
           {
@@ -2947,7 +2947,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2632,
+            "latencyMs": 3309,
             "failure": null
           },
           {
@@ -2958,7 +2958,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2180,
+            "latencyMs": 2169,
             "failure": null
           },
           {
@@ -2969,7 +2969,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2095,
+            "latencyMs": 2152,
             "failure": null
           },
           {
@@ -2980,7 +2980,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 8738,
+            "latencyMs": 2871,
             "failure": null
           },
           {
@@ -2991,7 +2991,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3299,
+            "latencyMs": 3416,
             "failure": null
           },
           {
@@ -3002,7 +3002,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2618,
+            "latencyMs": 2867,
             "failure": null
           },
           {
@@ -3013,7 +3013,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2255,
+            "latencyMs": 2231,
             "failure": null
           },
           {
@@ -3024,7 +3024,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 3314,
+            "latencyMs": 3273,
             "failure": null
           },
           {
@@ -3035,7 +3035,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2514,
+            "latencyMs": 2452,
             "failure": null
           },
           {
@@ -3046,7 +3046,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 2008,
+            "latencyMs": 3151,
             "failure": null
           }
         ]
@@ -3090,14 +3090,14 @@
             }
           ],
           "falseUnlockRate": 0,
-          "meanLatencyMs": 908.46,
-          "p95LatencyMs": 1027
+          "meanLatencyMs": 954.46,
+          "p95LatencyMs": 1132
         },
         "cost": {
           "calls": 50,
-          "costUsd": 0.03957500000000001,
-          "meanLatencyMs": 907,
-          "p95LatencyMs": 1025
+          "costUsd": 0.03965000000000004,
+          "meanLatencyMs": 952,
+          "p95LatencyMs": 1131
         },
         "results": [
           {
@@ -3112,7 +3112,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 896,
+            "latencyMs": 1214,
             "failure": null
           },
           {
@@ -3127,7 +3127,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 875,
+            "latencyMs": 897,
             "failure": null
           },
           {
@@ -3142,7 +3142,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 912,
+            "latencyMs": 873,
             "failure": null
           },
           {
@@ -3157,7 +3157,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 886,
+            "latencyMs": 898,
             "failure": null
           },
           {
@@ -3172,7 +3172,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 875,
+            "latencyMs": 895,
             "failure": null
           },
           {
@@ -3190,7 +3190,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 1032,
+            "latencyMs": 1077,
             "failure": null
           },
           {
@@ -3205,7 +3205,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 906,
+            "latencyMs": 920,
             "failure": null
           },
           {
@@ -3223,7 +3223,7 @@
             "extra": [
               "intro_consent"
             ],
-            "latencyMs": 964,
+            "latencyMs": 1006,
             "failure": null
           },
           {
@@ -3238,7 +3238,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 854,
+            "latencyMs": 881,
             "failure": null
           },
           {
@@ -3253,7 +3253,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 851,
+            "latencyMs": 863,
             "failure": null
           },
           {
@@ -3268,7 +3268,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 920,
+            "latencyMs": 908,
             "failure": null
           },
           {
@@ -3283,7 +3283,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 879,
+            "latencyMs": 995,
             "failure": null
           },
           {
@@ -3298,7 +3298,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 917,
+            "latencyMs": 978,
             "failure": null
           },
           {
@@ -3313,7 +3313,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 886,
+            "latencyMs": 1132,
             "failure": null
           },
           {
@@ -3328,7 +3328,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 911,
+            "latencyMs": 926,
             "failure": null
           },
           {
@@ -3343,7 +3343,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 937,
+            "latencyMs": 982,
             "failure": null
           },
           {
@@ -3358,7 +3358,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 882,
+            "latencyMs": 961,
             "failure": null
           },
           {
@@ -3373,7 +3373,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 898,
+            "latencyMs": 954,
             "failure": null
           },
           {
@@ -3388,7 +3388,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 895,
+            "latencyMs": 959,
             "failure": null
           },
           {
@@ -3403,7 +3403,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 888,
+            "latencyMs": 974,
             "failure": null
           },
           {
@@ -3418,7 +3418,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 852,
+            "latencyMs": 1100,
             "failure": null
           },
           {
@@ -3433,7 +3433,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 903,
+            "latencyMs": 891,
             "failure": null
           },
           {
@@ -3448,7 +3448,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 874,
+            "latencyMs": 866,
             "failure": null
           },
           {
@@ -3463,7 +3463,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 899,
+            "latencyMs": 963,
             "failure": null
           },
           {
@@ -3478,7 +3478,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 894,
+            "latencyMs": 927,
             "failure": null
           },
           {
@@ -3493,7 +3493,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 898,
+            "latencyMs": 921,
             "failure": null
           },
           {
@@ -3508,7 +3508,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 903,
+            "latencyMs": 947,
             "failure": null
           },
           {
@@ -3523,7 +3523,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 909,
+            "latencyMs": 896,
             "failure": null
           },
           {
@@ -3538,7 +3538,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 923,
+            "latencyMs": 907,
             "failure": null
           },
           {
@@ -3553,7 +3553,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 962,
+            "latencyMs": 892,
             "failure": null
           },
           {
@@ -3568,7 +3568,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 904,
+            "latencyMs": 927,
             "failure": null
           },
           {
@@ -3583,7 +3583,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1027,
+            "latencyMs": 1183,
             "failure": null
           },
           {
@@ -3598,7 +3598,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 889,
+            "latencyMs": 995,
             "failure": null
           },
           {
@@ -3613,7 +3613,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 906,
+            "latencyMs": 948,
             "failure": null
           },
           {
@@ -3628,7 +3628,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 954,
+            "latencyMs": 877,
             "failure": null
           },
           {
@@ -3650,7 +3650,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 888,
+            "latencyMs": 882,
             "failure": null
           },
           {
@@ -3661,7 +3661,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 889,
+            "latencyMs": 980,
             "failure": null
           },
           {
@@ -3672,7 +3672,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 877,
+            "latencyMs": 974,
             "failure": null
           },
           {
@@ -3683,7 +3683,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 863,
+            "latencyMs": 923,
             "failure": null
           },
           {
@@ -3694,7 +3694,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 882,
+            "latencyMs": 1129,
             "failure": null
           },
           {
@@ -3705,7 +3705,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 1175,
+            "latencyMs": 949,
             "failure": null
           },
           {
@@ -3716,7 +3716,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 867,
+            "latencyMs": 926,
             "failure": null
           },
           {
@@ -3727,7 +3727,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 882,
+            "latencyMs": 938,
             "failure": null
           },
           {
@@ -3738,7 +3738,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 915,
+            "latencyMs": 968,
             "failure": null
           },
           {
@@ -3749,7 +3749,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 909,
+            "latencyMs": 984,
             "failure": null
           },
           {
@@ -3760,7 +3760,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 928,
+            "latencyMs": 913,
             "failure": null
           },
           {
@@ -3771,7 +3771,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 879,
+            "latencyMs": 888,
             "failure": null
           },
           {
@@ -3782,7 +3782,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 943,
+            "latencyMs": 928,
             "failure": null
           },
           {
@@ -3793,7 +3793,7 @@
             "exact": true,
             "missed": [],
             "extra": [],
-            "latencyMs": 896,
+            "latencyMs": 939,
             "failure": null
           }
         ]
