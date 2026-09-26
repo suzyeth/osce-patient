@@ -1,7 +1,7 @@
 import { quoteLabels, registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
 import { DOMAIN_LABEL, FEEDBACK_STATEMENTS } from '../feedback.js';
 import { CLINICAL_DISCLOSURE_RULES } from '../safety.js';
-import { RUBRIC_SOURCES, STANDARD_RUBRIC } from '../cases/rubric.js';
+import { redFlagSources, RUBRIC_SOURCES, STANDARD_RUBRIC } from '../cases/rubric.js';
 
 const GMC_SOURCE = 'GMC, Understanding your results (PLAB 2 guide), read 2026-09-26';
 
@@ -161,6 +161,7 @@ export const UK_CLINICAL_HISTORY: DomainPack = registerPack({
   openingItemId: 'open_question',
   closingItemId: 'closing',
   rubric: STANDARD_RUBRIC,
-  sources: RUBRIC_SOURCES,
+  // The standard items plus the red flags a case can add, so no item in a built case shows no source.
+  sources: { ...RUBRIC_SOURCES, ...redFlagSources() },
   statements,
 });

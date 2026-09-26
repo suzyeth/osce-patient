@@ -75,7 +75,10 @@ function cases(): Record<string, PatientCase> {
  * deliberately leaves the later items unasked so the sample shows misses as well as hits.
  */
 async function sampleReport(all: Record<string, PatientCase>) {
-  const patientCase = Object.values(all)[0]!;
+  // Prefer a case with a critical item, so the one thing most visitors see demonstrates a missed
+  // critical item as well as earned marks. Falls back to whatever is first.
+  const cases = Object.values(all);
+  const patientCase = cases.find((c) => c.rubric.some((r) => r.critical)) ?? cases[0]!;
   const judge = offlineJudge();
   const patient = offlinePatient();
   let state = initialSessionState();

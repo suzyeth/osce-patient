@@ -176,6 +176,15 @@ export const RUBRIC_SOURCES: Readonly<Record<string, string>> = {
 export const STANDARD_RUBRIC_IDS: readonly string[] = STANDARD_RUBRIC.map((r) => r.id);
 
 /**
+ * A red flag item is promoted by RED_FLAG_HINTS below, from wording the patient used in the source
+ * transcript, so its source is that list and the transcript rather than a published guideline. That
+ * is weaker than the standard items and the report says so, which is better than showing no source
+ * at all and leaving a reader unable to tell whether one exists.
+ */
+const RED_FLAG_SOURCE =
+  "promoted to a critical item by this repository's own red-flag wording list (RED_FLAG_HINTS in src/cases/rubric.ts) because the patient's own words in the source transcript matched it; no published guideline is claimed, and the fact it guards carries the transcript line it came from";
+
+/**
  * Wording that usually means a doctor must act the same day. A model filing one of these as
  * ordinary history is the mistake this catches; a person then decides. These are prompts for a
  * human reader, not a clinical rule, and the list is deliberately short and literal.
@@ -201,6 +210,11 @@ const RED_FLAG_HINTS: ReadonlyArray<readonly [RegExp, string]> = [
 
 /** Diagnoses a patient would rarely name unprompted; worth a second look in the review. */
 const DIAGNOSIS_WORDS = /\b(pulmonary embolism|embolism|myocardial infarction|infarction|deep vein thrombosis|dvt|carcinoma|malignancy|angina|copd)\b/i;
+
+/** Sources for the red-flag items, so every item in a built case can say where it came from. */
+export function redFlagSources(): Record<string, string> {
+  return Object.fromEntries(Object.values(RED_FLAG_ITEMS).map((f) => [f.id, RED_FLAG_SOURCE]));
+}
 
 /** The rubric item a red flag becomes, so a case cannot be built without one when the words are there. */
 const RED_FLAG_ITEMS: Readonly<Record<string, { id: string; label: string; exampleQuestion: string; cues: string[] }>> = {
