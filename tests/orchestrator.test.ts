@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { appendTurn, FALLBACK_REPLY, runTurn } from '../src/orchestrator.js';
+import { appendTurn, FALLBACK_REPLY, respondGuarded, runTurn } from '../src/orchestrator.js';
 import { initialSessionState } from '../src/state.js';
 import { safetyMessage, safetyMessageFor } from '../src/safety.js';
+import { OFF_CASE_FALLBACK } from '../src/offCase.js';
 import { UK_CLINICAL_HISTORY } from '../src/domains/index.js';
 
 const SIGNPOSTING = UK_CLINICAL_HISTORY.safety.signposting;
@@ -23,6 +24,42 @@ function recordingPatient() {
     },
   };
 }
+
+describe('the off-case answer guard', () => {
+  // respondGuarded can hold this line; what is missing is knowing which turns to hold it on, which
+  // needs the judge to say so. These tests pin the machinery so that day only the caller changes.
+  const input = (studentInput: string) => ({ context: 'You are a patient.', studentInput, history: [], relevantFacts: [] });
+
+  it('replaces an answer that asserts something, when it is told the case says nothing', async () => {
+    const patient = scriptedPatient('No chest pain. Just this stubborn cough.', 'No, my weight has been steady.');
+    const r = await respondGuarded(patient, input('Have you had any chest pain?'), [], true);
+    expect(patient.calls).toBe(2);
+    expect(r.reply).toBe(OFF_CASE_FALLBACK);
+    expect(r.guardTriggered).toBe(true);
+  });
+
+  it('keeps a hedge the model offers first, and asks nothing twice', async () => {
+    const patient = scriptedPatient("I'm not sure.");
+    const r = await respondGuarded(patient, input('Have you had any chest pain?'), [], true);
+    expect(patient.calls).toBe(1);
+    expect(r.reply).toBe("I'm not sure.");
+    expect(r.guardTriggered).toBe(false);
+  });
+
+  it('takes the hedge on the second try without replacing it', async () => {
+    const patient = scriptedPatient('No.', "I haven't noticed anything like that.");
+    const r = await respondGuarded(patient, input('Do you get night sweats?'), [], true);
+    expect(patient.calls).toBe(2);
+    expect(r.reply).toBe("I haven't noticed anything like that.");
+  });
+
+  it('leaves everything alone when it is not told the case is silent', async () => {
+    const patient = scriptedPatient('No chest pain. Just this stubborn cough.');
+    const r = await respondGuarded(patient, input('Have you had any chest pain?'), [], false);
+    expect(patient.calls).toBe(1);
+    expect(r.reply).toBe('No chest pain. Just this stubborn cough.');
+  });
+});
 
 describe('runTurn', () => {
   it('unlocks the asked fact and records the rubric hit', async () => {

@@ -5,6 +5,7 @@ import { isPublic, unlockFacts } from './gates.js';
 import { buildPatientContext } from './patientContext.js';
 import { forbiddenTerms, guardReply } from './patientGuard.js';
 import { looksLikeSelfDisclosure, safetyMessage, safetyMessageFor } from './safety.js';
+import { isOffCaseAnswer, OFF_CASE_FALLBACK, OFF_CASE_WARNING } from './offCase.js';
 import { packFor } from './domains/index.js';
 import type { DisclosureCategory, SafetyClient, SafetyCheck } from './nebius/safetyClient.js';
 import type { Signposting } from './safety.js';
@@ -82,15 +83,34 @@ interface GuardedReply {
   guardTriggered: boolean;
 }
 
-/** One retry when the reply is empty or says a locked term; then an in-character fallback or redaction. */
-async function respondGuarded(patient: PatientClient, base: PatientInput, forbidden: readonly string[]): Promise<GuardedReply> {
+/**
+ * One retry when the reply is empty, says a locked term, or asserts something on a turn the case has
+ * nothing to say about; then an in-character fallback or redaction.
+ *
+ * `offCase` is the third of those: measured, the prompt alone does not stop the model answering a
+ * question the case never mentions, so the code can hold the line. runTurn passes false today,
+ * because deciding which turns are off-case needs a signal the judge does not yet return; this is
+ * exported so that guard is under test until it can be switched on. See src/offCase.ts.
+ */
+export async function respondGuarded(
+  patient: PatientClient,
+  base: PatientInput,
+  forbidden: readonly string[],
+  offCase: boolean,
+): Promise<GuardedReply> {
+  const acceptable = (reply: string): boolean => guardReply(reply, forbidden).ok && (!offCase || isOffCaseAnswer(reply));
   const first = await patient.respond(base);
   const firstBlank = first.trim() === '';
-  if (!firstBlank && guardReply(first, forbidden).ok) return { reply: first, guardTriggered: false };
-  const retry = await patient.respond({ ...base, context: base.context + (firstBlank ? EMPTY_WARNING : LEAK_WARNING) });
-  if (retry.trim() === '') return { reply: FALLBACK_REPLY, guardTriggered: !firstBlank };
+  if (!firstBlank && acceptable(first)) return { reply: first, guardTriggered: false };
+  const warning = firstBlank ? EMPTY_WARNING : guardReply(first, forbidden).ok ? OFF_CASE_WARNING : LEAK_WARNING;
+  const retry = await patient.respond({ ...base, context: base.context + warning });
+  if (retry.trim() === '') return { reply: offCase ? OFF_CASE_FALLBACK : FALLBACK_REPLY, guardTriggered: !firstBlank };
   const retryGuard = guardReply(retry, forbidden);
-  return { reply: retryGuard.ok ? retry : retryGuard.sanitized, guardTriggered: !firstBlank || !retryGuard.ok };
+  // A locked term is redacted; an off-case answer that still asserts something is replaced outright,
+  // because there is nothing in it worth keeping.
+  if (!retryGuard.ok) return { reply: retryGuard.sanitized, guardTriggered: true };
+  if (offCase && !isOffCaseAnswer(retry)) return { reply: OFF_CASE_FALLBACK, guardTriggered: true };
+  return { reply: retry, guardTriggered: !firstBlank };
 }
 
 export async function runTurn(
@@ -138,7 +158,8 @@ export async function runTurn(
     history,
     relevantFacts: relevantFacts(patientCase, nextState, verdict, newlyUnlocked),
   };
-  const { reply, guardTriggered } = await respondGuarded(patient, base, forbiddenTerms(patientCase, nextState));
+  // Enforcing the off-case answer here needs a signal this engine does not have: see offCase.ts.
+  const { reply, guardTriggered } = await respondGuarded(patient, base, forbiddenTerms(patientCase, nextState), false);
   return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false, blockedBy: null, blockedCategory: null };
 }
 

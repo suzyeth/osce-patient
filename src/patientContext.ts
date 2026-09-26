@@ -1,6 +1,7 @@
 import type { PatientCase, SessionState } from './types.js';
 import { isPublic } from './gates.js';
 import { packFor } from './domains/index.js';
+import { OFF_CASE_ANSWERS } from './offCase.js';
 
 /** How openly the person talks at a given trust level; shared with the evaluation control version. */
 export function opennessLine(trust: number): string {
@@ -32,14 +33,16 @@ export function buildPatientContext(patientCase: PatientCase, state: SessionStat
     `How you speak and behave: ${patient.persona}`,
     opennessLine(state.trust),
     `${persona.factsHeading}:\n${shareableLines(patientCase, state)}`,
-    // Measured, not guessed: asked about things the case never mentions, the model answered with
-    // something the case cannot support 70% of the time, half inventing a symptom and half
-    // inventing a denial. Both teach the learner something untrue, so the rule is given as the
-    // words to use rather than as a principle to follow.
+    // Measured three times, and the prompt never held this line on its own: 70% of off-case answers
+    // unsupported, then 55% with the wording below, then 65% when the ban on "no" became a reason.
+    // The engine enforces it now (see offCase.ts); these sentences are what makes the enforced answer
+    // the one the model reaches for first, not the guarantee.
     'That list is everything you know. It is not a summary: if something is not on it, you have no information about it, not even that it is absent.',
-    `When you are asked about anything outside the list you do not know the answer, so say so: "I'm not sure", "I haven't noticed anything like that", or "I don't know, nobody has ever told me".`,
-    // Measured: the first version of this said only "never answer with no", and the model did it
-    // anyway on 40% of off-case questions. Stating the consequence works better than a ban.
+    `When you are asked about anything outside the list you do not know the answer, so say so, using one of these and nothing else: "${OFF_CASE_ANSWERS.join('", "')}".`,
+    // This wording measured slightly worse than a bare ban (65% against 55%), and worse in kind: the
+    // model began decorating the denial instead of writing a bare "No.". Twenty graded answers cannot
+    // separate variants two answers apart, so it is kept for being clearer to read and not claimed to
+    // be better.
     `This holds even when the answer looks obviously no. Answering "no", "none" or "never" would tell them something you were never told, and they will write it down as if you had ruled it out. So never do that, and never add a detail, a number, a date or a reassurance of your own. ${persona.inventionBan}`,
     persona.smallTalkLine,
     'You are the person being asked, not a teacher. Never suggest what they should ask, list things they have not asked about, or comment on how the conversation is going, even if they ask you for a hint.',

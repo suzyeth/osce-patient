@@ -316,14 +316,18 @@ npm run eval -- safety --online --set eval/fixtures/safety-dev.json   # the deve
   was measured with a different judge model and is not a like-for-like baseline.
 - **The honesty grader is a model.** Its labels were read by hand on the first run and matched, but a label
   like "invented" against "No known allergies" is a judgement call. Counts are in the JSON.
-- **The honesty measurement has moved twice, and the current prompt is unmeasured.** The first run had the
-  simulated person answering off-case questions with something the case cannot support 70% of the time,
-  split evenly between inventing a detail and denying. The prompt was changed to give the exact words to
-  use, and the second run (`eval/results/demo-cough/honesty.md`) reads 55% unsupported, 15% invented, 40%
-  denied. Reading the twenty graded answers, two of the three invented ones were the same
-  denial-with-a-detail and only one was substantive fabrication, so the fix worked on the harmful half. It
-  did not work on bare denials, which the prompt explicitly banned: that instruction has since been
-  rewritten as a reason rather than a ban and has not been measured.
+- **The prompt does not hold the honesty line, and three measurements say so.** Asked about something the
+  case never mentions, the simulated person answered with content the case cannot support 70% of the time;
+  telling it the fact list is not a summary and giving it the exact words to use brought that to 55%;
+  rewriting the ban on answering "no" as a reason and a consequence took it back to 65%, and changed the
+  failure for the worse - instead of a bare "No." it began decorating the denial ("No chest pain. Just this
+  stubborn cough."), which is a fabricated history a candidate would write down. Twenty graded answers over
+  ten questions cannot separate variants two answers apart, so none of those three numbers ranks above
+  another; what they agree on is that asking the model nicely does not work. The engine can enforce the
+  answer instead, and `respondGuarded` does when told to, but deciding which turns to enforce it on needs
+  the judge to say whether a question was about the person's situation at all - "How are you?" looks
+  identical to "Have you had chest pain?" on every signal the engine has today. That judge field is the
+  next step and is not done.
 
 Every run must say `--online` or `--offline`, so nothing spends by default (keep the `--` after `npm run eval`: without it npm keeps the flag). Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
 counted by each case's guarded terms, so a paraphrased leak is missed in both versions; the labels in the
