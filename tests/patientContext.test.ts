@@ -24,6 +24,17 @@ describe('buildPatientContext', () => {
     expect(ctx).toContain('I smoke about twenty a day');
   });
 
+  it('tells the patient the exact words for a question the case cannot answer', () => {
+    const prompt = buildPatientContext(c, initialSessionState());
+    // The measured failure was inventing an answer, half as a symptom and half as a denial, so
+    // the prompt gives the wording rather than the principle.
+    expect(prompt).toContain('not a summary');
+    expect(prompt).toContain("I'm not sure");
+    expect(prompt).toContain('Never answer such a question with "no"');
+    // Small talk is not a health question, and must not be answered with a hedge.
+    expect(prompt).toContain('ordinary conversation');
+  });
+
   it('changes openness with trust', () => {
     expect(buildPatientContext(c, { ...initialSessionState(), trust: 80 })).toContain('talk openly');
     expect(buildPatientContext(c, { ...initialSessionState(), trust: 10 })).toContain('minimal answers');
