@@ -1,5 +1,6 @@
 {
   "id": "case-gas0001",
+  "pack": "uk-clinical-history",
   "title": "Nausea and Vomiting Assessment",
   "candidateBrief": "You are a doctor in a GP surgery. Emma Clarke, 25, has come in about Persistent nausea and vomiting. Take a focused history. You have 8 minutes.",
   "durationSeconds": 480,
@@ -14,7 +15,7 @@
     {
       "id": "intro_consent",
       "domain": "interpersonal",
-      "label": "Introduces self and gains consent",
+      "label": "Introduces self and explains the purpose of the conversation",
       "critical": false,
       "exampleQuestion": "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?",
       "offlineCues": [
@@ -55,7 +56,7 @@
       "domain": "data_gathering",
       "label": "Asks what it is like and how bad it is",
       "critical": false,
-      "exampleQuestion": "What does it feel like, and how bad is it out of ten?",
+      "exampleQuestion": "What does it feel like, and how bad does it get?",
       "offlineCues": [
         "what does it feel",
         "how bad",
@@ -147,7 +148,7 @@
     {
       "id": "systems_review",
       "domain": "data_gathering",
-      "label": "Screens the other systems",
+      "label": "Screens the systems relevant to the complaint",
       "critical": false,
       "exampleQuestion": "Any weight loss, fevers or night sweats?",
       "offlineCues": [

@@ -14,6 +14,8 @@ import { createNemotronJudge } from '../nebius/judgeClient.js';
 import { createNemotronPatient } from '../nebius/patientClient.js';
 import { createNemotronSafety } from '../nebius/safetyClient.js';
 import { offlineJudge, offlinePatient } from '../offline.js';
+import { appendTurn, runTurn } from '../orchestrator.js';
+import type { ConversationTurn } from '../llm.js';
 import { computeReport } from '../report.js';
 import { initialSessionState } from '../state.js';
 import { validateCase } from '../validateCase.js';
@@ -60,18 +62,30 @@ function cases(): Record<string, PatientCase> {
   return found;
 }
 
-/** A finished station for anyone without a code: real scoring, from a fixed set of covered items. */
-function sampleReport(all: Record<string, PatientCase>) {
+/**
+ * A finished station for anyone without a code, and the only thing most visitors will see.
+ *
+ * It is a real session, played offline against the keyword doubles, not a hand-made state. The old
+ * version set rubricHits directly with an empty transcript, so every covered item in the sample came
+ * back with no quote: the public demonstration of a tool whose whole claim is that a mark carries the
+ * words that earned it was a page full of marks with nothing behind them. It also hard-coded clinical
+ * item ids, so a non-clinical case would have shown nothing covered at all.
+ *
+ * The questions are the case's own example questions, so this works for any domain pack, and it
+ * deliberately leaves the later items unasked so the sample shows misses as well as hits.
+ */
+async function sampleReport(all: Record<string, PatientCase>) {
   const patientCase = Object.values(all)[0]!;
-  const covered = ['intro_consent', 'open_question', 'onset_duration', 'smoking', 'closing'];
-  const state = {
-    ...initialSessionState(),
-    trust: 62,
-    turnsUsed: 9,
-    empathyCount: 2,
-    rubricHits: Object.fromEntries(patientCase.rubric.filter((r) => covered.includes(r.id)).map((r, i) => [r.id, i + 1])),
-  };
-  return { caseTitle: patientCase.title, report: computeReport(patientCase, state), transcript: [] };
+  const judge = offlineJudge();
+  const patient = offlinePatient();
+  let state = initialSessionState();
+  let history: ConversationTurn[] = [];
+  for (const item of patientCase.rubric.slice(0, 5)) {
+    const result = await runTurn(patientCase, state, item.exampleQuestion, judge, patient, history);
+    state = result.state;
+    history = appendTurn(history, item.exampleQuestion, result);
+  }
+  return { caseTitle: patientCase.title, report: computeReport(patientCase, state), transcript: history };
 }
 
 function stationClients(nebius: NebiusConfig, remainingUsd: number, dailyBudgetUsd: number): StationClients {
@@ -92,6 +106,8 @@ const offline = (process.env.OSCE_WEB_OFFLINE ?? '').toLowerCase() === 'on';
 const nebius = offline ? null : config();
 const limits = loadWebLimits();
 const all = cases();
+// Played once at startup, so every visitor sees the same session and no request pays for it.
+const sample = await sampleReport(all);
 const deps: WebDeps = {
   limits,
   secret: process.env.OSCE_SESSION_SECRET ?? '',
@@ -102,7 +118,7 @@ const deps: WebDeps = {
       ? () => ({ judge: offlineJudge(), patient: offlinePatient(), spentUsd: () => 0 })
       : null,
   now: () => Date.now(),
-  sampleReport: () => sampleReport(all),
+  sampleReport: () => sample,
 };
 if (deps.secret.length < 16) {
   console.error('OSCE_SESSION_SECRET must be at least 16 characters: it seals each station in a cookie.');
