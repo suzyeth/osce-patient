@@ -139,6 +139,12 @@ const RED_FLAG_HINTS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\brash\b[^.]{0,40}\b(does ?n[o']t (fade|blanch)|glass)\b/i, 'a rash that does not fade'],
   [/\b(sudden|suddenly)\b[^.]{0,20}\b(weak(ness)?|numb(ness)?|slurred|vision went)\b/i, 'sudden weakness or numbness'],
   [/\b(thoughts of|planned to) (harm|kill|end)\b/i, 'thoughts of self-harm'],
+  [/\b(numb(ness)?|tingling)\b[^.]{0,40}\b(saddle|between my legs|bottom|groin|back passage)\b/i, 'numbness around the saddle area'],
+  [/\b(lost control|leaking|accident|can ?n[o']t (hold|control|feel))\b[^.]{0,30}\b(bladder|bowels?|wee|urine|poo)\b/i, 'loss of bladder or bowel control'],
+  [/\b(black|tarry)\b[^.]{0,20}\b(stools?|poo|motions?)\b/i, 'black or tarry stools'],
+  [/\b(stools?|poo|motions?)\b[^.]{0,25}\b(black|tarry)\b/i, 'black or tarry stools'],
+  [/\b(vomit(ing|ed)?|throwing up|threw up)\b[^.]{0,20}\bblood\b/i, 'vomiting blood'],
+  [/\bblood\b[^.]{0,20}\b(in|when i)\b[^.]{0,15}\b(stool|poo|vomit|urine|wee)\b/i, 'blood in the stool or urine'],
 ];
 
 /** Diagnoses a patient would rarely name unprompted; worth a second look in the review. */
@@ -155,6 +161,11 @@ const RED_FLAG_ITEMS: Readonly<Record<string, { id: string; label: string; examp
   'a rash that does not fade': { id: 'rf_rash', label: 'Asks whether the rash fades under a glass', exampleQuestion: 'Does the rash fade when you press a glass against it?', cues: ['rash', 'glass', 'fade'] },
   'sudden weakness or numbness': { id: 'rf_neuro', label: 'Asks about sudden weakness or numbness', exampleQuestion: 'Have you had any sudden weakness, numbness or trouble speaking?', cues: ['weakness', 'numbness', 'slurred'] },
   'thoughts of self-harm': { id: 'rf_self_harm', label: 'Asks about thoughts of self-harm', exampleQuestion: 'Have you had any thoughts of harming yourself?', cues: ['harm yourself', 'end your life'] },
+  'numbness around the saddle area': { id: 'rf_cauda_equina', label: 'Asks about saddle numbness and bladder or bowel control', exampleQuestion: 'Any numbness between your legs, or trouble controlling your bladder or bowels?', cues: ['numbness', 'saddle', 'bladder', 'bowel'] },
+  'loss of bladder or bowel control': { id: 'rf_cauda_equina', label: 'Asks about saddle numbness and bladder or bowel control', exampleQuestion: 'Any numbness between your legs, or trouble controlling your bladder or bowels?', cues: ['numbness', 'saddle', 'bladder', 'bowel'] },
+  'black or tarry stools': { id: 'rf_gi_bleed', label: 'Asks about black stools or vomiting blood', exampleQuestion: 'Have your stools been black or tarry, or have you vomited any blood?', cues: ['black stool', 'tarry', 'vomited blood'] },
+  'vomiting blood': { id: 'rf_gi_bleed', label: 'Asks about black stools or vomiting blood', exampleQuestion: 'Have your stools been black or tarry, or have you vomited any blood?', cues: ['black stool', 'tarry', 'vomited blood'] },
+  'blood in the stool or urine': { id: 'rf_gi_bleed', label: 'Asks about black stools or vomiting blood', exampleQuestion: 'Have your stools been black or tarry, or have you vomited any blood?', cues: ['black stool', 'tarry', 'vomited blood'] },
 };
 
 /** The rubric item for a red flag the hints found, or null when there is no standard one. */

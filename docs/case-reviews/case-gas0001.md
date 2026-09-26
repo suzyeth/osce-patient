@@ -41,6 +41,7 @@ Tick when the fact says nothing the quote does not say. Cross anything added, sh
 
 ## Worth a second look
 
+- f_social_smoking_alcoh_18 is too short to stand on its own ("No, no."); rewrite it as something the patient could say unprompted
 - fact f_character_severity_3 has no guarded terms, so the output guard cannot protect it
 - fact f_associated_symptoms_4 has no guarded terms, so the output guard cannot protect it
 - fact f_associated_symptoms_5 has no guarded terms, so the output guard cannot protect it

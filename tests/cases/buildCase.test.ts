@@ -120,6 +120,12 @@ describe('buildCase', () => {
     expect(result.warnings.join(' ')).toContain('became the red-flag item');
   });
 
+  it('says when a fact is a fragment that cannot stand on its own', () => {
+    const fragment = { ...draft.facts[3]!, text: 'No, no.' };
+    const result = built({ facts: [draft.facts[0]!, fragment] }) as BuiltCase;
+    expect(result.warnings.join(' ')).toContain('too short to stand on its own');
+  });
+
   it('says when the patient names a diagnosis', () => {
     const diagnosis = { ...draft.facts[4]!, text: 'I think I have a pulmonary embolism.' };
     const result = built({ facts: [draft.facts[0]!, diagnosis] }) as BuiltCase;

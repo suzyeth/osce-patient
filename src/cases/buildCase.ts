@@ -160,6 +160,15 @@ export function buildCase(draft: DraftCase, transcript: Transcript, caseId: stri
     }
   }
 
+  // A fact is read on its own, out of the transcript's flow, so a bare "No, no." or a fragment
+  // that only means something after the doctor's question is no use as a patient's line.
+  for (const { fact } of kept) {
+    const words = fact.text.split(/\s+/).filter((w) => w.length > 2);
+    if (fact.text.length < 25 || words.length < 5) {
+      notes.push(`${fact.id} is too short to stand on its own ("${fact.text}"); rewrite it as something the patient could say unprompted`);
+    }
+  }
+
   for (const { fact } of kept) {
     if (namesDiagnosis(fact.text)) {
       notes.push(`${fact.id} has the patient naming a diagnosis; keep it only if the transcript really does, and consider rewording it as a symptom`);

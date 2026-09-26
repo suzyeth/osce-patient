@@ -34,6 +34,9 @@ describe('redFlagHint', () => {
       ['I passed out at work on Tuesday.', 'fainting or collapse'],
       ["My son has a rash that doesn't fade when I press a glass on it.", 'a rash that does not fade'],
       ['I have lost a stone and I get night sweats.', 'weight loss with night sweats'],
+      ['I have had numbness between my legs since Friday.', 'numbness around the saddle area'],
+      ['I lost control of my bladder yesterday.', 'loss of bladder or bowel control'],
+      ['My stools have been black and tarry all week.', 'black or tarry stools'],
     ];
     for (const [text, reason] of cases) expect(redFlagHint(text), text).toBe(reason);
   });

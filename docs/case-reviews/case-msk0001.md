@@ -42,6 +42,8 @@ Nothing: every proposed fact was found in the transcript.
 - "insulin" appears in another fact too, so guarding it would hide that one as well
 - "retired school teacher" is already in what the candidate is told before asking, so it cannot be guarded
 - the persona or opening line says "retired school teacher", which belongs to the locked fact f_social_life_13
+- f_medications_allergie_9 is too short to stand on its own ("I take insulin for my diabetes."); rewrite it as something the patient could say unprompted
+- f_family_history_12 is too short to stand on its own ("My father had prostate cancer."); rewrite it as something the patient could say unprompted
 - fact f_onset_duration_5 has no guarded terms, so the output guard cannot protect it
 - fact f_medications_allergie_9 has no guarded terms, so the output guard cannot protect it
 
