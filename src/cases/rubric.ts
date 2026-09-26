@@ -1,16 +1,41 @@
 import type { RubricItem } from '../types.js';
 
 /**
- * The items every history-taking station is marked on, in the order a candidate would cover them.
- * Wording is our own, from openly published frameworks: the Calgary-Cambridge structure for the
- * opening and closing, SOCRATES for pain, and the GMC's Outcomes for graduates 11b for ideas,
- * concerns and expectations. A case adds its own red flags on top; nothing here is case-specific.
+ * The content a history-taking station asks a candidate to cover, in the order they would cover it.
+ *
+ * This list is ours. It is not any exam's marking sheet, and no exam marks item by item like this.
+ * The GMC publishes only three marking domains and ten examiner feedback statements for the PLAB 2
+ * / UKMLA clinical exam, and says item-level mark schemes are not published. We wrote these items
+ * by reading, for each one, what a published UK source actually asks for; RUBRIC_SOURCES below
+ * gives the source per item, and the report must show it rather than implying a GMC checklist.
+ *
+ * Sources used, all openly published:
+ * - GMC, PLAB 2 marking domains and the ten feedback statements (how-will-you-be-tested,
+ *   understanding-your-results).
+ * - GMC, Outcomes for graduates 2018, 11a (medical history including family and social history),
+ *   11b (ideas, concerns, expectations) and 18a (medication history and allergies).
+ * - GMC's one published sample station (8-minute headache telephone consultation), which lists
+ *   what a candidate must demonstrate to pass.
+ * - Calgary-Cambridge guide (Silverman, Kurtz & Draper, Skills for Communicating with Patients,
+ *   2nd ed, 2005) for the opening, the systems review and the closing.
+ * - Safety netting: the term is Roger Neighbour's (The Inner Consultation, 1987); the GMC's
+ *   management feedback statement and NICE NG12 1.14.6 both use it.
+ *
+ * Deliberately NOT cited: SOCRATES. It is widely taught for pain, but the origin usually given for
+ * it could not be verified in any primary source, so it is not used here as an authority.
+ *
+ * Not every item applies to every station: GMC's own 8-minute sample station does not ask for
+ * family history, a systems review, smoking or safety netting. Marking a candidate down for
+ * missing those in a focused station would misrepresent the exam, which is why the report reports
+ * coverage and never turns it into a pass or fail.
+ *
+ * A case adds its own red flags on top; nothing here is case-specific.
  */
 export const STANDARD_RUBRIC: readonly RubricItem[] = [
   {
     id: 'intro_consent',
     domain: 'interpersonal',
-    label: 'Introduces self and gains consent',
+    label: 'Introduces self and explains the purpose of the conversation',
     critical: false,
     exampleQuestion: "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?",
     offlineCues: ['my name is', "i'm one of the doctors", 'is it okay if', 'happy for me to'],
@@ -36,7 +61,9 @@ export const STANDARD_RUBRIC: readonly RubricItem[] = [
     domain: 'data_gathering',
     label: 'Asks what it is like and how bad it is',
     critical: false,
-    exampleQuestion: 'What does it feel like, and how bad is it out of ten?',
+    // No published UK source asks for a score out of ten, so the example does not ask for one;
+    // "out of ten" stays as a cue because candidates do say it.
+    exampleQuestion: 'What does it feel like, and how bad does it get?',
     offlineCues: ['what does it feel', 'how bad', 'out of ten', 'describe the pain'],
   },
   {
@@ -90,7 +117,7 @@ export const STANDARD_RUBRIC: readonly RubricItem[] = [
   {
     id: 'systems_review',
     domain: 'data_gathering',
-    label: 'Screens the other systems',
+    label: 'Screens the systems relevant to the complaint',
     critical: false,
     exampleQuestion: 'Any weight loss, fevers or night sweats?',
     offlineCues: ['weight loss', 'fevers', 'night sweats', 'appetite'],
@@ -120,6 +147,28 @@ export const STANDARD_RUBRIC: readonly RubricItem[] = [
     offlineCues: ['if it gets worse', 'come back', 'call 111', 'go to a&e', 'straight back'],
   },
 ];
+
+/**
+ * Where each item comes from, quoted or closely paraphrased from the source, for the report and for
+ * anyone who wants to argue with an item. "framework" marks an item with no regulator source: it
+ * rests only on the Calgary-Cambridge guide, and is the weakest kind of item here.
+ */
+export const RUBRIC_SOURCES: Readonly<Record<string, string>> = {
+  intro_consent: 'Calgary-Cambridge: "Introduces self, role and nature of interview; obtain consent if necessary" (framework; the guide says consent only "if necessary")',
+  open_question: 'GMC PLAB 2 interpersonal domain: "how you use open and closed questioning"; Calgary-Cambridge: "Listens attentively to the opening statement, without interrupting"',
+  onset_duration: 'GMC sample station: "including occurrences, location, duration, triggers"',
+  character_severity: 'GMC sample station: "location, duration, triggers"; character and severity are standard for pain but the sample station does not ask for a score out of ten (framework)',
+  associated_symptoms: 'GMC sample station: "including occurrences, location, duration, triggers, associated symptoms"',
+  past_medical: 'GMC sample station: "Take a medical history of any medication or trauma"',
+  medications_allergies: 'GMC Outcomes for graduates 18a: "establish an accurate medication history... and establish medication allergies"',
+  family_history: 'GMC Outcomes for graduates 11a: "including family and social history" (not asked for in the published 8-minute sample station)',
+  social_smoking_alcohol: 'GMC sample station: "appropriate lifestyle history (eg alcohol, diet, sex, sleep)" (smoking appears in the MLA content map on the management side, not here)',
+  social_life: 'GMC Outcomes for graduates 11a: "including family and social history"; MLA content map: "social factors (eg employment and fitness for work, housing)"',
+  systems_review: 'Calgary-Cambridge content guide: "relevant systems review" only (framework; no regulator source, and no GMC station asks for it)',
+  ice_concerns: 'GMC Outcomes for graduates 11b: "take into account their ideas concerns, expectations, values and preferences"',
+  closing: 'GMC PLAB 2 language feedback statement: "including not checking understanding"; Calgary-Cambridge: "Summarizes session briefly and clarifies plan of care"',
+  safety_netting: 'GMC PLAB 2 management feedback statement: "including follow up and safety netting"; NICE NG12 1.14.6: "which symptoms to look out for and when they should return"',
+};
 
 export const STANDARD_RUBRIC_IDS: readonly string[] = STANDARD_RUBRIC.map((r) => r.id);
 

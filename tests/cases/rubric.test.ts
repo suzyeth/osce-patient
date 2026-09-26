@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { namesDiagnosis, redFlagHint, redFlagItem, rubricFor, STANDARD_RUBRIC, STANDARD_RUBRIC_IDS } from '../../src/cases/rubric.js';
+import { namesDiagnosis, redFlagHint, redFlagItem, rubricFor, RUBRIC_SOURCES, STANDARD_RUBRIC, STANDARD_RUBRIC_IDS } from '../../src/cases/rubric.js';
 import { RubricItemSchema } from '../../src/types.js';
 
 describe('the standard rubric', () => {
@@ -58,5 +58,24 @@ describe('namesDiagnosis', () => {
     expect(namesDiagnosis('I am worried this might be a pulmonary embolism.')).toBe(true);
     expect(namesDiagnosis('My dad had lung cancer and I am frightened.')).toBe(false);
     expect(namesDiagnosis('I think it is just a chest infection.')).toBe(false);
+  });
+});
+
+describe('RUBRIC_SOURCES', () => {
+  it('names a published source for every standard item, so the report can show one', () => {
+    for (const item of STANDARD_RUBRIC) {
+      const source = RUBRIC_SOURCES[item.id];
+      expect(source, item.id).toBeTruthy();
+      // A source has to name who says it, not just assert that someone does.
+      expect(source, item.id).toMatch(/GMC|NICE|Calgary-Cambridge|MLA/);
+    }
+    // And nothing claims a source for an item that does not exist.
+    for (const id of Object.keys(RUBRIC_SOURCES)) expect(STANDARD_RUBRIC_IDS).toContain(id);
+  });
+
+  it('marks the three items that rest on a framework only, rather than implying a regulator', () => {
+    for (const id of ['intro_consent', 'character_severity', 'systems_review']) {
+      expect(RUBRIC_SOURCES[id], id).toContain('framework');
+    }
   });
 });
