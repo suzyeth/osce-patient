@@ -50,6 +50,15 @@ export class SessionCookieError extends Error {
 }
 
 const HISTORY_TURNS = 8;
+/**
+ * The history is what actually fills the cookie: eight turns of a reply that can run to 1,600
+ * characters is far more than every quote put together. Untrimmed it pushed a long station past the
+ * 16 KB request-header limit, which made every later request fail with 431 and lost the whole
+ * session. The models only ever see recent turns for context, so a trimmed tail costs nothing they
+ * would have used.
+ */
+const HISTORY_STUDENT_MAX = 250;
+const HISTORY_PATIENT_MAX = 350;
 const VERSION = 'v2';
 const IV_BYTES = 12;
 
@@ -65,7 +74,7 @@ const IV_BYTES = 12;
  */
 const QUOTE_MAX = 120;
 const QUOTE_MIN = 40;
-const TRANSCRIPT_TEXT_BUDGET = 1600;
+const TRANSCRIPT_TEXT_BUDGET = 1200;
 const FLAG = { empathy: 1, interrupted: 2, jargon: 4 } as const;
 
 function trim(text: string, limit: number): string {
@@ -133,7 +142,9 @@ export function toStored(caseId: string, startedAt: number, state: SessionState,
       empathyCount: state.empathyCount,
     },
     transcript: storedTurns(state.transcript),
-    history: history.slice(-HISTORY_TURNS).map((t) => ({ student: t.student, patient: t.patient })),
+    history: history
+      .slice(-HISTORY_TURNS)
+      .map((t) => ({ student: trim(t.student, HISTORY_STUDENT_MAX), patient: trim(t.patient, HISTORY_PATIENT_MAX) })),
     spentUsd,
   };
 }
@@ -191,7 +202,13 @@ export function codeMatches(given: string, expected: string): boolean {
  * alternative was to throw away the quotes that make a mark checkable.
  */
 export const COOKIE_CHUNK_CHARS = 3400;
-export const MAX_COOKIE_CHUNKS = 6;
+/**
+ * Four, not six. Node's default request-header limit is 16 KB for the whole header, and measurement
+ * put five chunks at about 17 KB, which the server rejects with 431 before any handler runs. The
+ * station then cannot even fetch its own report. Four chunks is about 13.7 KB and leaves room for
+ * the rest of the headers.
+ */
+export const MAX_COOKIE_CHUNKS = 4;
 
 export function splitCookie(value: string): string[] {
   const parts: string[] = [];

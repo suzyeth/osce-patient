@@ -158,6 +158,14 @@ describe('splitting the cookie', () => {
     expect(() => splitCookie(tooLong)).toThrow(SessionCookieError);
   });
 
+  it('trims the history, because that is what actually fills the cookie', () => {
+    const long = [{ student: 'q'.repeat(900), patient: 'a'.repeat(900) }];
+    const stored = toStored('demo-cough', 1, state, long, 0);
+    expect(stored.history[0]?.student.length).toBeLessThanOrEqual(250);
+    expect(stored.history[0]?.patient.length).toBeLessThanOrEqual(350);
+    expect(stored.history[0]?.student.endsWith('…')).toBe(true);
+  });
+
   it('fits the longest station the web limits allow', () => {
     // maxTurns is 40, so this is the worst case a visitor can actually reach.
     const transcript = Array.from({ length: 40 }, (_, i) => ({
@@ -176,7 +184,46 @@ describe('splitting the cookie', () => {
       rubricHits: Object.fromEntries(transcript.map((x, i) => [`rubric_item_${i}`, x.turn])),
     };
     const history = Array.from({ length: 8 }, (_, i) => ({ student: 'q'.repeat(500), patient: 'a'.repeat(500) }));
-    const parts = splitCookie(sealSession(toStored('demo-cough', 1, full, history, 0.05), SECRET));
+    const sealed = sealSession(toStored('demo-cough', 1, full, history, 0.05), SECRET);
+    const parts = splitCookie(sealed);
     expect(parts.length).toBeLessThanOrEqual(MAX_COOKIE_CHUNKS);
+    // Four chunks is about 13.7 KB of request header. Node's default limit for the whole header is
+    // 16 KB and a reverse proxy may be tighter, so this is the number that has to hold, not the
+    // chunk count on its own.
+    expect(sealed.length).toBeLessThan(14 * 1024);
+  });
+
+  const turn = (i: number, over: Partial<TurnRecord> = {}): TurnRecord => ({
+    turn: i,
+    studentInput: `Question number ${i}: ${'a long thing to ask about their symptoms '.repeat(3)}`,
+    creditedItemIds: [],
+    questionStyle: 'closed' as const,
+    empathy: false,
+    interrupted: false,
+    jargon: false,
+    ...over,
+  });
+
+  it('keeps every credited quote under real pressure, and drops flag-only text first', () => {
+    // 60 worth-quoting turns against a 1200 character budget: the dropping loop has to run. The old
+    // test sat ten characters under the budget, so removing the guard that protects credited quotes
+    // did not fail it.
+    const credited = Array.from({ length: 30 }, (_, i) => turn(i + 1, { creditedItemIds: [`item_${i}`] }));
+    const flagged = Array.from({ length: 30 }, (_, i) => turn(i + 31, { jargon: true }));
+    const stored = toStored('demo-cough', 1, { ...state, transcript: [...credited, ...flagged] }, [], 0);
+    const kept = stored.transcript.filter((x) => x.c.length > 0);
+    const flagOnly = stored.transcript.filter((x) => x.c.length === 0);
+    expect(kept).toHaveLength(30);
+    expect(flagOnly).toHaveLength(30);
+    // Every mark still has its words; the flag-only turns are what gave way.
+    expect(kept.every((x) => x.q !== '')).toBe(true);
+    expect(flagOnly.some((x) => x.q === '')).toBe(true);
+  });
+
+  it('refuses a state too large to store rather than writing one a browser will reject', () => {
+    const huge = 'x'.repeat(COOKIE_CHUNK_CHARS * MAX_COOKIE_CHUNKS + 1);
+    expect(() => splitCookie(huge)).toThrow(SessionCookieError);
+    // And the message says what the problem is, because a caller has to tell the candidate.
+    expect(() => splitCookie(huge)).toThrow(/too large to store/);
   });
 });

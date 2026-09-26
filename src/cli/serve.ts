@@ -137,7 +137,12 @@ async function toRequest(req: IncomingMessage): Promise<Request> {
   });
 }
 
-createServer((req, res) => {
+// Node's default request-header limit is 16 KB, and the session can legitimately use several
+// cookies. Raising it here is the difference between a long station working and every request
+// failing with 431; MAX_COOKIE_CHUNKS keeps the state inside this.
+const MAX_HEADER_BYTES = 32 * 1024;
+
+createServer({ maxHeaderSize: MAX_HEADER_BYTES }, (req, res) => {
   const path = (req.url ?? '/').split('?')[0] ?? '/';
   if (!path.startsWith('/api/')) {
     serveFile(path, res);
@@ -160,7 +165,17 @@ createServer((req, res) => {
       headers['set-cookie'] = local ? cookies.map((c) => c.replace('; Secure', '')) : cookies;
     }
     res.writeHead(response.status, headers).end(Buffer.from(await response.arrayBuffer()));
-  })();
+  })().catch((e: unknown) => {
+    // Without this, anything escaping a handler was an unhandled rejection, which takes the whole
+    // process down and with it every other station in progress. One request must not do that.
+    console.error('Request failed:', e);
+    if (!res.headersSent) {
+      res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Something went wrong on the server. Please start again.' }));
+    } else {
+      res.end();
+    }
+  });
 }).listen(PORT, () => {
   console.log(`Station at http://localhost:${PORT}`);
   const models = nebius ? `${nebius.judgeModel} / ${nebius.patientModel}` : offline ? 'offline doubles (no cost, no safety model)' : 'none (sample report only)';

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { packFor, packIds, registerPack, type DomainPack } from '../../src/domains/index.js';
+import { packFor, packIds, registerPack, SHIPPED_PACK_IDS, type DomainPack } from '../../src/domains/index.js';
 import { computeReport } from '../../src/report.js';
 import { formatReport } from '../../src/formatReport.js';
 import { initialSessionState } from '../../src/state.js';
@@ -28,7 +28,10 @@ const minimal = (over: Partial<DomainPack> = {}): DomainPack => ({
 
 describe('registering a domain pack', () => {
   it('lists the packs that ship with the tool', () => {
-    expect(packIds()).toEqual(['uk-clinical-history', 'user-research-interview']);
+    // Containment, not equality: other tests register packs of their own and there is no way to
+    // unregister one, so equality here would pass only while this test happened to run first.
+    for (const id of SHIPPED_PACK_IDS) expect(packIds()).toContain(id);
+    expect(SHIPPED_PACK_IDS).toEqual(['uk-clinical-history', 'user-research-interview']);
   });
 
   it('refuses an item in a domain the pack does not declare', () => {
@@ -57,7 +60,7 @@ describe('registering a domain pack', () => {
   });
 
   it('names a source for every item it ships', () => {
-    for (const id of packIds()) {
+    for (const id of SHIPPED_PACK_IDS) {
       const pack = packFor(id);
       for (const item of pack.rubric) expect(pack.sources[item.id], `${id}/${item.id}`).toBeTruthy();
     }

@@ -189,3 +189,10 @@ export function packFor(id: string): DomainPack {
 export function packIds(): string[] {
   return [...REGISTRY.keys()].sort();
 }
+
+/**
+ * The packs that ship with the tool. Registering a pack is permanent and has no undo, so a test that
+ * registers one leaves it in the registry: an assertion about "the packs this tool has" has to ask
+ * this rather than ask what is in the registry, or it passes only while it runs first.
+ */
+export const SHIPPED_PACK_IDS: readonly string[] = ['uk-clinical-history', 'user-research-interview'];

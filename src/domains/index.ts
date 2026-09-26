@@ -5,6 +5,6 @@
 import './ukClinicalHistory.js';
 import './userResearchInterview.js';
 
-export { packFor, packIds, registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
+export { packFor, packIds, registerPack, SHIPPED_PACK_IDS, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
 export { UK_CLINICAL_HISTORY } from './ukClinicalHistory.js';
 export { USER_RESEARCH_INTERVIEW } from './userResearchInterview.js';

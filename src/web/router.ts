@@ -67,6 +67,9 @@ function oneCookie(name: string, value: string, maxAgeSeconds: number): string {
  * session can never be read with a longer one's tail still attached.
  */
 function cookieHeaders(value: string, maxAgeSeconds: number): string[] {
+  // splitCookie throws when the state has outgrown what a browser will carry. Letting that escape
+  // took the whole server down with it and lost a turn that had already been paid for, so the caller
+  // handles it: see storeOrRefuse.
   const parts = splitCookie(value);
   const headers = parts.map((part, i) => oneCookie(`${SESSION_COOKIE}_${i}`, part, maxAgeSeconds));
   for (let i = parts.length; i < MAX_COOKIE_CHUNKS; i++) headers.push(oneCookie(`${SESSION_COOKIE}_${i}`, '', 0));
@@ -134,6 +137,20 @@ async function start(request: Request, deps: WebDeps): Promise<Response> {
   );
 }
 
+/**
+ * The cookies for a state, or null when it will not fit. Nothing here can silently drop evidence: a
+ * state that cannot be stored is reported to the candidate, with the turn they just spent still
+ * shown, rather than being written back in a form the browser would reject.
+ */
+function storeOrRefuse(stored: StoredSession, secret: string, maxAgeSeconds: number): string[] | null {
+  try {
+    return cookieHeaders(sealSession(stored, secret), maxAgeSeconds);
+  } catch (e) {
+    if (e instanceof SessionCookieError) return null;
+    throw e;
+  }
+}
+
 interface Station {
   stored: StoredSession;
   patientCase: PatientCase;
@@ -177,6 +194,23 @@ async function turn(request: Request, deps: WebDeps): Promise<Response> {
 
   const nextHistory = appendTurn(history, input.trim(), result);
   const next = toStored(patientCase.id, stored.startedAt, result.state, nextHistory, stored.spentUsd + clients.spentUsd());
+  const cookies = storeOrRefuse(next, deps.secret, patientCase.durationSeconds + 600);
+  if (cookies === null) {
+    // The answer was paid for, so it is shown; the state is not written back, so the station stays
+    // where it was and the candidate is told to finish rather than losing the report to a 431.
+    return json(
+      {
+        reply: result.reply,
+        paused: result.safetyBlocked,
+        secondsLeft: secondsLeft(patientCase, stored, deps.now()),
+        turnsUsed: stored.state.turnsUsed,
+        maxTurns: deps.limits.maxTurns,
+        error: 'This station has run too long to keep track of. Finish now to see the report for what you have covered so far.',
+        reason: 'session_too_large',
+      },
+      { status: 200 },
+    );
+  }
   return json(
     {
       reply: result.reply,
@@ -185,7 +219,7 @@ async function turn(request: Request, deps: WebDeps): Promise<Response> {
       turnsUsed: next.state.turnsUsed,
       maxTurns: deps.limits.maxTurns,
     },
-    { cookies: cookieHeaders(sealSession(next, deps.secret), patientCase.durationSeconds + 600) },
+    { cookies },
   );
 }
 
