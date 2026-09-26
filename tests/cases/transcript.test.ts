@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { checkQuote, citation, parseTranscript, patientTurns } from '../../src/cases/transcript.js';
 
 const SAMPLE = [
@@ -71,9 +71,13 @@ describe('checkQuote', () => {
   });
 });
 
-describe('a real Fareez transcript', () => {
+// The raw datasets are not in the repository (data/raw is ignored), so this runs only when the
+// download has been done; everything above proves the parser on its own.
+const REAL = 'data/raw/transcripts/RES0001.txt';
+
+describe.skipIf(!existsSync(REAL))('a real Fareez transcript', () => {
   it('parses, and the patient speaks in the first turns', () => {
-    const real = parseTranscript('RES0001.txt', readFileSync('data/raw/transcripts/RES0001.txt', 'utf8'));
+    const real = parseTranscript('RES0001.txt', readFileSync(REAL, 'utf8'));
     expect(real.turns.length).toBeGreaterThan(40);
     expect(real.turns[0]?.speaker).toBe('doctor');
     const first = patientTurns(real)[0]!;
