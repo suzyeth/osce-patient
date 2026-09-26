@@ -119,14 +119,23 @@ statements, quoted verbatim** from the PLAB 2 guide, each with what this station
 - **The content list is ours, and the report says so**, with a source per item in `RUBRIC_SOURCES`
   (`src/cases/rubric.ts`). Of the fourteen standard items, eleven have verbatim support from the GMC
   (*Outcomes for graduates* 11a, 11b, 18a; the PLAB 2 feedback statements; the one published sample station)
-  or from NICE (NG12 1.14.6 on safety netting, a term that is Roger Neighbour's, 1987). Three rest on the
-  Calgary-Cambridge guide alone and are marked `framework`.
+  or from NICE. Three rest on the Calgary-Cambridge guide alone and are marked `framework`. On safety netting
+  specifically: the term was first described by Roger Neighbour in *The Inner Consultation* (1987), the GMC's
+  own Management feedback statement says "including follow up and safety netting", and NICE NG12
+  recommendation 1.14.6 (as numbered since the April 2026 update) says to explain "which symptoms to look out
+  for and when they should return for re-evaluation" - but NG12 is a suspected-cancer guideline and that
+  recommendation applies to a defined group who have symptoms associated with increased risk and do **not**
+  meet the threshold for referral, not to every consultation.
 - **SOCRATES is not cited.** It is widely taught for pain, but the origin usually given for it could not be
   verified in any primary source, so it is not used here as an authority. The example question no longer asks
   for a severity score out of ten either: no published UK source asks for one.
-- **Not every item applies to every station.** The GMC's own 8-minute sample station does not ask for family
-  history, a systems review, smoking or safety netting. The report counts coverage and never converts it into
-  a pass.
+- **Not every item applies to every station.** The stated pass requirements of the GMC's one published sample
+  station (an 8-minute headache telephone consultation) do not mention family history, a systems review,
+  smoking or safety netting; they do ask for "appropriate lifestyle history (eg alcohol, diet, sex, sleep)"
+  and to "Recommend appropriate management", either of which a marker could read as covering them. The cleaner
+  evidence is a word search: "safety netting", "family history" and "systems review" appear nowhere in
+  *Outcomes for graduates 2020* or the MLA content map, while "smoking" appears in both. The report counts
+  coverage and never converts it into a pass.
 
 ## Domain packs
 
@@ -169,21 +178,66 @@ than hidden. Three reasons it is typed anyway:
 
 1. **Nebius Token Factory, which the hackathon credits are for, has no speech model.** All 25 models in the
    catalogue are text, embedding or vision.
-2. **Speech recognition is the wrong thing to be bad at.** Most users of a PLAB 2 tool are not native
-   speakers, and in a pharmacy-education pilot of a voice virtual patient, "voice recognition accuracy was the
-   most frequently identified improvement priority (38/62, 61.3%)". A transcription error dressed up as a
-   judged mark is worse than no mark.
-3. **The evidence says the feedback is the active ingredient, not the realism.** The Cochrane review of
-   interventions for medical students' interpersonal communication (2021, 76 studies, 10,124 students) finds
-   personalised, specific feedback the most robust single ingredient (SMD 0.58, moderate quality), while
-   relationship building barely moves (SMD 0.18) and electronic versus face-to-face delivery is null.
+2. **Speech recognition is the wrong thing to be bad at, and it is worst for exactly these users.** Most
+   people sitting PLAB 2 are not native English speakers, and a 2026 *npj Digital Medicine* study of clinical
+   speech transcription reports that "in testing Whisper and WhisperX on native and non-native English
+   clinical speech, error rates were significantly higher for non-native speakers". In a pilot of a voice
+   virtual patient in pharmacy education, "voice recognition accuracy was the most frequently identified
+   improvement priority (38/62, 61.3%)". A transcription error dressed up as a judged mark is worse than no
+   mark. In fairness to that same pilot: 37 of its 62 students judged human standardised-patient training more
+   effective than the voice system, and its authors position such a tool as "a complement to rather than a
+   replacement for" it, which is this tool's position too.
+3. **The evidence puts the weight on the feedback, not the realism.** In the Cochrane review of interventions
+   for medical students' interpersonal communication (2021, 76 studies in 91 publications, 10,124 students),
+   the one intervention *ingredient* with a defensible advantage over its alternative is feedback:
+   "personalised/specific feedback probably improves overall communication skills to a small degree in
+   comparison to generic or no feedback (SMD 0.58, 95% CI 0.29 to 0.87; 6 studies, 502 participants;
+   moderate-quality evidence)", and the review's own practice implication is that "with the exception of
+   providing tailored feedback, the differential effectiveness of particular approaches remains unclear".
 
-Two claims that should **not** be made from this literature, both corrected here after checking the primary
-sources: McCarrick et al. 2025 is a within-arm pre-post result, not a between-group test, so it is not
-evidence that typed practice transfers; and one small pilot RCT with a blinded face-to-face outcome trends
-the other way on history taking (Hedges' g = −0.68 favouring spoken peer role-play). Typed practice is
-defensible for content coverage, structure and familiarisation. It is not a substitute for speaking, and this
-tool does not claim to be one.
+Three things that review does **not** say, and that an earlier draft of this README got wrong. It does not
+rank feedback against "relationship building" as though both were ingredients: the rapport figure (SMD 0.18,
+95% CI -0.15 to 0.51, low-quality) is a different kind of comparison, any communication intervention against
+usual curriculum measured on a rapport outcome, and its interval crosses zero, so it is absence of evidence of
+an effect rather than a small one. Electronic versus face-to-face delivery is not flatly null: it "may make
+little to no difference" to rapport (SMD 0.02, moderate-quality, n = 176), empathy is too imprecise to call
+(SMD -0.13, 95% CI -0.68 to 0.43), and information giving may be slightly **worse** electronically. And
+feedback is not the largest effect in the review; information gathering (SMD 1.07) is larger.
+
+Two claims about transfer that this tool does not make, both corrected after reading the sources:
+
+- McCarrick et al. 2025 (*J Surg Educ*) is often read as showing that typed practice transfers to a spoken
+  OSCE. Its headline result as reported is a within-arm pre-post comparison, "significantly increased in the
+  intervention group alone (p < 0.001, 0.37v0.19 Cohen D)", with no between-group test in the abstract, and
+  the full text is paywalled. It **did** randomise 45 students to each arm with an assessor blinded to group,
+  so this is a caveat about what was reported, not a claim that the trial had no control.
+- One exploratory pilot RCT (Lee et al., *BMC Med Educ* 2025, n = 19 Korean-medicine students, no power
+  calculation) found a non-significant trend favouring peer role-play on history taking in one of its two
+  scenarios (Hedges' g = -0.68, adjusted p = 0.27), while its AI arm trended better on patient education (up
+  to g = 0.99). Its AI arm was a **text** chatbot, so it does not isolate speaking, and its authors conclude
+  the two approaches have "complementary strengths". An earlier draft of this README quoted only the figure
+  that told against its own product, which is the same error as quoting only the flattering one.
+
+So: typed practice is defensible for content coverage, structure and familiarisation. It is not a substitute
+for speaking, and nothing here claims it is.
+
+### The sharpest objections to this design
+
+A reviewer raises these immediately, so they belong here rather than waiting to be found.
+
+- **An AI that plays the patient and also marks is marking its own conversation.** The Cochrane review found
+  the empathy effect of communication training "when assessed by experts, but not by simulated patients": the
+  effect disappears when whoever played the patient does the scoring. This tool separates the roles in code
+  (the judge is a different call from the patient, and the honesty grader is a different model again), but
+  that is a mitigation, not an answer.
+- **AI markers are systematically generous, and worst at exactly what a consultation is.** A 2025 *BMC
+  Medical Education* comparison found "AI models consistently assigned higher scores than human evaluators
+  across all skills" and that "inter-rater consistency was higher for visually observable steps, while
+  auditory tasks led to greater discrepancies".
+- **The evidence base for AI simulated patients is thin.** A 2025 scoping review of 28 studies found "only 13%
+  (3/23) of studies used validated tools" and "only 21.7% (5/23) objectively measured learning outcomes", and
+  concludes they "cannot replace real-world interactions".
+
 
 ## Run it
 

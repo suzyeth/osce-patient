@@ -18,8 +18,11 @@ import type { RubricItem } from '../types.js';
  *   what a candidate must demonstrate to pass.
  * - Calgary-Cambridge guide (Silverman, Kurtz & Draper, Skills for Communicating with Patients,
  *   2nd ed, 2005) for the opening, the systems review and the closing.
- * - Safety netting: the term is Roger Neighbour's (The Inner Consultation, 1987); the GMC's
- *   management feedback statement and NICE NG12 1.14.6 both use it.
+ * - Safety netting: first described by Roger Neighbour (The Inner Consultation, 1987, per BJGP
+ *   2019); the GMC's management feedback statement says "including follow up and safety netting".
+ *   NICE NG12 1.14.6 (as numbered since April 2026) also uses it, but NG12 is a suspected-cancer
+ *   guideline and that recommendation covers people with symptoms of raised risk who do not meet the
+ *   threshold for referral, not every consultation.
  *
  * Deliberately NOT cited: SOCRATES. It is widely taught for pain, but the origin usually given for
  * it could not be verified in any primary source, so it is not used here as an authority.
@@ -167,7 +170,7 @@ export const RUBRIC_SOURCES: Readonly<Record<string, string>> = {
   systems_review: 'Calgary-Cambridge content guide: "relevant systems review" only (framework; no regulator source, and no GMC station asks for it)',
   ice_concerns: 'GMC Outcomes for graduates 11b: "take into account their ideas concerns, expectations, values and preferences"',
   closing: 'GMC PLAB 2 language feedback statement: "including not checking understanding"; Calgary-Cambridge: "Summarizes session briefly and clarifies plan of care"',
-  safety_netting: 'GMC PLAB 2 management feedback statement: "including follow up and safety netting"; NICE NG12 1.14.6: "which symptoms to look out for and when they should return"',
+  safety_netting: 'GMC PLAB 2 management feedback statement: "including follow up and safety netting". NICE NG12 1.14.6 (numbering as of April 2026) says the same for a defined suspected-cancer group, not for every consultation',
 };
 
 export const STANDARD_RUBRIC_IDS: readonly string[] = STANDARD_RUBRIC.map((r) => r.id);
