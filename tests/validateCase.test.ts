@@ -62,10 +62,24 @@ describe('validateCase', () => {
     expect(r.errors).toContain('fact f_duration has a blank guarded term');
   });
 
-  it('flags a rubric with no interpersonal items', () => {
+  it("flags an item in a domain this case does not have a pack domain for", () => {
     const bad = loadDemoCase();
-    bad.rubric = bad.rubric.map((r) => ({ ...r, domain: r.domain === 'interpersonal' ? 'data_gathering' : r.domain }));
-    expect(validateCase(bad).errors).toContain('rubric has no interpersonal items, so the global judgement cannot score it');
+    bad.rubric = bad.rubric.map((r) => ({ ...r, domain: r.domain === 'interpersonal' ? 'bedside_manner' : r.domain }));
+    expect(validateCase(bad).errors).toContain(
+      'rubric item intro_consent is in domain bedside_manner, which pack uk-clinical-history does not mark',
+    );
+  });
+
+  it('flags a case whose pack does not exist', () => {
+    const bad = { ...loadDemoCase(), pack: 'no-such-pack' };
+    expect(validateCase(bad).errors.join(' ')).toContain('unknown domain pack: no-such-pack');
+  });
+
+  it("flags a case with no item for the pack own order check", () => {
+    const bad = loadDemoCase();
+    // The clinical pack checks order with open_question and closing; drop one.
+    bad.rubric = bad.rubric.filter((r) => r.id !== 'closing');
+    expect(validateCase(bad).errors.join(' ')).toContain('closing item closing, which this case has no item for');
   });
 
   it('flags a concern that the first turn could unlock', () => {

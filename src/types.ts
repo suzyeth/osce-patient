@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
-export const DOMAINS = ['data_gathering', 'interpersonal', 'management'] as const;
-export type Domain = (typeof DOMAINS)[number];
+/**
+ * A scoring domain is named by the domain pack a case belongs to, not by this file: the engine has
+ * no opinion about what is being taught. See src/domains/pack.ts.
+ */
+export type Domain = string;
 export const FACT_KINDS = ['presenting', 'history', 'red_flag', 'concern'] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
 
@@ -15,7 +18,7 @@ export const SourceSchema = z.object({
 
 export const RubricItemSchema = z.object({
   id: z.string().min(1),
-  domain: z.enum(DOMAINS),
+  domain: z.string().min(1),
   label: z.string().min(1),
   /** A critical item (e.g. a red flag) caps the global judgement at Borderline when missed. */
   critical: z.boolean().default(false),
@@ -41,6 +44,8 @@ export const FactSchema = z.object({
 
 export const PatientCaseSchema = z.object({
   id: z.string().min(1),
+  /** The domain pack whose rubric, domains and feedback statements this case is marked against. */
+  pack: z.string().min(1).default('uk-clinical-history'),
   title: z.string().min(1),
   candidateBrief: z.string().min(1),
   durationSeconds: z.number().int().positive(),

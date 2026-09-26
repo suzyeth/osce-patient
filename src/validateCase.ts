@@ -2,6 +2,7 @@ import type { Fact, PatientCase } from './types.js';
 import { guardReply } from './patientGuard.js';
 import { buildPatientContext } from './patientContext.js';
 import { initialSessionState, INITIAL_TRUST, MAX_TRUST_DELTA } from './state.js';
+import { packFor } from './domains/index.js';
 
 export interface CaseIssues {
   errors: string[];
@@ -46,11 +47,29 @@ function blankEntryErrors(c: PatientCase): string[] {
   return [...cues, ...terms];
 }
 
-/** The global judgement is scored on data gathering and interpersonal skills, so both need items. */
-function scoredDomainErrors(c: PatientCase): string[] {
-  return (['data_gathering', 'interpersonal'] as const)
-    .filter((d) => !c.rubric.some((r) => r.domain === d))
-    .map((d) => `rubric has no ${d} items, so the global judgement cannot score it`);
+/**
+ * A case is marked against a domain pack, so its items have to live in domains that pack declares,
+ * and the items the pack uses for its order check have to exist. Nothing here requires a particular
+ * domain: the pack decides what this field has.
+ */
+function packErrors(c: PatientCase): string[] {
+  let pack;
+  try {
+    pack = packFor(c.pack);
+  } catch (e) {
+    return [e instanceof Error ? e.message : String(e)];
+  }
+  const known = new Set(pack.domains.map((d) => d.id));
+  const errors = c.rubric
+    .filter((r) => !known.has(r.domain))
+    .map((r) => `rubric item ${r.id} is in domain ${r.domain}, which pack ${pack.id} does not mark`);
+  const ids = new Set(c.rubric.map((r) => r.id));
+  for (const [what, id] of [['opening', pack.openingItemId], ['closing', pack.closingItemId]] as const) {
+    if (id !== undefined && !ids.has(id)) {
+      errors.push(`pack ${pack.id} checks order with its ${what} item ${id}, which this case has no item for`);
+    }
+  }
+  return errors;
 }
 
 /**
@@ -188,7 +207,7 @@ export function validateCase(c: PatientCase): CaseIssues {
     ...duplicateRubricIds(c),
     ...factReferenceErrors(c),
     ...blankEntryErrors(c),
-    ...scoredDomainErrors(c),
+    ...packErrors(c),
     ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
     ...unguardedTextErrors(c),

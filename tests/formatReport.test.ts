@@ -38,9 +38,9 @@ const text = () =>
 describe('formatReport', () => {
   it('says what this is before it says anything about the candidate', () => {
     const out = text();
-    expect(out).toContain('This is practice feedback, not a mark.');
-    expect(out).toContain('does not publish an item-by-item mark scheme');
-    expect(out).toContain('not been reviewed by a clinician');
+    expect(out).toContain('This is practice feedback, not a mark');
+    expect(out).toContain('publishes no item-by-item mark scheme');
+    expect(out).toContain('not been reviewed');
     // No verdict, anywhere.
     expect(out).not.toMatch(/Global judgement|Borderline|Satisfactory/);
   });
@@ -50,13 +50,15 @@ describe('formatReport', () => {
     expect(out).toContain('Does not develop a management plan reflecting current best practice');
     expect(out).toContain('[--] Examination');
     expect(out).toContain('Nothing is examined in a typed history-taking station.');
+    // The wording's authority is shown, because ours and a regulator's are not the same thing.
+    expect(out).toContain('Published wording, from: GMC');
   });
 
   it('quotes the question that earned each mark, and suggests wording for the ones missed', () => {
     const out = text();
     expect(out).toContain('[x] Takes a smoking history - question 2');
     expect(out).toContain('You asked: "Do you smoke at all?"');
-    expect(out).toContain('[ ] Asks about coughing up blood (red flag)');
+    expect(out).toContain('[ ] Asks about coughing up blood (critical)');
     expect(out).toContain('Try: "Have you coughed up any blood?"');
     expect(out).toContain('You did not find out what the patient was worried about.');
   });

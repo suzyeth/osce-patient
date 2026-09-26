@@ -67,10 +67,13 @@ describe('computeReport', () => {
     expect(computeReport(c, { ...initialSessionState(), unlockedFactIds: ['f_concern'] }).concernElicited).toBe(true);
   });
 
-  it('counts each domain without a ratio, and always flags management as incomplete', () => {
+  it('counts each of the pack domains, in the pack order, with no ratio', () => {
     const r = computeReport(c, initialSessionState());
-    expect(r.domains.management).toEqual({ covered: 0, total: 0 });
-    expect(r.managementIncomplete).toBe(true);
+    expect(r.domains.map((d) => d.id)).toEqual(['data_gathering', 'management', 'interpersonal']);
+    expect(r.domains.find((d) => d.id === 'management')).toMatchObject({ covered: 0, total: 0 });
+    // The pack, not the engine, says what is left unscored.
+    expect(r.caveat).toContain('Clinical management is not scored');
+    expect(r.strayDomains).toEqual([]);
   });
 });
 

@@ -154,32 +154,21 @@ function statementRow(s) {
   li.append(mark, Object.assign(document.createElement('b'), { textContent: s.label }));
   li.append(hint(s.text));
   li.append(hint(s.evidence));
+  // Whose words these are matters: a regulator's statement and ours are not the same thing.
+  li.append(hint(`${s.authority === 'regulator' ? 'Published wording' : 'Our wording'}, from: ${s.source}`));
   for (const q of s.quotes.slice(0, 2)) li.append(hint(`You wrote: “${q}”`));
   return li;
 }
 
-// The GMC's own names for its three marking domains.
-const DOMAIN_LABELS = {
-  data_gathering: 'Data gathering',
-  interpersonal: 'Interpersonal skills',
-  management: 'Clinical management',
-};
-
 function renderReport(title, report) {
   $('reportTitle').textContent = title;
-  const domains = Object.entries(report.domains)
-    .filter(([, score]) => score.total > 0)
-    .map(([domain, score]) => scoreCard(DOMAIN_LABELS[domain] ?? domain, score));
+  // The domains and their names come from the case's domain pack, not from this page.
+  const domains = report.domains.filter((d) => d.total > 0).map((d) => scoreCard(d.label, d));
   $('scores').replaceChildren(
     scoreCard('Items covered', { covered: report.items.filter((i) => i.covered).length, total: report.items.length }),
     ...domains,
   );
-  if (report.managementIncomplete) {
-    const note = document.createElement('p');
-    note.className = 'muted';
-    note.textContent = 'Clinical management is not scored in this version; only safety netting is looked at.';
-    $('scores').after(note);
-  }
+  $('caveat').textContent = report.caveat;
   $('statements').replaceChildren(...report.statements.map(statementRow));
   $('covered').replaceChildren(...report.items.filter((i) => i.covered).map((i) => itemRow(i, true)));
   $('missed').replaceChildren(...report.items.filter((i) => !i.covered).map((i) => itemRow(i, false)));
