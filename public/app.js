@@ -126,6 +126,10 @@ function scoreCard(label, score) {
   return box;
 }
 
+function hint(text) {
+  return Object.assign(document.createElement('span'), { className: 'hint', textContent: text });
+}
+
 function itemRow(item, covered) {
   const li = document.createElement('li');
   if (item.critical) li.className = 'critical';
@@ -133,14 +137,33 @@ function itemRow(item, covered) {
   mark.className = covered ? 'tick' : 'cross';
   mark.textContent = covered ? '✓' : '✗';
   li.append(mark, document.createTextNode(item.label + (item.critical ? ' (red flag)' : '')));
-  const hint = document.createElement('span');
-  hint.className = 'hint';
-  hint.textContent = covered ? `first covered at question ${item.turn}` : `Try: ${item.exampleQuestion}`;
-  li.append(hint);
+  // The words that earned the mark, so a candidate can disagree with it.
+  if (covered) li.append(hint(item.quote ? `question ${item.turn}: “${item.quote}”` : `question ${item.turn}`));
+  else li.append(hint(`Try: ${item.exampleQuestion}`));
+  if (item.source) li.append(hint(`Source: ${item.source}`));
   return li;
 }
 
-const DOMAIN_LABELS = { data_gathering: 'Information gathering', interpersonal: 'Communication', management: 'Clinical management' };
+const STATEMENT_MARK = { concern: ['cross', '✗'], no_concern: ['tick', '✓'], not_assessed: ['muted', '–'] };
+
+function statementRow(s) {
+  const li = document.createElement('li');
+  if (s.outcome === 'concern') li.className = 'critical';
+  const [cls, glyph] = STATEMENT_MARK[s.outcome] ?? STATEMENT_MARK.not_assessed;
+  const mark = Object.assign(document.createElement('span'), { className: cls, textContent: glyph });
+  li.append(mark, Object.assign(document.createElement('b'), { textContent: s.label }));
+  li.append(hint(s.text));
+  li.append(hint(s.evidence));
+  for (const q of s.quotes.slice(0, 2)) li.append(hint(`You wrote: “${q}”`));
+  return li;
+}
+
+// The GMC's own names for its three marking domains.
+const DOMAIN_LABELS = {
+  data_gathering: 'Data gathering',
+  interpersonal: 'Interpersonal skills',
+  management: 'Clinical management',
+};
 
 function renderReport(title, report) {
   $('reportTitle').textContent = title;
@@ -151,17 +174,13 @@ function renderReport(title, report) {
     scoreCard('Items covered', { covered: report.items.filter((i) => i.covered).length, total: report.items.length }),
     ...domains,
   );
-  const judgement = document.createElement('div');
-  judgement.className = 'score';
-  judgement.append(Object.assign(document.createElement('small'), { textContent: 'Overall' }));
-  judgement.append(Object.assign(document.createElement('b'), { textContent: report.global }));
-  $('scores').append(judgement);
   if (report.managementIncomplete) {
     const note = document.createElement('p');
     note.className = 'muted';
-    note.textContent = 'Clinical management is only partly scored in this version.';
+    note.textContent = 'Clinical management is not scored in this version; only safety netting is looked at.';
     $('scores').after(note);
   }
+  $('statements').replaceChildren(...report.statements.map(statementRow));
   $('covered').replaceChildren(...report.items.filter((i) => i.covered).map((i) => itemRow(i, true)));
   $('missed').replaceChildren(...report.items.filter((i) => !i.covered).map((i) => itemRow(i, false)));
   show(reportView);

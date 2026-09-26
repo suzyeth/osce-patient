@@ -4,7 +4,6 @@ export const DOMAINS = ['data_gathering', 'interpersonal', 'management'] as cons
 export type Domain = (typeof DOMAINS)[number];
 export const FACT_KINDS = ['presenting', 'history', 'red_flag', 'concern'] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
-export type GlobalJudgement = 'Unsatisfactory' | 'Borderline' | 'Satisfactory' | 'Good';
 
 export const SourceSchema = z.object({
   dataset: z.enum(['fareez2022', 'primock57', 'agentclinic-medqa', 'authored']),
@@ -81,6 +80,23 @@ export const JudgeVerdictSchema = z.object({
 });
 export type JudgeVerdict = z.infer<typeof JudgeVerdictSchema>;
 
+/**
+ * One student turn, kept so the report can quote the words that earned a mark instead of only
+ * naming the turn. Everything a mark rests on has to be inspectable by the person being marked.
+ */
+export interface TurnRecord {
+  /** 1-based. */
+  turn: number;
+  /** The student's own words, verbatim. */
+  studentInput: string;
+  /** Rubric items this turn was the first to cover. */
+  creditedItemIds: string[];
+  questionStyle: JudgeVerdict['questionStyle'];
+  empathy: boolean;
+  interrupted: boolean;
+  jargon: boolean;
+}
+
 export interface SessionState {
   trust: number;
   unlockedFactIds: string[];
@@ -90,4 +106,6 @@ export interface SessionState {
   interruptions: number;
   jargonCount: number;
   empathyCount: number;
+  /** Every turn in order, for quoting evidence back in the report. */
+  transcript: TurnRecord[];
 }

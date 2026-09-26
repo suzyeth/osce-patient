@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   codeMatches,
+  COOKIE_CHUNK_CHARS,
+  joinCookieChunks,
+  MAX_COOKIE_CHUNKS,
+  splitCookie,
   openSession,
   sealSession,
   SessionCookieError,
@@ -9,6 +13,7 @@ import {
   type StoredSession,
 } from '../../src/web/sessionCookie.js';
 import { initialSessionState } from '../../src/state.js';
+import type { TurnRecord } from '../../src/types.js';
 
 const SECRET = 'a-secret-of-at-least-16-chars';
 const OTHER = 'another-secret-of-16-plus-chars';
@@ -78,5 +83,100 @@ describe('codeMatches', () => {
     expect(codeMatches('judge-cod', 'judge-code')).toBe(false);
     expect(codeMatches('', 'judge-code')).toBe(false);
     expect(codeMatches('JUDGE-CODE', 'judge-code')).toBe(false);
+  });
+});
+
+describe('the transcript in the cookie', () => {
+  const turn = (i: number, over: Partial<TurnRecord> = {}): TurnRecord => ({
+    turn: i,
+    studentInput: `Question number ${i}: ${'a very long thing to ask the patient about their symptoms '.repeat(4)}`,
+    creditedItemIds: [],
+    questionStyle: 'closed' as const,
+    empathy: false,
+    interrupted: false,
+    jargon: false,
+    ...over,
+  });
+
+  it('stores only the turns the report can say something about', () => {
+    const transcript = [turn(1), turn(2, { creditedItemIds: ['smoking'] }), turn(3, { jargon: true })];
+    const stored = toStored('demo-cough', 1, { ...state, transcript }, [], 0);
+    // Turn one earned nothing and carries no flag, so the report would never print it.
+    expect(stored.transcript.map((x) => x.t)).toEqual([2, 3]);
+    expect(stored.transcript[0]?.q).toContain('Question number 2');
+    expect(stored.transcript[0]?.c).toEqual(['smoking']);
+    expect(stored.transcript[1]?.f).toBe(4);
+  });
+
+  it('trims a long question rather than dropping it', () => {
+    const stored = toStored('demo-cough', 1, { ...state, transcript: [turn(1, { creditedItemIds: ['smoking'] })] }, [], 0);
+    const quote = stored.transcript[0]?.q ?? '';
+    expect(quote.length).toBeLessThanOrEqual(120);
+    expect(quote.endsWith('…')).toBe(true);
+  });
+
+  it('round-trips the flags back into the engine state', () => {
+    const transcript = [turn(1, { creditedItemIds: ['smoking'], empathy: true, interrupted: true, jargon: true })];
+    const restored = toSessionState(openSession(sealSession(toStored('demo-cough', 1, { ...state, transcript }, [], 0), SECRET), SECRET));
+    expect(restored.transcript[0]).toMatchObject({ turn: 1, empathy: true, interrupted: true, jargon: true, questionStyle: 'closed' });
+    expect(restored.transcript[0]?.creditedItemIds).toEqual(['smoking']);
+  });
+
+  it('fits a whole station in a few cookies, and never drops the evidence for a mark', () => {
+    // Worse than a real station: 20 credited questions, all long, plus 10 flagged ones.
+    const credited = Array.from({ length: 20 }, (_, i) => turn(i + 1, { creditedItemIds: [`rubric_item_${i}`] }));
+    const flagged = Array.from({ length: 10 }, (_, i) => turn(i + 21, { jargon: true, interrupted: true }));
+    const transcript = [...credited, ...flagged];
+    const stored = toStored('demo-cough', 1, { ...state, transcript }, history, 0.05);
+    const cookie = sealSession(stored, SECRET);
+    // Browsers only guarantee about 4 KB per cookie, so no single chunk may approach that.
+    const parts = splitCookie(cookie);
+    expect(parts.length).toBeLessThanOrEqual(MAX_COOKIE_CHUNKS);
+    for (const part of parts) expect(part.length).toBeLessThanOrEqual(COOKIE_CHUNK_CHARS);
+    // Put back together, it is the same session; nothing about chunking changes what is stored.
+    expect(joinCookieChunks(new Map(parts.map((part, i) => [i, part])))).toBe(cookie);
+    expect(stored.transcript).toHaveLength(30);
+    // Every credited turn still carries the words that earned it.
+    expect(stored.transcript.filter((x) => x.c.length > 0).every((x) => x.q !== '')).toBe(true);
+    expect(openSession(cookie, SECRET).transcript).toHaveLength(30);
+  });
+});
+
+describe('splitting the cookie', () => {
+  it('needs no split for a short session and leaves it byte for byte the same', () => {
+    const cookie = sealSession(toStored('demo-cough', 1, state, [], 0), SECRET);
+    expect(splitCookie(cookie)).toEqual([cookie]);
+  });
+
+  it('stops at a gap rather than joining a stale tail onto a new session', () => {
+    expect(joinCookieChunks(new Map([[0, 'aaa'], [2, 'ccc']]))).toBe('aaa');
+    expect(joinCookieChunks(new Map())).toBeNull();
+  });
+
+  it('refuses to store a session that would need more cookies than a browser will keep', () => {
+    const tooLong = 'x'.repeat(COOKIE_CHUNK_CHARS * MAX_COOKIE_CHUNKS + 1);
+    expect(() => splitCookie(tooLong)).toThrow(SessionCookieError);
+  });
+
+  it('fits the longest station the web limits allow', () => {
+    // maxTurns is 40, so this is the worst case a visitor can actually reach.
+    const transcript = Array.from({ length: 40 }, (_, i) => ({
+      turn: i + 1,
+      studentInput: `A long question about the patient and their symptoms, number ${i + 1}, ${'padding '.repeat(20)}`,
+      creditedItemIds: [`rubric_item_${i}`],
+      questionStyle: 'closed' as const,
+      empathy: true,
+      interrupted: true,
+      jargon: true,
+    }));
+    const full = {
+      ...state,
+      turnsUsed: 40,
+      transcript,
+      rubricHits: Object.fromEntries(transcript.map((x, i) => [`rubric_item_${i}`, x.turn])),
+    };
+    const history = Array.from({ length: 8 }, (_, i) => ({ student: 'q'.repeat(500), patient: 'a'.repeat(500) }));
+    const parts = splitCookie(sealSession(toStored('demo-cough', 1, full, history, 0.05), SECRET));
+    expect(parts.length).toBeLessThanOrEqual(MAX_COOKIE_CHUNKS);
   });
 });

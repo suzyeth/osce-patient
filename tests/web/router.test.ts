@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { handleApi, SESSION_COOKIE, type StationClients, type WebDeps } from '../../src/web/router.js';
-import { openSession, sealSession, toStored } from '../../src/web/sessionCookie.js';
+import { joinCookieChunks, openSession, sealSession, splitCookie, toStored } from '../../src/web/sessionCookie.js';
 import type { WebLimits } from '../../src/web/limits.js';
 import { offlineJudge, offlinePatient } from '../../src/offline.js';
 import { computeReport } from '../../src/report.js';
@@ -37,22 +37,42 @@ const post = (path: string, payload: unknown, cookie?: string) =>
   new Request(`https://example.test${path}`, {
     method: 'POST',
     body: JSON.stringify(payload),
-    headers: cookie ? { cookie: `${SESSION_COOKIE}=${cookie}` } : {},
+    headers: cookie ? { cookie: cookieChunks(cookie) } : {},
   });
 
-const cookieFrom = (response: Response): string => (response.headers.get('set-cookie') ?? '').split(';')[0]!.split('=').slice(1).join('=');
+/** The browser sends the numbered chunks back in one header; this is what that looks like. */
+const cookieChunks = (value: string): string =>
+  splitCookie(value)
+    .map((part, i) => `${SESSION_COOKIE}_${i}=${part}`)
+    .join('; ');
+
+/** The session the response set, reassembled from the set-cookie headers, as a browser would. */
+const cookieFrom = (response: Response): string => {
+  const chunks = new Map<number, string>();
+  for (const header of response.headers.getSetCookie()) {
+    const [pair] = header.split(';');
+    const [name, ...rest] = (pair ?? '').split('=');
+    const match = /^osce_station_(\d+)$/.exec(name ?? '');
+    const value = rest.join('=');
+    if (match && value !== '') chunks.set(Number(match[1]), value);
+  }
+  return joinCookieChunks(chunks) ?? '';
+};
+
+/** Every set-cookie header in one string, for asserting on the attributes. */
+const setCookieText = (response: Response): string => response.headers.getSetCookie().join(' | ');
 
 describe('POST /api/start', () => {
   it('needs the access code and sets a sealed cookie', async () => {
     const refused = await handleApi(post('/api/start', { code: 'wrong' }), deps());
     expect(refused.status).toBe(403);
-    expect(refused.headers.get('set-cookie')).toBeNull();
+    expect(refused.headers.getSetCookie()).toEqual([]);
 
     const started = await handleApi(post('/api/start', { code: 'plab-2026' }), deps());
     expect(started.status).toBe(200);
     const payload = (await started.json()) as Record<string, unknown>;
     expect(payload).toMatchObject({ caseId: c.id, patientName: c.patient.name, secondsLeft: c.durationSeconds, reviewStatus: 'unreviewed' });
-    const header = started.headers.get('set-cookie') ?? '';
+    const header = setCookieText(started);
     expect(header).toContain('HttpOnly');
     expect(header).toContain('SameSite=Lax');
     expect(header).toContain('Secure');
@@ -118,7 +138,7 @@ describe('POST /api/turn', () => {
     const cookie = sealed();
     const response = await handleApi(post('/api/turn', { input: 'Do you smoke?' }, cookie), deps({ clientsFor: failing }));
     expect(response.status).toBe(502);
-    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(response.headers.getSetCookie()).toEqual([]);
     expect(openSession(cookie, SECRET).state.turnsUsed).toBe(0);
   });
 
@@ -135,7 +155,7 @@ describe('POST /api/report and GET /api/sample', () => {
     const response = await handleApi(post('/api/report', {}, stored), deps());
     const payload = (await response.json()) as { report: { items: Array<{ id: string; covered: boolean }> } };
     expect(payload.report.items.find((i) => i.id === 'smoking')?.covered).toBe(true);
-    expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+    expect(setCookieText(response)).toContain('Max-Age=0');
   });
 
   it('lists the cases a visitor may choose, with nothing they should not see yet', async () => {

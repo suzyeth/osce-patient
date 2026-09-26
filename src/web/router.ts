@@ -5,7 +5,17 @@ import { appendTurn, runTurn } from '../orchestrator.js';
 import { computeReport, type SessionReport } from '../report.js';
 import { initialSessionState } from '../state.js';
 import { checkAccess, checkTurn, type WebLimits } from './limits.js';
-import { openSession, sealSession, SessionCookieError, toSessionState, toStored, type StoredSession } from './sessionCookie.js';
+import {
+  joinCookieChunks,
+  MAX_COOKIE_CHUNKS,
+  openSession,
+  sealSession,
+  SessionCookieError,
+  splitCookie,
+  toSessionState,
+  toStored,
+  type StoredSession,
+} from './sessionCookie.js';
 
 export const SESSION_COOKIE = 'osce_station';
 
@@ -30,26 +40,54 @@ export interface WebDeps {
   sampleReport: () => { caseTitle: string; report: SessionReport; transcript: ConversationTurn[] };
 }
 
-function json(body: unknown, init: ResponseInit = {}): Response {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(init.headers ?? {}) },
-  });
+interface JsonInit extends ResponseInit {
+  /** One entry per set-cookie header: the state needs several, and an object header holds only one. */
+  cookies?: readonly string[];
 }
 
-function cookieHeader(value: string, maxAgeSeconds: number): string {
+function json(body: unknown, init: JsonInit = {}): Response {
+  const { cookies, ...rest } = init;
+  const response = new Response(JSON.stringify(body), {
+    ...rest,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(init.headers ?? {}) },
+  });
+  for (const cookie of cookies ?? []) response.headers.append('set-cookie', cookie);
+  return response;
+}
+
+function oneCookie(name: string, value: string, maxAgeSeconds: number): string {
   // Lax is enough: every call is same-site from the page, and it keeps the cookie off other sites.
-  return `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAgeSeconds}`;
+  return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAgeSeconds}`;
+}
+
+/**
+ * The state is split across numbered cookies because one cookie cannot hold a whole station's
+ * evidence. Chunks the session no longer needs are expired in the same response, so a shorter
+ * session can never be read with a longer one's tail still attached.
+ */
+function cookieHeaders(value: string, maxAgeSeconds: number): string[] {
+  const parts = splitCookie(value);
+  const headers = parts.map((part, i) => oneCookie(`${SESSION_COOKIE}_${i}`, part, maxAgeSeconds));
+  for (let i = parts.length; i < MAX_COOKIE_CHUNKS; i++) headers.push(oneCookie(`${SESSION_COOKIE}_${i}`, '', 0));
+  return headers;
+}
+
+function clearedCookies(): string[] {
+  const headers: string[] = [];
+  for (let i = 0; i < MAX_COOKIE_CHUNKS; i++) headers.push(oneCookie(`${SESSION_COOKIE}_${i}`, '', 0));
+  return headers;
 }
 
 function readCookie(request: Request): string | null {
   const header = request.headers.get('cookie');
   if (!header) return null;
+  const chunks = new Map<number, string>();
   for (const part of header.split(';')) {
     const [name, ...rest] = part.trim().split('=');
-    if (name === SESSION_COOKIE) return rest.join('=');
+    const match = /^osce_station_(\d+)$/.exec(name ?? '');
+    if (match) chunks.set(Number(match[1]), rest.join('='));
   }
-  return null;
+  return joinCookieChunks(chunks);
 }
 
 async function body(request: Request): Promise<Record<string, unknown>> {
@@ -90,7 +128,7 @@ async function start(request: Request, deps: WebDeps): Promise<Response> {
       reviewStatus: patientCase.reviewStatus,
       maxTurns: deps.limits.maxTurns,
     },
-    { headers: { 'set-cookie': cookieHeader(sealSession(stored, deps.secret), patientCase.durationSeconds + 600) } },
+    { cookies: cookieHeaders(sealSession(stored, deps.secret), patientCase.durationSeconds + 600) },
   );
 }
 
@@ -145,7 +183,7 @@ async function turn(request: Request, deps: WebDeps): Promise<Response> {
       turnsUsed: next.state.turnsUsed,
       maxTurns: deps.limits.maxTurns,
     },
-    { headers: { 'set-cookie': cookieHeader(sealSession(next, deps.secret), patientCase.durationSeconds + 600) } },
+    { cookies: cookieHeaders(sealSession(next, deps.secret), patientCase.durationSeconds + 600) },
   );
 }
 
@@ -156,7 +194,7 @@ async function report(request: Request, deps: WebDeps): Promise<Response> {
   const computed = computeReport(patientCase, toSessionState(stored));
   return json(
     { caseTitle: patientCase.title, reviewStatus: patientCase.reviewStatus, report: computed },
-    { headers: { 'set-cookie': cookieHeader('', 0) } },
+    { cookies: clearedCookies() },
   );
 }
 

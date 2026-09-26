@@ -114,7 +114,7 @@ export async function runTurn(
   // it added no recall over that check and tripled false pauses, so it does not override it.
   if (flaggedByModel === null && verdict.selfDisclosure) return blocked(state, 'judge');
 
-  const afterVerdict = applyVerdict(state, verdict, patientCase.rubric.map((r) => r.id));
+  const afterVerdict = applyVerdict(state, verdict, patientCase.rubric.map((r) => r.id), studentInput);
   const newlyUnlocked = unlockFacts(patientCase, afterVerdict, verdict);
   const nextState: SessionState = {
     ...afterVerdict,
