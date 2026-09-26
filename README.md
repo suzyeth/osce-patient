@@ -240,10 +240,14 @@ npm run eval -- safety --online --set eval/fixtures/safety-dev.json   # the deve
   was measured with a different judge model and is not a like-for-like baseline.
 - **The honesty grader is a model.** Its labels were read by hand on the first run and matched, but a label
   like "invented" against "No known allergies" is a judgement call. Counts are in the JSON.
-- **The last honesty run predates a prompt fix.** It measured the simulated person answering off-case
-  questions with something the case cannot support 70% of the time, half inventing a symptom and half
-  inventing a denial. The prompt now gives the exact words to use instead; that fix has not yet been
-  re-measured.
+- **The honesty measurement has moved twice, and the current prompt is unmeasured.** The first run had the
+  simulated person answering off-case questions with something the case cannot support 70% of the time,
+  split evenly between inventing a detail and denying. The prompt was changed to give the exact words to
+  use, and the second run (`eval/results/demo-cough/honesty.md`) reads 55% unsupported, 15% invented, 40%
+  denied. Reading the twenty graded answers, two of the three invented ones were the same
+  denial-with-a-detail and only one was substantive fabrication, so the fix worked on the harmful half. It
+  did not work on bare denials, which the prompt explicitly banned: that instruction has since been
+  rewritten as a reason rather than a ban and has not been measured.
 
 Every run must say `--online` or `--offline`, so nothing spends by default (keep the `--` after `npm run eval`: without it npm keeps the flag). Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
 counted by each case's guarded terms, so a paraphrased leak is missed in both versions; the labels in the
