@@ -90,7 +90,7 @@ describe('the engine is not a medical tool', () => {
   });
 
   it('flags the missed evidence of cost as the critical miss for this field', () => {
-    const r = computeReport(research, initialSessionState());
+    const r = computeReport(research, { ...initialSessionState(), turnsUsed: 1 });
     expect(r.criticalMisses).toEqual(['cost_of_problem']);
     const evidence = r.statements.find((s) => s.key === 'evidence');
     expect(evidence?.outcome).toBe('concern');

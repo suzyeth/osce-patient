@@ -70,7 +70,7 @@ function strayDomains(items: ItemResult[], pack: DomainPack): string[] {
  * Which items those are is the pack's business. Anything subtler is a human judgement and is not
  * guessed at here.
  */
-function sessionOrder(items: ItemResult[], pack: DomainPack): { ordered: boolean; detail: string } {
+function sessionOrder(items: ItemResult[], pack: DomainPack): { ordered: boolean | null; detail: string } {
   const turnOf = (id: string | undefined): number | null =>
     (id === undefined ? undefined : items.find((i) => i.id === id)?.turn) ?? null;
   const opened = turnOf(pack.openingItemId);
@@ -80,7 +80,7 @@ function sessionOrder(items: ItemResult[], pack: DomainPack): { ordered: boolean
     .filter((i) => i.domain === gatheringId && i.turn !== null)
     .map((i) => i.turn as number);
   if (gatheringTurns.length === 0) {
-    return { ordered: true, detail: 'Too little was covered to say anything about structure.' };
+    return { ordered: null, detail: 'You did not cover enough of the conversation to say anything about its order.' };
   }
   const first = Math.min(...gatheringTurns);
   const last = Math.max(...gatheringTurns);
@@ -96,10 +96,18 @@ function sessionOrder(items: ItemResult[], pack: DomainPack): { ordered: boolean
       detail: `You summarised at question ${closed} and then went back to asking for details at question ${last}.`,
     };
   }
-  return {
-    ordered: true,
-    detail: 'You opened before narrowing down, and did not go back to gathering details after summarising.',
-  };
+  // Only claim the parts that actually happened. Saying "you opened before narrowing down" to
+  // someone who never opened the conversation is the failure this whole report exists to avoid.
+  const held: string[] = [];
+  if (opened !== null) held.push('you opened before narrowing down');
+  if (closed !== null) held.push('you did not go back to gathering details after summarising');
+  if (held.length === 0) {
+    return {
+      ordered: null,
+      detail: 'You neither opened nor closed the conversation, so there is no order here to judge.',
+    };
+  }
+  return { ordered: true, detail: `As far as this session can see, ${held.join(', and ')}.` };
 }
 
 function observe(items: ItemResult[], state: SessionState, patientCase: PatientCase, pack: DomainPack, concernElicited: boolean | null): Observations {
@@ -141,10 +149,22 @@ function judgeStatements(pack: DomainPack, obs: Observations): StatementResult[]
       authority: statement.authority,
       source: statement.source,
     };
-    if (!statement.assessable || !statement.assess) {
-      return { ...base, outcome: 'not_assessed' as const, evidence: statement.notAssessableBecause, quotes: [] };
+    const notAssessed = (evidence: string): StatementResult => ({ ...base, outcome: 'not_assessed', evidence, quotes: [] });
+    if (!statement.assessable || !statement.assess) return notAssessed(statement.notAssessableBecause);
+    // Three ways there is no evidence either way. Each one used to come out as no concern, which
+    // told the learner they had done something they had not: the worst thing this report can do.
+    if (obs.turnsUsed === 0) return notAssessed('You did not ask anything, so there is nothing here to judge.');
+    const missing = (statement.needsItems ?? []).filter((id) => obs.itemById(id) === undefined);
+    if (missing.length > 0) {
+      return notAssessed(`This case has no item for ${missing.join(', ')}, so this station cannot judge it.`);
     }
-    return { ...base, ...statement.assess(obs) };
+    try {
+      return { ...base, ...statement.assess(obs) };
+    } catch (e) {
+      // A pack's own mistake must cost one statement, not the whole report.
+      const why = e instanceof Error ? e.message : String(e);
+      return notAssessed(`This could not be worked out: ${why}. Please report it on the repository's issue tracker.`);
+    }
   });
 }
 

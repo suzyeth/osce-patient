@@ -52,8 +52,12 @@ export interface Observations {
   interruptedTurns: readonly number[];
   jargonTurns: readonly number[];
   empathyTurns: readonly number[];
-  /** Whether the session ran in a sensible order, from the pack's opening and closing items. */
-  order: { ordered: boolean; detail: string };
+  /**
+   * Whether the session ran in a sensible order, from the pack's opening and closing items.
+   * `ordered` is null when there was nothing to judge, which a pack must report as not assessed
+   * rather than as no concern.
+   */
+  order: { ordered: boolean | null; detail: string };
   /** Whether the hidden concern was reached; null when the case has none. */
   concernElicited: boolean | null;
   itemById: (id: string) => ItemResult | undefined;
@@ -96,6 +100,12 @@ export interface FeedbackStatement {
   assessable: boolean;
   /** Why it cannot be judged here; empty when it can. */
   notAssessableBecause: string;
+  /**
+   * Rubric item ids this statement's judgement reads. A case that has none of them cannot be judged
+   * on this statement, and the engine reports that rather than letting the pack's assess function
+   * mistake an absent item for a covered one. validateCase checks these exist.
+   */
+  needsItems?: readonly string[];
   /** How this field judges the statement. Required when assessable. */
   assess?: (obs: Observations) => StatementJudgement;
 }

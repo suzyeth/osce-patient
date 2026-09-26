@@ -6,7 +6,7 @@ const GMC_SOURCE = 'GMC, Understanding your results (PLAB 2 guide), read 2026-09
 
 /** Judged from the order the items were covered in; see sessionOrder in report.ts. */
 const consultation = (obs: Observations): StatementJudgement => ({
-  outcome: obs.order.ordered ? 'no_concern' : 'concern',
+  outcome: obs.order.ordered === null ? 'not_assessed' : obs.order.ordered ? 'no_concern' : 'concern',
   evidence: obs.order.detail,
   quotes: [],
 });
@@ -111,10 +111,16 @@ const ASSESS: Readonly<Record<string, (obs: Observations) => StatementJudgement>
   language,
 };
 
+/** Which rubric items each statement's judgement reads; the engine reports an absent one. */
+const NEEDS: Readonly<Record<string, readonly string[]>> = {
+  language: ['closing'],
+};
+
 const statements: FeedbackStatement[] = FEEDBACK_STATEMENTS.map((s) => ({
   ...s,
   authority: 'regulator' as const,
   source: GMC_SOURCE,
+  needsItems: NEEDS[s.key],
   assess: ASSESS[s.key],
 }));
 

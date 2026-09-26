@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeReport } from '../src/report.js';
+import { formatReport } from '../src/formatReport.js';
+import { registerPack } from '../src/domains/index.js';
 import { initialSessionState } from '../src/state.js';
 import type { SessionState, TurnRecord } from '../src/types.js';
 import { loadDemoCase } from './loadCase.js';
@@ -14,6 +16,14 @@ const record = (over: Partial<TurnRecord> = {}): TurnRecord => ({
   empathy: false,
   interrupted: false,
   jargon: false,
+  ...over,
+});
+
+/** A session where something was said, so statements are judged rather than left unassessed. */
+const spoken = (over: Partial<SessionState> = {}): SessionState => ({
+  ...initialSessionState(),
+  turnsUsed: 1,
+  transcript: [record()],
   ...over,
 });
 
@@ -77,6 +87,83 @@ describe('computeReport', () => {
   });
 });
 
+describe('what the report refuses to claim without evidence', () => {
+  // Every one of these was a real defect: an empty or partial session came back as "no concern",
+  // telling the learner they had done something they had not. Nothing is worse than that here.
+  it('judges nothing at all when nobody said anything', () => {
+    const r = computeReport(c, initialSessionState());
+    expect(r.statements.every((s) => s.outcome === 'not_assessed')).toBe(true);
+    for (const s of r.statements) expect(s.evidence.length, s.key).toBeGreaterThan(20);
+    const assessable = r.statements.filter((s) => s.key === 'listening' || s.key === 'time' || s.key === 'jargon');
+    for (const s of assessable) expect(s.evidence, s.key).toContain('did not ask anything');
+  });
+
+  it('never tells a silent learner they let the patient finish or kept to plain words', () => {
+    const text = formatReport(computeReport(c, initialSessionState()));
+    expect(text).not.toContain('You let the patient finish');
+    expect(text).not.toContain('You kept to plain words');
+    expect(text).not.toContain('You opened before narrowing down');
+    expect(text).not.toContain('[ok]');
+  });
+
+  it('will not judge order when the learner neither opened nor closed', () => {
+    // Three gathering items covered, but the opening and closing items never were.
+    const s = statement(spoken({ rubricHits: { onset_duration: 1, smoking: 2, haemoptysis: 3 }, turnsUsed: 3 }), 'consultation');
+    expect(s.outcome).toBe('not_assessed');
+    expect(s.evidence).toContain('neither opened nor closed');
+  });
+
+  it('only claims the part of the order it can actually see', () => {
+    const opened = statement(spoken({ rubricHits: { open_question: 1, smoking: 2 }, turnsUsed: 2 }), 'consultation');
+    expect(opened.outcome).toBe('no_concern');
+    expect(opened.evidence).toContain('you opened before narrowing down');
+    // It did not also claim the learner summarised, because they did not.
+    expect(opened.evidence).not.toContain('after summarising');
+  });
+
+  it('says which item is missing when a statement needs one the case does not have', () => {
+    const noClosing = { ...c, rubric: c.rubric.filter((r) => r.id !== 'closing') };
+    const s = computeReport(noClosing, spoken({ turnsUsed: 2 })).statements.find((x) => x.key === 'language');
+    expect(s?.outcome).toBe('not_assessed');
+    expect(s?.evidence).toContain('no item for closing');
+  });
+
+  it('loses one statement, not the whole report, when a pack throws', () => {
+    const broken = registerPack({
+      id: 'test-throwing-pack',
+      label: 'Throwing',
+      personNoun: 'person',
+      learnerNoun: 'learner',
+      caveat: 'A pack whose assess function is wrong.',
+      persona: { roleLine: 'You are someone.', factsHeading: 'What you may share', inventionBan: 'Invent nothing.', smallTalkLine: 'Small talk is fine.' },
+      domains: [{ id: 'asking', label: 'Asking' }],
+      gatheringDomainId: 'asking',
+      rubric: [{ id: 'a', domain: 'asking', label: 'Asks', critical: false, exampleQuestion: 'Well?', offlineCues: ['well'] }],
+      sources: { a: 'somewhere published' },
+      statements: [
+        {
+          key: 'boom',
+          label: 'Boom',
+          text: 'Did not.',
+          authority: 'ours',
+          source: 'x',
+          assessable: true,
+          notAssessableBecause: '',
+          assess: () => {
+            throw new Error('assess blew up');
+          },
+        },
+      ],
+    });
+    const brokenCase = { ...c, pack: broken.id, rubric: [broken.rubric[0]!] };
+    const r = computeReport(brokenCase, spoken({ turnsUsed: 1 }));
+    expect(r.statements[0]?.outcome).toBe('not_assessed');
+    expect(r.statements[0]?.evidence).toContain('assess blew up');
+    // The rest of the report survived.
+    expect(r.items).toHaveLength(1);
+  });
+});
+
 describe('the GMC feedback statements', () => {
   it('reports all ten, in the GMC order, quoting the GMC wording', () => {
     const r = computeReport(c, initialSessionState());
@@ -106,7 +193,7 @@ describe('the GMC feedback statements', () => {
   });
 
   it('flags a missed red flag under Issues, naming it', () => {
-    const s = statement(initialSessionState(), 'issues');
+    const s = statement(spoken(), 'issues');
     expect(s.outcome).toBe('concern');
     expect(s.evidence).toContain('You did not cover "Asks about coughing up blood"');
   });
@@ -131,30 +218,28 @@ describe('the GMC feedback statements', () => {
   });
 
   it('flags asking specific questions before opening the consultation under Consultation', () => {
-    const late = statement({ ...initialSessionState(), rubricHits: { smoking: 1, open_question: 4 } }, 'consultation');
+    const late = statement(spoken({ rubricHits: { smoking: 1, open_question: 4 } }), 'consultation');
     expect(late.outcome).toBe('concern');
     expect(late.evidence).toContain('question 4');
-    const inOrder = statement({ ...initialSessionState(), rubricHits: { open_question: 1, smoking: 3 } }, 'consultation');
+    const inOrder = statement(spoken({ rubricHits: { open_question: 1, smoking: 3 } }), 'consultation');
     expect(inOrder.outcome).toBe('no_concern');
   });
 
   it('flags more questions than the station has room for under Time, and says typing is not timed', () => {
-    const over = statement({ ...initialSessionState(), turnsUsed: 999 }, 'time');
+    const over = statement(spoken({ turnsUsed: 999 }), 'time');
     expect(over.outcome).toBe('concern');
     expect(over.evidence).toContain('not timed');
-    const within = statement({ ...initialSessionState(), turnsUsed: 4 }, 'time');
+    const within = statement(spoken({ turnsUsed: 4 }), 'time');
     expect(within.outcome).toBe('no_concern');
     expect(within.evidence).toContain('not timed');
   });
 
   it('treats a missed concern as a rapport problem, and empathy as evidence against one', () => {
-    expect(statement(initialSessionState(), 'rapport').outcome).toBe('concern');
-    const kind: SessionState = {
-      ...initialSessionState(),
+    expect(statement(spoken(), 'rapport').outcome).toBe('concern');
+    const kind: SessionState = spoken({
       unlockedFactIds: ['f_concern'],
-      turnsUsed: 1,
       transcript: [record({ studentInput: 'That sounds frightening.', empathy: true })],
-    };
+    });
     const s = statement(kind, 'rapport');
     expect(s.outcome).toBe('no_concern');
     expect(s.quotes).toEqual(['That sounds frightening.']);

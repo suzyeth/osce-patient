@@ -201,6 +201,21 @@ function factWarnings(c: PatientCase, f: Fact): string[] {
   return warnings;
 }
 
+/**
+ * A statement whose items this case does not have is reported as not assessed rather than guessed at,
+ * which is correct but easy to do by accident, so the author is told which feedback they are losing.
+ */
+function statementCoverageWarnings(c: PatientCase): string[] {
+  const ids = new Set(c.rubric.map((r) => r.id));
+  return packFor(c.pack)
+    .statements.flatMap((s) => {
+      const missing = (s.needsItems ?? []).filter((id) => !ids.has(id));
+      return missing.length === 0
+        ? []
+        : [`feedback statement "${s.label}" cannot be judged for this case: it has no item ${missing.join(', ')}`];
+    });
+}
+
 /** Authoring checks that the schema cannot express. Errors block use; warnings are advice. */
 export function validateCase(c: PatientCase): CaseIssues {
   // The pack is checked first and on its own: every later check needs it, and several would throw
@@ -216,7 +231,11 @@ export function validateCase(c: PatientCase): CaseIssues {
     ...unguardedTextErrors(c),
     ...openingTextErrors(c),
   ];
-  const warnings = [...c.facts.flatMap((f) => factWarnings(c, f)), ...contentOverlapWarnings(c)];
+  const warnings = [
+    ...c.facts.flatMap((f) => factWarnings(c, f)),
+    ...contentOverlapWarnings(c),
+    ...statementCoverageWarnings(c),
+  ];
   if (c.rubric.some((r) => r.critical) && !c.facts.some((f) => f.kind === 'red_flag')) {
     warnings.push('case has a critical rubric item but no red flag fact');
   }

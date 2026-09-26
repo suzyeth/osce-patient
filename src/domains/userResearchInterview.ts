@@ -89,7 +89,18 @@ const statement = (
   text: string,
   source: string,
   assess: (obs: Observations) => StatementJudgement,
-): FeedbackStatement => ({ key, label, text, authority: 'ours', source, assessable: true, notAssessableBecause: '', assess });
+  needsItems: readonly string[] = [],
+): FeedbackStatement => ({
+  key,
+  label,
+  text,
+  authority: 'ours',
+  source,
+  assessable: true,
+  notAssessableBecause: '',
+  needsItems,
+  assess,
+});
 
 const unassessable = (key: string, label: string, text: string, source: string, because: string): FeedbackStatement => ({
   key,
@@ -107,7 +118,11 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'Structure',
     'Jumped between topics, or narrowed down before understanding the person’s situation.',
     `${GDS_INTERVIEWS}: "focus on stories and real examples - avoid generalities and talking about how things should happen"`,
-    (obs) => ({ outcome: obs.order.ordered ? 'no_concern' : 'concern', evidence: obs.order.detail, quotes: [] }),
+    (obs) => ({
+      outcome: obs.order.ordered === null ? 'not_assessed' : obs.order.ordered ? 'no_concern' : 'concern',
+      evidence: obs.order.detail,
+      quotes: [],
+    }),
   ),
   statement(
     'evidence',
@@ -115,6 +130,13 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'Left the interview without one concrete thing the person has already done, spent or lost because of the problem.',
     `${MOM_TEST}: "Talk about their life instead of your idea"`,
     (obs) => {
+      if (!obs.hasCritical) {
+        return {
+          outcome: 'not_assessed',
+          evidence: 'This case marks nothing as the thing you must not leave without, so there is nothing here to check.',
+          quotes: [],
+        };
+      }
       if (obs.missedCritical.length === 0) {
         return {
           outcome: 'no_concern',
@@ -150,6 +172,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
         quotes: [],
       };
     },
+    ['recent_specific', 'walk_through', 'last_time_failed'],
   ),
   statement(
     'talking',
@@ -240,6 +263,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
         ? { outcome: 'no_concern', evidence: 'You left room for what you had not thought of, and told them what happens with what they said.', quotes: [] }
         : { outcome: 'concern', evidence: `You ended without covering ${quoteLabels(missed)}.`, quotes: [] };
     },
+    ['closing_anything_else', 'next_steps'],
   ),
   statement(
     'consent',
@@ -256,6 +280,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
             quotes: [],
           };
     },
+    ['intro_purpose', 'consent_recording'],
   ),
   // The two things this pack most wants to teach, and typing cannot rehearse either of them.
   unassessable(

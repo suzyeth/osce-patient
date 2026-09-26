@@ -19,37 +19,59 @@ and points them to NHS 111, their GP, 999 or Samaritans (116 123).
 
 ## What is actually different, and what is not
 
-Being honest about this mattered enough to change the product, so it belongs at the top.
+Being honest about this mattered enough to change the product, so it belongs at the top. Every figure here
+was checked against its primary source, and where the source says less than the first draft of this README
+claimed, the weaker version is what stands.
 
-**Not different.** An AI patient that withholds information is not an empty space. Quesmed sells unlimited
-voice OSCE practice at £39.99/year and states its patients have "rules about what to volunteer versus what
-to disclose only when properly probed". Geeky Medics has 800+ AI virtual patients, prices a voice
-consultation at roughly 28p, and is the only platform to have been through a randomised trial. Several
-smaller PLAB 2 products do the same thing for £10–30.
+**Not different.** An AI patient that withholds information is not an empty space. Quesmed's OSCE Practice
+plan (£39.99/year, £14.99 monthly) states its patient is given "rules about what to volunteer versus what
+to disclose only when properly probed". Geeky Medics advertises "800+ virtual patients", charges 4 credits
+for a real-time voice consultation against 100 credits for £6.99 — about 24–28p depending on the bundle,
+with text consultations free — and its virtual patients have been compared head to head with human
+standardised patients in a cluster-randomised trial (Dang et al., *BMC Medical Education* 2026, n = 67),
+which found **no significant difference** in OSCE scores (6.5 vs 6.3, p = 0.543). Other platforms have
+randomised evidence too, so this is uncommon rather than unique. Several smaller PLAB 2 products gate their
+patients for £10–30.
 
 **Different.** Of the three dozen products checked in September 2026, **none publishes its mark scheme or
 its gating rules, and none anchors a mark to a line of the transcript.** One vendor called its rubric
-"commercially sensitive". That matters because of the one number that keeps coming back: in a UCLA
-evaluation of an AI OSCE tool, 96% of students thought the cases were realistic and **7% were willing to be
-graded by it**. A mark you cannot inspect is a mark you cannot argue with.
+"commercially sensitive". And what students say they do not want is to be marked by it. In an interim UCLA
+student-poster evaluation of Geeky Medics' AI OSCE in an obstetrics and gynaecology clerkship (n = 27, data
+collection still ongoing), 96% agreed the cases were "reflective of what they had learned on their rotation
+and appropriate for their level of training", but only **41%** agreed it was "a comparable learning
+experience to an OSCE with a standardized patient", and only **7% "believed the OSCE should be a graded
+part of the clerkship"**. The same abstract lists "inaccuracies of the AI grading feature" among the
+difficulties encountered. That is a poster abstract with 27 students and unfinished data collection, not a
+trial: read it as the shape of a worry, not a rate. A mark you cannot inspect is a mark you cannot argue
+with.
 
 So this repository publishes all of it: the case file with every fact's trigger, the content list with a
 source per item, the gating rules as code with tests, and a report that quotes the question that earned each
 mark.
 
-There is also a regulator's sentence behind this. GMC, *Promoting excellence*, R5.8, on who may assess a
-medical student:
+There is also a regulator's sentence behind this. GMC, *Promoting excellence* (2015, in effect from 2016),
+R5.8, under the heading "Undergraduate assessment":
 
-> They are responsible for honestly and effectively assessing the medical student's performance and **being
-> able to justify their decision**.
+> Assessments must be carried out by someone with appropriate expertise in the area being assessed, and who
+> has been appropriately selected, supported and appraised. They are responsible for honestly and
+> effectively assessing the medical student's performance and **being able to justify their decision**.
 
-And the GMC's own psychometric report on PLAB 2 (Homer, PLAB 2 Annual Report 2022, 189,862 station-level
-records) finds that the **examiner** explains 15–17% of the variance in station scores, more than the
-candidate's own 10.3%: "Examiner is the strongest predictor of total domain scores in stations followed by
-Candidate." Two honest caveats that must travel with that: the GMC adds that at exam level "the apparent
-concern that examiners have a strong relative impact on scores is largely ameliorated", and R5.8's "someone"
-has never been said by the GMC to permit software. Per-mark auditability is not a fix for unfair exams. It
-is what makes a practice tool's feedback checkable, which is the thing students say is missing.
+Its postgraduate twin, R5.11, repeats that and adds "Educators must be trained and calibrated in the
+assessments they are required to conduct" — a calibration duty the undergraduate standard does not impose.
+
+A GMC-published psychometric analysis by Matt Homer (Leeds), *Influences on scoring and grading in PLAB2:
+PLAB2 Annual Report 2022*, published December 2023 and covering 189,862 station-level rows from March to
+October 2022, finds the examiner explaining 15–17% of the variance in station **scores** (Tables 5–7)
+against the candidate's own 10.3%: "we see that Examiner is the strongest predictor of total domain scores
+in stations followed by Candidate…".
+
+Three caveats belong with that figure and are not optional. It holds for scores, not grades: for grades the
+examiner's 8.5% sits **below** the candidate's 9.3%. The same report adds that "when station-level effects
+are aggregated up to the exam level, the apparent concern that examiners have a strong relative impact on
+scores is largely ameliorated. In this report we have not explicitly measured the extent of this", and
+Homer's own 2022 paper puts exam-level reliability at 0.75 for domain scores. And R5.8's "someone" has never
+been said by the GMC to permit software. **Per-mark auditability is not a fix for unfair exams.** It is what
+makes a practice tool's feedback checkable, which is the thing students say is missing.
 
 ## What the engine does
 
