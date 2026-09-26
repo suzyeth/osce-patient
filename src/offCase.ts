@@ -12,12 +12,17 @@
  * Twenty graded answers cannot separate variants two answers apart, so tuning the wording further
  * would be tuning inside the noise.
  *
- * Enforcing it in code is the right answer and is not possible yet. respondGuarded can replace a reply
- * that is not one of these, and does when asked to, but deciding WHICH turns to ask that of needs a
- * signal the engine does not have. "Nothing credited and no fact in reach" looked like it, and it is
- * not: "How are you?" is exactly that shape, and hedging at it would make the patient look broken.
- * Telling an off-case question from small talk needs the judge to say so, which means one more field
- * in its output and re-measuring the judge. That is the next step, not another prompt.
+ * So the engine enforces it. The judge says whether a line asked for information a case file would
+ * hold (asksAboutFacts), which is what separates a question the case cannot answer from small talk;
+ * on the first kind, a reply that is not one of these is asked for again and then replaced. Measured
+ * after that: 0% unsupported, with 13 of 20 replies caught and asked again, so the model still asserts
+ * something on most of these questions and it no longer reaches the candidate.
+ *
+ * "Nothing credited and no fact in reach" is not enough on its own, and the first wording of the judge
+ * field was not either. It called "How are you today?" a question about the patient, which is true and
+ * useless: the patient then answered small talk with "I'm not sure" and suppressed the opening it would
+ * otherwise have given. The instruction now asks for information a case file would record and names
+ * greetings as not that, which the smoke test covers because that is how it will show if it breaks.
  */
 export const OFF_CASE_ANSWERS: readonly string[] = [
   "I'm not sure",

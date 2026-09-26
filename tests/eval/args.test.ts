@@ -2,10 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { DEFAULT_CAP_USD, parseEvalArgs } from '../../src/eval/args.js';
 
 describe('parseEvalArgs', () => {
+  it('takes a judge filter, so one setting can be re-measured on its own', () => {
+    const parsed = parseEvalArgs(['judge', '--online', '--judge', 'default']);
+    expect(parsed.ok && parsed.args.judgeFilter).toBe('default');
+  });
+
   it('fills defaults for a single evaluation', () => {
     expect(parseEvalArgs(['judge', '--online'])).toEqual({
       ok: true,
-      args: { evals: ['judge'], casePath: 'cases/demo-cough.json', offline: false, capUsd: DEFAULT_CAP_USD, repeat: 2, labelsPath: null, setPath: null },
+      args: { evals: ['judge'], casePath: 'cases/demo-cough.json', offline: false, capUsd: DEFAULT_CAP_USD, repeat: 2, labelsPath: null, setPath: null, judgeFilter: null },
     });
   });
 
@@ -13,7 +18,7 @@ describe('parseEvalArgs', () => {
     const parsed = parseEvalArgs(['all', '--offline', '--cap', '0.25', '--repeat', '1', '--case', 'cases/x.json']);
     expect(parsed).toEqual({
       ok: true,
-      args: { evals: ['judge', 'safety', 'attack', 'honesty'], casePath: 'cases/x.json', offline: true, capUsd: 0.25, repeat: 1, labelsPath: null, setPath: null },
+      args: { evals: ['judge', 'safety', 'attack', 'honesty'], casePath: 'cases/x.json', offline: true, capUsd: 0.25, repeat: 1, labelsPath: null, setPath: null, judgeFilter: null },
     });
   });
 

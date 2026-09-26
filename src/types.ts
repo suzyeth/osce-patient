@@ -80,6 +80,17 @@ export const JudgeVerdictSchema = z.object({
   jargon: z.boolean(),
   /** True when the user seems to describe their own real symptoms. */
   selfDisclosure: z.boolean(),
+  /**
+   * True when the line asks about the person, their life or their circumstances, whether or not it
+   * matches a rubric item. False for greetings, permission, summaries and closing.
+   *
+   * This is the signal that separates "asked about something the case never mentions", where the
+   * answer must be that they do not know, from small talk, where it must not. Measured three times,
+   * the prompt alone does not hold that line; without this field the engine cannot tell the two apart
+   * ("How are you?" credits nothing and reaches no fact, and so does "Have you had chest pain?").
+   * Defaults to false, so a judge that omits it leaves the engine doing what it did before.
+   */
+  asksAboutFacts: z.boolean().default(false),
   trustDelta: z.number(),
   reasoning: z.string(),
 });

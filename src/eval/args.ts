@@ -15,6 +15,11 @@ export interface EvalArgs {
   labelsPath: string | null;
   /** safety only: another line set, for example the development set used to tune the prompt. */
   setPath: string | null;
+  /**
+   * judge only: run just the settings whose name contains this, so a change to the judge can be
+   * re-measured on the setting that ships without paying for the four that only justified choosing it.
+   */
+  judgeFilter: string | null;
 }
 
 export const USAGE = [
@@ -26,11 +31,12 @@ export const USAGE = [
   '  --repeat <n>       how many times each honesty question is asked (default 2, at most 5)',
   '  --labels <path>    labelled conversations, required for agreement',
   '  --set <path>       safety only: line set to measure (default eval/fixtures/safety-blind-heldout.json)',
+  '  --judge <text>     judge only: run only the settings whose name contains this, e.g. --judge default',
   '"all" runs judge, safety, attack and honesty; agreement needs a person\'s labels and runs on its own.',
   'Keep the "--" after "npm run eval": without it npm takes --offline for itself.',
 ].join('\n');
 
-const VALUE_FLAGS: readonly string[] = ['--case', '--cap', '--repeat', '--labels', '--set'];
+const VALUE_FLAGS: readonly string[] = ['--case', '--cap', '--repeat', '--labels', '--set', '--judge'];
 const MODE_FLAGS: readonly string[] = ['--online', '--offline'];
 
 type Parsed = { ok: true; args: EvalArgs } | { ok: false; message: string };
@@ -89,6 +95,7 @@ export function parseEvalArgs(argv: readonly string[]): Parsed {
       repeat,
       labelsPath,
       setPath: valueAfter(argv, '--set') ?? null,
+      judgeFilter: valueAfter(argv, '--judge') ?? null,
     },
   };
 }

@@ -158,8 +158,12 @@ export async function runTurn(
     history,
     relevantFacts: relevantFacts(patientCase, nextState, verdict, newlyUnlocked),
   };
-  // Enforcing the off-case answer here needs a signal this engine does not have: see offCase.ts.
-  const { reply, guardTriggered } = await respondGuarded(patient, base, forbiddenTerms(patientCase, nextState), false);
+  // The case says nothing about this question: they asked about the person, nothing was credited, and
+  // no fact is in reach. A paraphrase the judge missed lands here too, and a hedge is right there as
+  // well, because the gate's whole point is that an uncredited fact has not been asked for yet.
+  // asksAboutFacts is what keeps small talk out of this: "How are you?" is otherwise the same shape.
+  const offCase = verdict.asksAboutFacts && verdict.rubricItemIds.length === 0 && base.relevantFacts.length === 0;
+  const { reply, guardTriggered } = await respondGuarded(patient, base, forbiddenTerms(patientCase, nextState), offCase);
   return { state: nextState, reply, verdict, newlyUnlocked, guardTriggered, safetyBlocked: false, blockedBy: null, blockedCategory: null };
 }
 

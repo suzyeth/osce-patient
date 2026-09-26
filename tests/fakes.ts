@@ -11,6 +11,7 @@ export function verdict(partial: Partial<JudgeVerdict> = {}): JudgeVerdict {
     interrupted: false,
     jargon: false,
     selfDisclosure: false,
+    asksAboutFacts: false,
     trustDelta: 0,
     reasoning: 'test',
     ...partial,

@@ -26,8 +26,8 @@ function recordingPatient() {
 }
 
 describe('the off-case answer guard', () => {
-  // respondGuarded can hold this line; what is missing is knowing which turns to hold it on, which
-  // needs the judge to say so. These tests pin the machinery so that day only the caller changes.
+  // The judge says whether a line asked about the person at all (asksAboutFacts), which is what
+  // separates a question the case cannot answer from small talk.
   const input = (studentInput: string) => ({ context: 'You are a patient.', studentInput, history: [], relevantFacts: [] });
 
   it('replaces an answer that asserts something, when it is told the case says nothing', async () => {
@@ -58,6 +58,32 @@ describe('the off-case answer guard', () => {
     const r = await respondGuarded(patient, input('Have you had any chest pain?'), [], false);
     expect(patient.calls).toBe(1);
     expect(r.reply).toBe('No chest pain. Just this stubborn cough.');
+  });
+
+  it('holds the line through runTurn when the judge says they asked about the person', async () => {
+    const asked = fakeJudge(verdict({ rubricItemIds: [], asksAboutFacts: true }));
+    const patient = scriptedPatient('No chest pain. Just this stubborn cough.', 'No, nothing like that.');
+    const r = await runTurn(c, initialSessionState(), 'Have you had any chest pain?', asked, patient);
+    expect(r.reply).toBe(OFF_CASE_FALLBACK);
+    expect(patient.calls).toBe(2);
+  });
+
+  it('does not hold it on small talk, which credits nothing and reaches no fact either', async () => {
+    // This is the case that made the guard impossible to switch on before: identical to the above on
+    // every signal except asksAboutFacts.
+    const chat = fakeJudge(verdict({ rubricItemIds: [], asksAboutFacts: false }));
+    const patient = scriptedPatient('Not too bad, thanks. A bit tired of this cough.');
+    const r = await runTurn(c, initialSessionState(), 'How are you today?', chat, patient);
+    expect(r.reply).toBe('Not too bad, thanks. A bit tired of this cough.');
+    expect(patient.calls).toBe(1);
+  });
+
+  it('leaves an answer alone when the case does have something to say', async () => {
+    const credited = fakeJudge(verdict({ rubricItemIds: ['smoking'], asksAboutFacts: true }));
+    const patient = scriptedPatient('I smoke about twenty a day.');
+    const r = await runTurn(c, initialSessionState(), 'Do you smoke?', credited, patient);
+    expect(r.reply).toBe('I smoke about twenty a day.');
+    expect(patient.calls).toBe(1);
   });
 });
 

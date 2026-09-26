@@ -12,6 +12,10 @@ import type { ConversationTurn } from '../llm.js';
 const SMOKE_BUDGET_USD = 0.02;
 const LINES = [
   "Hello, I'm one of the doctors. Is it okay if I ask you some questions?",
+  // Small talk that credits no rubric item. It has to come back as conversation, not as "I'm not
+  // sure": the off-case guard fires on a question the case cannot answer, and telling the two apart
+  // rests on the judge's asksAboutFacts. If this line ever gets hedged, that is how it will show.
+  'How are you today?',
   'What brings you in today?',
   'Do you smoke?',
 ];

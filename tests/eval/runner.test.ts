@@ -33,6 +33,7 @@ const args = (evals: EvalArgs['evals'], extra: Partial<EvalArgs> = {}): EvalArgs
   repeat: 1,
   labelsPath: null,
   setPath: null,
+  judgeFilter: null,
   ...extra,
 });
 

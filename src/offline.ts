@@ -17,6 +17,15 @@ function matchesCue(text: string, cue: string): boolean {
  * Deterministic keyword judge for zero-cost development and demos.
  * It is deliberately crude; evaluation numbers are never reported from offline mode.
  */
+/**
+ * Greetings and courtesies. These ask about the person in plain English and still must not count as
+ * asking for anything a case file would hold: hedging at "how are you?" makes the station look broken,
+ * and it suppresses the opening the patient would otherwise give. Measured against the real judge,
+ * which got this wrong until its instruction named the case.
+ */
+const SMALL_TALK =
+  /\b(how are you|how do you feel today|are you (?:alright|ok|okay|comfortable)|is it (?:ok|okay|alright)|happy for me|any questions|anything else you|thank you|nice to meet|sorry to keep you)\b/i;
+
 export function offlineJudge(): JudgeClient {
   return {
     async evaluate({ patientCase, studentInput }): Promise<JudgeVerdict> {
@@ -39,6 +48,9 @@ export function offlineJudge(): JudgeClient {
         interrupted: false,
         jargon: false,
         selfDisclosure: false,
+        // A question mark and a second person: crude, but it is the offline double's whole character,
+        // and it keeps greetings and closings out of the off-case guard the way the real judge does.
+        asksAboutFacts: trimmed.endsWith('?') && /\byou\b|\byour\b/i.test(trimmed) && !SMALL_TALK.test(trimmed),
         trustDelta: empathy ? EMPATHY_TRUST_DELTA : DEFAULT_TRUST_DELTA,
         reasoning: 'offline keyword judge',
       };
