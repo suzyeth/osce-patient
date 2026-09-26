@@ -76,11 +76,6 @@ function cookieHeaders(value: string, maxAgeSeconds: number): string[] {
   return headers;
 }
 
-function clearedCookies(): string[] {
-  const headers: string[] = [];
-  for (let i = 0; i < MAX_COOKIE_CHUNKS; i++) headers.push(oneCookie(`${SESSION_COOKIE}_${i}`, '', 0));
-  return headers;
-}
 
 function readCookie(request: Request): string | null {
   const header = request.headers.get('cookie');
@@ -132,6 +127,7 @@ async function start(request: Request, deps: WebDeps): Promise<Response> {
       secondsLeft: patientCase.durationSeconds,
       reviewStatus: patientCase.reviewStatus,
       maxTurns: deps.limits.maxTurns,
+      maxInputChars: deps.limits.maxInputChars,
     },
     { cookies: cookieHeaders(sealSession(stored, deps.secret), patientCase.durationSeconds + 600) },
   );
@@ -223,15 +219,20 @@ async function turn(request: Request, deps: WebDeps): Promise<Response> {
   );
 }
 
+/**
+ * The report does not clear the session. It used to, which meant it could be fetched exactly once:
+ * the clock reaching zero and the candidate pressing Finish both call this, and whichever lost the
+ * race got "This station has not been started" instead of the report. If rendering then failed, a
+ * whole station's evidence was gone. The session expires on its own (Max-Age is the station's length
+ * plus ten minutes) and spending is already capped per station, so nothing needs the session to be
+ * destroyed here; asking twice returns the same report.
+ */
 async function report(request: Request, deps: WebDeps): Promise<Response> {
   const found = station(request, deps);
   if (found instanceof Response) return found;
   const { stored, patientCase } = found;
   const computed = computeReport(patientCase, toSessionState(stored));
-  return json(
-    { caseTitle: patientCase.title, reviewStatus: patientCase.reviewStatus, report: computed },
-    { cookies: clearedCookies() },
-  );
+  return json({ caseTitle: patientCase.title, reviewStatus: patientCase.reviewStatus, report: computed });
 }
 
 /**

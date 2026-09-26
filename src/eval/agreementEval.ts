@@ -57,7 +57,7 @@ export async function runAgreementEval(patientCase: PatientCase, labels: Agreeme
     for (const [i, t] of conversation.turns.entries()) {
       try {
         const v = await judge.evaluate({ patientCase, state, studentInput: t.student, history });
-        state = applyVerdict(state, v, known);
+        state = applyVerdict(state, v, known, t.student);
         results.push({ conversationId: conversation.id, turn: i + 1, human: t.items, judge: v.rubricItemIds, failure: null });
       } catch (e) {
         results.push({ conversationId: conversation.id, turn: i + 1, human: t.items, judge: null, failure: failureReason(e) });

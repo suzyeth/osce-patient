@@ -143,6 +143,17 @@ function serveFile(path: string, res: ServerResponse): void {
   }
 }
 
+/**
+ * True when this request reached us over plain http, so a Secure cookie would be thrown away.
+ * x-forwarded-proto is trusted only to say https, which can add Secure but never remove it.
+ */
+function insecureOrigin(req: IncomingMessage): boolean {
+  const forwarded = req.headers['x-forwarded-proto'];
+  const proto = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
+  if (proto === 'https') return false;
+  return (req.socket as { encrypted?: boolean }).encrypted !== true;
+}
+
 async function toRequest(req: IncomingMessage): Promise<Request> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
@@ -179,9 +190,12 @@ createServer({ maxHeaderSize: MAX_HEADER_BYTES }, (req, res) => {
     // malformed cookie and drops, and the station silently fails to resume.
     const cookies = response.headers.getSetCookie();
     if (cookies.length > 0) {
-      // Cookies are marked Secure; over plain http on localhost the browser would refuse them.
-      const local = req.headers.host?.startsWith('localhost') ?? false;
-      headers['set-cookie'] = local ? cookies.map((c) => c.replace('; Secure', '')) : cookies;
+      // Cookies are marked Secure, and a browser drops a Secure cookie sent over plain http. Only
+      // startsWith('localhost') counted as local, so serving on 127.0.0.1 or any other name left the
+      // station permanently unable to start with nothing on screen to explain it. Dropping Secure is
+      // right for a plain-http origin and wrong for anything else, so the decision follows the
+      // scheme, and https keeps Secure whatever the host is.
+      headers['set-cookie'] = insecureOrigin(req) ? cookies.map((c) => c.replace('; Secure', '')) : cookies;
     }
     res.writeHead(response.status, headers).end(Buffer.from(await response.arrayBuffer()));
   })().catch((e: unknown) => {

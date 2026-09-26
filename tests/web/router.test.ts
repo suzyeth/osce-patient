@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { handleApi, SESSION_COOKIE, type StationClients, type WebDeps } from '../../src/web/router.js';
-import { joinCookieChunks, openSession, sealSession, splitCookie, toStored } from '../../src/web/sessionCookie.js';
+import { joinCookieChunks, MAX_COOKIE_CHUNKS, openSession, sealSession, splitCookie, toStored } from '../../src/web/sessionCookie.js';
 import type { WebLimits } from '../../src/web/limits.js';
 import { offlineJudge, offlinePatient } from '../../src/offline.js';
 import { computeReport } from '../../src/report.js';
@@ -150,12 +150,34 @@ describe('POST /api/turn', () => {
 });
 
 describe('POST /api/report and GET /api/sample', () => {
-  it('scores the station from the sealed state and clears the cookie', async () => {
+  it('scores the station from the sealed state, and can be asked more than once', async () => {
     const stored = sealSession(toStored(c.id, 1_700_000_000_000, { ...initialSessionState(), rubricHits: { smoking: 1 }, turnsUsed: 1 }, [], 0.002), SECRET);
     const response = await handleApi(post('/api/report', {}, stored), deps());
     const payload = (await response.json()) as { report: { items: Array<{ id: string; covered: boolean }> } };
     expect(payload.report.items.find((i) => i.id === 'smoking')?.covered).toBe(true);
-    expect(setCookieText(response)).toContain('Max-Age=0');
+
+    // The clock running out and the Finish button both ask for the report. Clearing the session here
+    // meant whichever came second got "This station has not been started" and the evidence was gone.
+    expect(setCookieText(response)).not.toContain('Max-Age=0');
+    const again = await handleApi(post('/api/report', {}, stored), deps());
+    expect(again.status).toBe(200);
+    const second = (await again.json()) as { report: { items: Array<{ id: string; covered: boolean }> } };
+    expect(second.report.items.find((i) => i.id === 'smoking')?.covered).toBe(true);
+  });
+
+  it('expires the chunks it does not use, so a shorter session cannot inherit a longer one’s tail', async () => {
+    const started = await handleApi(post('/api/start', { code: 'plab-2026' }), deps());
+    const headers = started.headers.getSetCookie();
+    // One chunk is enough for a fresh station, and the rest are expired in the same response. A
+    // session that shrinks leaves no gap for joinCookieChunks to stop at, so this is what prevents a
+    // stale tail being read as part of the new session.
+    const used = headers.filter((h) => !h.includes('Max-Age=0'));
+    const expired = headers.filter((h) => h.includes('Max-Age=0'));
+    expect(used.length).toBeGreaterThan(0);
+    expect(expired.length).toBe(MAX_COOKIE_CHUNKS - used.length);
+    for (let i = used.length; i < MAX_COOKIE_CHUNKS; i++) {
+      expect(headers.some((h) => h.startsWith(`${SESSION_COOKIE}_${i}=;`))).toBe(true);
+    }
   });
 
   it('lists the cases a visitor may choose, with nothing they should not see yet', async () => {

@@ -92,6 +92,9 @@ $('startForm').addEventListener('submit', async (event) => {
   $('turns').textContent = `up to ${data.maxTurns} questions`;
   // What to call the person comes from the case's domain pack, not from this page.
   $('input').placeholder = `Ask the ${data.personNoun} a question`;
+  // The server decides how long a question may be; hard-coding it here meant raising the limit did
+  // nothing and the page cut the candidate off without saying why.
+  if (data.maxInputChars) $('input').maxLength = data.maxInputChars;
   $('log').replaceChildren();
   say(data.patientName, data.openingLine, 'patient');
   show(station);
@@ -168,7 +171,15 @@ function statementRow(s) {
   li.append(hint(s.evidence));
   // Whose words these are matters: a regulator's statement and ours are not the same thing.
   li.append(hint(`${s.authority === 'regulator' ? 'Published wording' : 'Our wording'}, from: ${s.source}`));
-  for (const q of s.quotes.slice(0, 2)) li.append(hint(`You wrote: “${q}”`));
+  for (const q of s.quotes.slice(0, 3)) {
+    li.append(
+      hint(
+        q.text === ''
+          ? `Question ${q.turn}: the words were not kept, so this part cannot be checked`
+          : `You wrote at question ${q.turn}: “${q.text}”`,
+      ),
+    );
+  }
   return li;
 }
 
@@ -189,11 +200,18 @@ function renderReport(title, report) {
   show(reportView);
 }
 
+let finishing = false;
+
 async function finish() {
+  // The clock reaching zero and the Finish button both land here; one report is enough.
+  if (finishing) return;
+  finishing = true;
   clearInterval(ticking);
   const { ok, data } = await api('/api/report', {});
   if (!ok) {
-    error($('turnError'), data.error ?? 'Could not build the report.');
+    // Let them try again: the session is still there, so a failed fetch is not a lost station.
+    finishing = false;
+    error($('turnError'), data.error ?? 'Could not build the report. Press Finish to try again.');
     return;
   }
   renderReport(`Your report: ${data.caseTitle}`, data.report);
@@ -201,6 +219,7 @@ async function finish() {
 
 $('finish').addEventListener('click', finish);
 $('again').addEventListener('click', () => {
+  finishing = false;
   show(gate);
   $('code').focus();
 });

@@ -26,7 +26,8 @@ export function applyVerdict(
   state: SessionState,
   verdict: JudgeVerdict,
   knownRubricIds: readonly string[],
-  studentInput = '',
+  /** Required: a turn stored without the words is a mark the report cannot show evidence for. */
+  studentInput: string,
 ): SessionState {
   const turn = state.turnsUsed + 1;
   const rubricHits = { ...state.rubricHits };

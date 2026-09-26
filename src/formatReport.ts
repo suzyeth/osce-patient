@@ -35,20 +35,30 @@ export function formatReport(r: SessionReport): string {
     lines.push('', 'Note: this case has not been reviewed by anyone qualified in the field.');
   }
 
-  const regulator = r.statements.some((s) => s.authority === 'regulator');
-  lines.push(
-    '',
-    'WHAT A REVIEWER WOULD COMMENT ON',
-    regulator
-      ? 'Statements published by the body that assesses this, in its own words.'
-      : 'Nobody publishes a feedback list for this kind of conversation, so these statements are ours.',
-    '',
-  );
+  // Every statement carries its own authority below. The heading only describes the whole set when
+  // the whole set agrees, which both shipped packs do; a mixed pack gets a heading that says so
+  // rather than one that claims a regulator for wording that is ours.
+  const authorities = new Set(r.statements.map((s) => s.authority));
+  const heading =
+    authorities.size !== 1
+      ? 'Some of these statements are published by the body that assesses this and some are ours; each says which.'
+      : authorities.has('regulator')
+        ? 'Statements published by the body that assesses this, in its own words.'
+        : 'Nobody publishes a feedback list for this kind of conversation, so these statements are ours.';
+  lines.push('', 'WHAT A REVIEWER WOULD COMMENT ON', heading, '');
   for (const s of r.statements) {
     lines.push(`${OUTCOME_MARK[s.outcome]} ${s.label}: ${s.text}`);
     lines.push(`      ${s.evidence}`);
     lines.push(`      ${s.authority === 'regulator' ? 'Published wording' : 'Our wording'}, from: ${s.source}`);
-    for (const q of s.quotes.slice(0, 2)) lines.push(`      You wrote: "${q}"`);
+    for (const q of s.quotes.slice(0, 3)) {
+      // The question number travels with the words. Without it, a list of quotes beside a list of
+      // question numbers puts the wrong words against the wrong question as soon as one is dropped.
+      lines.push(
+        q.text === ''
+          ? `      Question ${q.turn}: the words were not kept, so this part cannot be checked.`
+          : `      You wrote at question ${q.turn}: "${q.text}"`,
+      );
+    }
   }
 
   lines.push('', 'CONTENT YOU COVERED', 'Our list. Counts, not a score.', '');

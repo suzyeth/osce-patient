@@ -88,8 +88,10 @@ export function storedTurns(transcript: readonly TurnRecord[]): StoredTurn[] {
   const flagsOf = (t: TurnRecord): number =>
     (t.empathy ? FLAG.empathy : 0) + (t.interrupted ? FLAG.interrupted : 0) + (t.jargon ? FLAG.jargon : 0);
   const worth = transcript.filter((t) => t.creditedItemIds.length > 0 || flagsOf(t) !== 0);
-  // Every quote gets an equal share of the budget, so a long station shortens all of them rather
-  // than keeping the first few whole and losing the rest.
+  // Every quote gets the same length limit, so a long station shortens all of them rather than
+  // keeping the first few whole. If the total is still over budget after that, the loop below gives
+  // up the text of flag-only turns, earliest first; the report names the question a quote belongs to,
+  // so a turn whose words went says so instead of the next one sliding into its place.
   const share = worth.length === 0 ? QUOTE_MAX : Math.max(QUOTE_MIN, Math.floor(TRANSCRIPT_TEXT_BUDGET / worth.length));
   const limit = Math.min(QUOTE_MAX, share);
   const kept = worth.map((t) => ({
@@ -220,7 +222,15 @@ export function splitCookie(value: string): string[] {
   return parts;
 }
 
-/** Joins the numbered chunks, in order, stopping at the first gap so a stale tail cannot corrupt it. */
+/**
+ * Joins the numbered chunks in order, stopping at the first gap.
+ *
+ * A gap is not what a stale tail usually looks like: a session that shrank leaves its later chunks in
+ * the browser with no gap at all, and joining them produces something that fails to decrypt. What
+ * actually prevents that is the caller expiring every chunk it does not use (see cookieHeaders), and
+ * the worst case if it ever slipped through is a 400 telling the candidate to start again, never
+ * altered state, because the seal covers the whole value.
+ */
 export function joinCookieChunks(chunks: ReadonlyMap<number, string>): string | null {
   const parts: string[] = [];
   for (let i = 0; i < MAX_COOKIE_CHUNKS; i++) {

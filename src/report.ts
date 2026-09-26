@@ -5,6 +5,7 @@ import {
   type FeedbackStatement,
   type ItemResult,
   type Observations,
+  type Quote,
   type StatementJudgement,
 } from './domains/pack.js';
 
@@ -113,8 +114,10 @@ function sessionOrder(items: ItemResult[], pack: DomainPack): { ordered: boolean
 function observe(items: ItemResult[], state: SessionState, patientCase: PatientCase, pack: DomainPack, concernElicited: boolean | null): Observations {
   const turns = state.transcript;
   const minutes = Math.max(1, Math.round(patientCase.durationSeconds / 60));
-  const quotesFrom = (wanted: readonly number[]): string[] =>
-    turns.filter((t) => wanted.includes(t.turn)).map((t) => t.studentInput).filter((s) => s.trim() !== '');
+  // Every turn asked for is returned, in the order asked for, so a quote is always readable against
+  // the question number beside it. A turn whose words were not kept comes back with an empty text.
+  const quotesFrom = (wanted: readonly number[]): Quote[] =>
+    wanted.map((turn) => ({ turn, text: turns.find((t) => t.turn === turn)?.studentInput ?? '' }));
   const turnsWith = (flag: (t: TurnRecord) => boolean): number[] => turns.filter(flag).map((t) => t.turn);
   return {
     items,

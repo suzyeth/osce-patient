@@ -62,10 +62,22 @@ export interface Observations {
   /** Whether the hidden concern was reached; null when the case has none. */
   concernElicited: boolean | null;
   itemById: (id: string) => ItemResult | undefined;
-  /** The learner's own words from the given turns, for quoting evidence back. */
-  quotesFrom: (turns: readonly number[]) => string[];
+  /**
+   * The learner's own words from the given turns. Every turn asked for comes back, including ones
+   * whose words were not kept (text ''), because a quote has to be readable against the question
+   * number the evidence names: a list of unlabelled quotes beside a list of question numbers put the
+   * wrong words against the wrong question as soon as any were dropped.
+   */
+  quotesFrom: (turns: readonly number[]) => Quote[];
   /** "question 3, question 7", for evidence lines. */
   list: (turns: readonly number[]) => string;
+}
+
+/** One thing the learner said, with the question it was, so it cannot be misread as another. */
+export interface Quote {
+  turn: number;
+  /** Empty when the words were not kept; the report says so rather than omitting the quote. */
+  text: string;
 }
 
 export interface StatementJudgement {
@@ -76,8 +88,8 @@ export interface StatementJudgement {
   outcome: 'concern' | 'no_concern' | 'not_assessed';
   /** Plain-English reason naming the questions it rests on. Always present, whatever the outcome. */
   evidence: string;
-  /** The learner's own words the judgement rests on, if any. */
-  quotes: string[];
+  /** The learner's own words the judgement rests on, if any, each with its question number. */
+  quotes: Quote[];
 }
 
 /**
@@ -162,7 +174,9 @@ export interface DomainPack {
  * as the candidate sees it in the list, rather than inventing a second phrasing for each item.
  */
 export function quoteLabels(items: readonly ItemResult[]): string {
-  return items.map((i) => `"${i.label}"`).join(', ');
+  // A label may itself contain a double quote, which would nest ambiguously; single quotes inside
+  // the label are safe, so it is those that go round it in that case.
+  return items.map((i) => (i.label.includes('"') ? `'${i.label}'` : `"${i.label}"`)).join(', ');
 }
 
 /** Bodies whose wording may be labelled as a regulator's. Named, so the label cannot be a guess. */

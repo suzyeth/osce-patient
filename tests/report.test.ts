@@ -166,6 +166,45 @@ describe('what the report refuses to claim without evidence', () => {
   });
 });
 
+describe('a quote and its question number', () => {
+  it('names the question a quote came from, so it cannot be read against another', () => {
+    const state = spoken({
+      turnsUsed: 3,
+      transcript: [
+        record({ turn: 1, studentInput: 'What brings you in?' }),
+        record({ turn: 2, studentInput: 'Any haemoptysis?', jargon: true }),
+        record({ turn: 3, studentInput: 'Any dyspnoea either?', jargon: true }),
+      ],
+    });
+    const s = statement(state, 'language');
+    expect(s.quotes).toEqual([
+      { turn: 2, text: 'Any haemoptysis?' },
+      { turn: 3, text: 'Any dyspnoea either?' },
+    ]);
+    expect(formatReport(computeReport(c, state))).toContain('You wrote at question 2: "Any haemoptysis?"');
+  });
+
+  it('says the words were not kept rather than shifting the next quote up into their place', () => {
+    // Turn 2's words were dropped to fit the cookie; turn 3's were kept. Without the question
+    // number, the report would have shown turn 3's words against "question 2, question 3".
+    const state = spoken({
+      turnsUsed: 3,
+      transcript: [
+        record({ turn: 1, studentInput: 'What brings you in?' }),
+        record({ turn: 2, studentInput: '', jargon: true }),
+        record({ turn: 3, studentInput: 'Any dyspnoea either?', jargon: true }),
+      ],
+    });
+    expect(statement(state, 'language').quotes).toEqual([
+      { turn: 2, text: '' },
+      { turn: 3, text: 'Any dyspnoea either?' },
+    ]);
+    const text = formatReport(computeReport(c, state));
+    expect(text).toContain('Question 2: the words were not kept, so this part cannot be checked.');
+    expect(text).toContain('You wrote at question 3: "Any dyspnoea either?"');
+  });
+});
+
 describe('the GMC feedback statements', () => {
   it('reports all ten, in the GMC order, quoting the GMC wording', () => {
     const r = computeReport(c, initialSessionState());
@@ -209,7 +248,7 @@ describe('the GMC feedback statements', () => {
     const s = statement(state, 'language');
     expect(s.outcome).toBe('concern');
     expect(s.evidence).toContain('question 2');
-    expect(s.quotes).toEqual(['Any haemoptysis or dyspnoea?']);
+    expect(s.quotes).toEqual([{ turn: 2, text: 'Any haemoptysis or dyspnoea?' }]);
   });
 
   it('flags an interruption under Listening and says non-verbal cues are out of reach', () => {
@@ -225,6 +264,13 @@ describe('the GMC feedback statements', () => {
     expect(late.evidence).toContain('question 4');
     const inOrder = statement(spoken({ rubricHits: { open_question: 1, smoking: 3 } }), 'consultation');
     expect(inOrder.outcome).toBe('no_concern');
+  });
+
+  it('puts the Time boundary where the arithmetic says, not one either side of it', () => {
+    // demo-cough is 8 minutes, so there is room for about 16 questions. Only the far ends were ever
+    // tested, so an off-by-one here would not have been caught.
+    expect(statement(spoken({ turnsUsed: 16 }), 'time').outcome).toBe('no_concern');
+    expect(statement(spoken({ turnsUsed: 17 }), 'time').outcome).toBe('concern');
   });
 
   it('flags more questions than the station has room for under Time, and says typing is not timed', () => {
@@ -244,7 +290,7 @@ describe('the GMC feedback statements', () => {
     });
     const s = statement(kind, 'rapport');
     expect(s.outcome).toBe('no_concern');
-    expect(s.quotes).toEqual(['That sounds frightening.']);
+    expect(s.quotes).toEqual([{ turn: 1, text: 'That sounds frightening.' }]);
     expect(s.evidence).toContain('voice and manner');
   });
 });
