@@ -1,4 +1,5 @@
 import type { Domain, RubricItem } from '../types.js';
+import type { DisclosureRules, Signposting } from '../safety.js';
 
 /**
  * A domain pack is everything this tool knows about one kind of conversation. The engine itself -
@@ -136,6 +137,11 @@ export interface DomainPack {
   /** One line for the report saying what this pack does and does not claim to measure. */
   caveat: string;
   persona: PersonaPrompt;
+  /**
+   * What this field pauses practice on beyond self-harm, and where a pause sends someone. Self-harm
+   * is checked by the engine in every field; the rest was tuned for medicine and does not transfer.
+   */
+  safety: { disclosure: DisclosureRules; signposting: Signposting };
   domains: readonly ScoringDomain[];
   /** The domain whose items count as gathering information, for the order check. */
   gatheringDomainId: string;
@@ -159,16 +165,42 @@ export function quoteLabels(items: readonly ItemResult[]): string {
   return items.map((i) => `"${i.label}"`).join(', ');
 }
 
+/** Bodies whose wording may be labelled as a regulator's. Named, so the label cannot be a guess. */
+const REGULATORS = /\b(GMC|NICE|RCGP|GDC|NMC|HCPC|College of Policing|ACAS)\b/;
+
 const REGISTRY = new Map<string, DomainPack>();
 
 export function registerPack(pack: DomainPack): DomainPack {
   if (REGISTRY.has(pack.id)) throw new Error(`domain pack already registered: ${pack.id}`);
   const ids = new Set(pack.domains.map((d) => d.id));
+  const itemIds = new Set<string>();
   for (const item of pack.rubric) {
+    if (itemIds.has(item.id)) throw new Error(`pack ${pack.id}: two rubric items share the id ${item.id}`);
+    itemIds.add(item.id);
+    if (pack.sources[item.id] === undefined) throw new Error(`pack ${pack.id}: item ${item.id} has no source`);
     if (!ids.has(item.domain)) throw new Error(`pack ${pack.id}: item ${item.id} is in unknown domain ${item.domain}`);
   }
   if (!ids.has(pack.gatheringDomainId)) throw new Error(`pack ${pack.id}: unknown gathering domain ${pack.gatheringDomainId}`);
+  if (!pack.rubric.some((r) => r.domain === pack.gatheringDomainId)) {
+    throw new Error(`pack ${pack.id}: its gathering domain ${pack.gatheringDomainId} has no items, so order can never be judged`);
+  }
+  for (const [what, id] of [['opening', pack.openingItemId], ['closing', pack.closingItemId]] as const) {
+    if (id !== undefined && !pack.rubric.some((r) => r.id === id)) {
+      throw new Error(`pack ${pack.id}: its ${what} item ${id} is not in its own rubric`);
+    }
+  }
+  const keys = new Set<string>();
   for (const statement of pack.statements) {
+    if (keys.has(statement.key)) throw new Error(`pack ${pack.id}: two statements share the key ${statement.key}`);
+    keys.add(statement.key);
+    // authority 'regulator' is the strongest thing this tool says about any wording, and the report
+    // shows it to every reader. It cannot be verified from here, but it can be made hard to set by
+    // accident: a regulator's wording has to name where it was published.
+    if (statement.authority === 'regulator' && !REGULATORS.test(statement.source)) {
+      throw new Error(
+        `pack ${pack.id}: statement ${statement.key} claims authority 'regulator' but its source does not name a body: ${statement.source}`,
+      );
+    }
     if (statement.assessable && !statement.assess) {
       throw new Error(`pack ${pack.id}: statement ${statement.key} says it is assessable but has no assess function`);
     }

@@ -166,31 +166,50 @@ const SELF_HARM: readonly RegExp[] = [
   /\bmaking myself sick\b/i,
 ];
 
-const PRACTICE_ONLY = "This is a practice tool with a fictional patient, so it can't give advice about real health. ";
+/**
+ * Where a paused session sends someone. The first sentence names what this tool is, so it belongs to
+ * the field and comes from the domain pack: telling a research interviewer that this is "a practice
+ * tool with a fictional patient" is wrong and was a real bug. The rest is UK help that any field
+ * needs, and lives here.
+ */
+export interface Signposting {
+  /** One sentence saying what this tool is and cannot do. Supplied by the pack. */
+  practiceOnly: string;
+  /** Extra help for a medicines question, when the field has one. */
+  medicines?: string;
+  /** Extra help for someone being hurt, when the field has one. */
+  abuse?: string;
+}
+
 const NHS = "For you or anyone you're worried about, contact NHS 111 or a GP, or call 999 in an emergency. ";
 const SAMARITANS = "If you're struggling or thinking about harming yourself, you can call Samaritans free on 116 123, at any hour.";
-const PHARMACIST = 'A pharmacist can answer questions about medicines, doses and interactions, free and without an appointment. ';
-const ABUSE = 'If someone is hurting or frightening you, the National Domestic Abuse Helpline is free on 0808 2000 247, at any hour.';
+
+/** Signposting for a field with nothing of its own to add: just say what the tool is. */
+export const generalSignposting = (practiceOnly: string): Signposting => ({ practiceOnly });
 
 /** The message when the rule list pauses practice, and the fallback when no category is known. */
-export const SAFETY_MESSAGE = PRACTICE_ONLY + NHS + SAMARITANS;
+export function safetyMessage(signposting: Signposting): string {
+  return signposting.practiceOnly + NHS + SAMARITANS;
+}
 
 /**
  * The same pause, worded for what was said. "If you're unwell" is wrong for someone asking about
  * their child, and a medicines question is usually answered faster by a pharmacist than by 111.
+ * A field that gave no wording for a category falls back to the general pause.
  */
-export function safetyMessageFor(category: string | null): string {
+export function safetyMessageFor(category: string | null, signposting: Signposting): string {
+  const { practiceOnly, medicines, abuse } = signposting;
   switch (category) {
     case 'self_harm':
-      return PRACTICE_ONLY + SAMARITANS + ' ' + NHS.trim();
+      return practiceOnly + SAMARITANS + ' ' + NHS.trim();
     case 'abuse':
-      return PRACTICE_ONLY + ABUSE + ' ' + NHS.trim();
+      return abuse === undefined ? safetyMessage(signposting) : practiceOnly + abuse + ' ' + NHS.trim();
     case 'medicines':
-      return PRACTICE_ONLY + PHARMACIST + NHS.trim();
+      return medicines === undefined ? safetyMessage(signposting) : practiceOnly + medicines + NHS.trim();
     case 'advice_for_other':
-      return PRACTICE_ONLY + NHS.trim();
+      return practiceOnly + NHS.trim();
     default:
-      return SAFETY_MESSAGE;
+      return safetyMessage(signposting);
   }
 }
 
@@ -236,9 +255,35 @@ function selfHarmDisclosed(text: string): boolean {
   });
 }
 
-export function looksLikeSelfDisclosure(input: string): boolean {
+/**
+ * The patterns a field pauses on beyond self-harm. `strong` fires whatever else the line contains;
+ * `weak` is suppressed when the line is plainly a summary of what the other person said, which is a
+ * normal thing to type and used to be paused.
+ */
+export interface DisclosureRules {
+  strong: readonly RegExp[];
+  weak: readonly RegExp[];
+}
+
+/**
+ * Asking for advice about real health, and describing your own symptoms. These were tuned to avoid
+ * stopping a medical candidate mid-consultation, and that tuning does not transfer: "My back is
+ * killing me, anyway - walk me through what you did" is an ordinary way to open a research
+ * interview and this list stops it. So a field opts into them rather than getting them by default.
+ */
+export const CLINICAL_DISCLOSURE_RULES: DisclosureRules = { strong: EXPLICIT, weak: FIRST_PERSON_SYMPTOM };
+
+/** A field with nothing of its own to add: self-harm still pauses, because it must everywhere. */
+export const NO_EXTRA_DISCLOSURE_RULES: DisclosureRules = { strong: [], weak: [] };
+
+/**
+ * Self-harm and suicide are checked whatever is being practised: someone typing that into any tool
+ * needs signposting, and no field may opt out. Everything else is the field's own, so the caller has
+ * to say which field it is rather than getting medicine by accident.
+ */
+export function looksLikeSelfDisclosure(input: string, rules: DisclosureRules): boolean {
   const text = normalise(input);
-  if (selfHarmDisclosed(text) || EXPLICIT.some((p) => p.test(text))) return true;
+  if (selfHarmDisclosed(text) || rules.strong.some((p) => p.test(text))) return true;
   if (RECAP.test(text)) return false;
-  return FIRST_PERSON_SYMPTOM.some((p) => p.test(text));
+  return rules.weak.some((p) => p.test(text));
 }

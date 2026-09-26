@@ -7,6 +7,7 @@ import { initialSessionState } from '../../src/state.js';
 import { runTurn } from '../../src/orchestrator.js';
 import { offlineJudge, offlinePatient } from '../../src/offline.js';
 import { parseCase } from '../../src/types.js';
+import { NO_EXTRA_DISCLOSURE_RULES } from '../../src/safety.js';
 import { buildPatientContext } from '../../src/patientContext.js';
 
 const research = parseCase(JSON.parse(readFileSync(new URL('../../cases/research-checkout.json', import.meta.url), 'utf8')));
@@ -18,6 +19,7 @@ const minimal = (over: Partial<DomainPack> = {}): DomainPack => ({
   learnerNoun: 'learner',
   caveat: 'A test pack.',
   persona: { roleLine: 'You are someone.', factsHeading: 'What you may share', inventionBan: 'Invent nothing.', smallTalkLine: 'Small talk is fine.' },
+  safety: { disclosure: NO_EXTRA_DISCLOSURE_RULES, signposting: { practiceOnly: 'This is a test. ' } },
   domains: [{ id: 'asking', label: 'Asking' }],
   gatheringDomainId: 'asking',
   rubric: [{ id: 'a', domain: 'asking', label: 'Asks', critical: false, exampleQuestion: 'Well?', offlineCues: ['well'] }],
@@ -51,6 +53,51 @@ describe('registering a domain pack', () => {
       statements: [{ key: 's', label: 'S', text: 'Did not.', authority: 'ours', source: 'x', assessable: false, notAssessableBecause: '  ' }],
     });
     expect(() => registerPack(bad)).toThrow(/must say why/);
+  });
+
+  it('refuses a claim of a regulator whose source names no body', () => {
+    const bad = minimal({
+      statements: [
+        {
+          key: 's',
+          label: 'S',
+          text: 'Did not.',
+          authority: 'regulator',
+          source: 'we made this up',
+          assessable: false,
+          notAssessableBecause: 'not judged here',
+        },
+      ],
+    });
+    expect(() => registerPack(bad)).toThrow(/does not name a body/);
+    // And the same statement is fine once its source names one.
+    expect(() =>
+      registerPack(
+        minimal({
+          statements: [
+            {
+              key: 's',
+              label: 'S',
+              text: 'Did not.',
+              authority: 'regulator',
+              source: 'GMC, Understanding your results',
+              assessable: false,
+              notAssessableBecause: 'not judged here',
+            },
+          ],
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('refuses the rest of what it used to wave through', () => {
+    const item = (id: string, domain = 'asking') => ({ id, domain, label: 'Asks', critical: false, exampleQuestion: 'Well?', offlineCues: [] });
+    expect(() => registerPack(minimal({ rubric: [item('a'), item('a')], sources: { a: 'published' } }))).toThrow(/share the id/);
+    expect(() => registerPack(minimal({ sources: {} }))).toThrow(/has no source/);
+    expect(() => registerPack(minimal({ openingItemId: 'nope' }))).toThrow(/opening item nope is not in its own rubric/);
+    expect(() =>
+      registerPack(minimal({ domains: [{ id: 'asking', label: 'Asking' }, { id: 'empty', label: 'Empty' }], gatheringDomainId: 'empty' })),
+    ).toThrow(/has no items, so order can never be judged/);
   });
 
   it('refuses the same id twice', () => {
@@ -113,6 +160,37 @@ describe('the engine is not a medical tool', () => {
     // The rules that stop the model inventing things are the engine's, so they are still there.
     expect(prompt).toContain('It is not a summary');
     expect(prompt).toContain('Never invent numbers, dates, names, amounts of money');
+  });
+
+  it('does not stop a research interview with a medical rule, but still stops self-harm', async () => {
+    const judge = offlineJudge();
+    const patient = offlinePatient();
+    // The review found this exact line stopped: it reads as a symptom to a clinical rule list, and
+    // it is an ordinary way to open an interview. The real question in it must survive.
+    const ordinary = await runTurn(
+      research,
+      initialSessionState(),
+      'My back is killing me, anyway - walk me through what you did.',
+      judge,
+      patient,
+    );
+    expect(ordinary.safetyBlocked).toBe(false);
+    expect(ordinary.state.rubricHits.walk_through).toBe(1);
+
+    // Self-harm is the engine's business in every field, so it still pauses.
+    const distress = await runTurn(research, initialSessionState(), "I've been having thoughts of ending it all.", judge, patient);
+    expect(distress.safetyBlocked).toBe(true);
+    expect(distress.reply).toContain('Samaritans free on 116 123');
+    // And the pause says what this tool is, in this field's words.
+    expect(distress.reply).toContain('fictional person');
+    expect(distress.reply).not.toContain('patient');
+  });
+
+  it('stops the same line in the clinical field, where it is a disclosure', async () => {
+    const clinical = parseCase(JSON.parse(readFileSync(new URL('../../cases/demo-cough.json', import.meta.url), 'utf8')));
+    const r = await runTurn(clinical, initialSessionState(), "I've been having a lot of pain in my back for weeks.", offlineJudge(), offlinePatient());
+    expect(r.safetyBlocked).toBe(true);
+    expect(r.reply).toContain('fictional patient');
   });
 
   it('runs a whole non-clinical turn through the same engine, gating and all', async () => {

@@ -141,9 +141,18 @@ function itemRow(item, covered) {
   mark.textContent = covered ? '✓' : '✗';
   li.append(mark, document.createTextNode(item.label + (item.critical ? ' (critical)' : '')));
   // The words that earned the mark, so a candidate can disagree with it.
-  if (covered) li.append(hint(item.quote ? `question ${item.turn}: “${item.quote}”` : `question ${item.turn}`));
-  else li.append(hint(`Try: ${item.exampleQuestion}`));
-  if (item.source) li.append(hint(`Source: ${item.source}`));
+  if (covered) {
+    li.append(
+      hint(
+        item.quote
+          ? `question ${item.turn}: “${item.quote}”`
+          : `question ${item.turn} — the words that earned this were not kept, so this mark cannot be checked`,
+      ),
+    );
+  } else {
+    li.append(hint(`Try: ${item.exampleQuestion}`));
+  }
+  li.append(hint(item.source ? `Source: ${item.source}` : "Source: none published; this item is this case's own."));
   return li;
 }
 

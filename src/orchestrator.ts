@@ -4,8 +4,10 @@ import { applyVerdict } from './state.js';
 import { isPublic, unlockFacts } from './gates.js';
 import { buildPatientContext } from './patientContext.js';
 import { forbiddenTerms, guardReply } from './patientGuard.js';
-import { looksLikeSelfDisclosure, SAFETY_MESSAGE, safetyMessageFor } from './safety.js';
+import { looksLikeSelfDisclosure, safetyMessage, safetyMessageFor } from './safety.js';
+import { packFor } from './domains/index.js';
 import type { DisclosureCategory, SafetyClient, SafetyCheck } from './nebius/safetyClient.js';
+import type { Signposting } from './safety.js';
 
 export interface TurnResult {
   state: SessionState;
@@ -25,15 +27,22 @@ export interface TurnResult {
 const LEAK_WARNING =
   '\n\nNote: your previous answer mentioned details that are not in your list of facts you may share. ' +
   'Answer again using only the facts listed above.';
-const EMPTY_WARNING = '\n\nNote: your previous answer was empty. Answer the doctor in character, in one to three short sentences.';
+// "the doctor" would contradict a non-clinical pack own role line, which tells the person they
+// are not a customer and not being sold anything: both go into the same prompt.
+const EMPTY_WARNING = '\n\nNote: your previous answer was empty. Answer in character, in one to three short sentences.';
 
 /** Said in character when the patient model returns nothing twice. */
 export const FALLBACK_REPLY = "Sorry, I didn't quite catch that. Could you say it again?";
 
-function blocked(state: SessionState, blockedBy: 'rule' | 'model' | 'judge', category: DisclosureCategory | null = null): TurnResult {
+function blocked(
+  state: SessionState,
+  blockedBy: 'rule' | 'model' | 'judge',
+  signposting: Signposting,
+  category: DisclosureCategory | null = null,
+): TurnResult {
   return {
     state,
-    reply: category === null ? SAFETY_MESSAGE : safetyMessageFor(category),
+    reply: category === null ? safetyMessage(signposting) : safetyMessageFor(category, signposting),
     verdict: null,
     newlyUnlocked: [],
     guardTriggered: false,
@@ -93,7 +102,9 @@ export async function runTurn(
   history: ConversationTurn[] = [],
   safety?: SafetyClient,
 ): Promise<TurnResult> {
-  if (looksLikeSelfDisclosure(studentInput)) return blocked(state, 'rule');
+  // Which lines pause practice, and how a pause is worded, belong to the field.
+  const { disclosure, signposting } = packFor(patientCase.pack).safety;
+  if (looksLikeSelfDisclosure(studentInput, disclosure)) return blocked(state, 'rule', signposting);
 
   // Both models are asked at once, so the safety check adds no waiting to the turn. The judge's
   // outcome is settled rather than awaited, because a failed judge call must never swallow a
@@ -105,14 +116,14 @@ export async function runTurn(
     ),
     askSafetyModel(safety, studentInput, history),
   ]);
-  if (flaggedByModel?.selfDisclosure) return blocked(state, 'model', flaggedByModel.category);
+  if (flaggedByModel?.selfDisclosure) return blocked(state, 'model', signposting, flaggedByModel.category);
   if (!judged.ok) throw judged.error;
 
   // The judge is an external model: validate its output before it touches state.
   const verdict = JudgeVerdictSchema.parse(judged.value);
   // The judge's own flag is the fallback for when the safety check had no answer. On the blind set
   // it added no recall over that check and tripled false pauses, so it does not override it.
-  if (flaggedByModel === null && verdict.selfDisclosure) return blocked(state, 'judge');
+  if (flaggedByModel === null && verdict.selfDisclosure) return blocked(state, 'judge', signposting);
 
   const afterVerdict = applyVerdict(state, verdict, patientCase.rubric.map((r) => r.id), studentInput);
   const newlyUnlocked = unlockFacts(patientCase, afterVerdict, verdict);

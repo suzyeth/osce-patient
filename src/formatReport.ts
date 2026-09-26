@@ -10,14 +10,19 @@ const OUTCOME_MARK = {
 } as const;
 
 function itemLine(i: ItemResult): string[] {
-  if (!i.covered) {
-    const lines = [`[ ] ${i.label}${i.critical ? ' (critical)' : ''}`, `      Try: "${i.exampleQuestion}"`];
-    if (i.source) lines.push(`      Source: ${i.source}`);
-    return lines;
+  const lines = [`${i.covered ? '[x]' : '[ ]'} ${i.label}${i.critical ? ' (critical)' : ''}${i.covered ? ` - question ${i.turn}` : ''}`];
+  if (i.covered) {
+    // The quote is the whole point: the learner can see exactly which sentence earned the mark.
+    if (i.quote) lines.push(`      You asked: "${i.quote}"`);
+    // An earned mark with no quote has to say so. Silently omitting the line leaves the learner
+    // unable to tell whether the evidence is missing or the report just did not print it.
+    else lines.push('      The words that earned this were not kept, so this mark cannot be checked.');
+  } else {
+    lines.push(`      Try: "${i.exampleQuestion}"`);
   }
-  const lines = [`[x] ${i.label}${i.critical ? ' (critical)' : ''} - question ${i.turn}`];
-  // The quote is the whole point: the learner can see exactly which sentence earned the mark.
-  if (i.quote) lines.push(`      You asked: "${i.quote}"`);
+  // Shown whether or not it was covered: a mark you cannot trace to a source is the thing this
+  // report exists to avoid, and it used to be printed only for the items that were missed.
+  lines.push(i.source ? `      Source: ${i.source}` : '      Source: none published; this item belongs to this case alone.');
   return lines;
 }
 

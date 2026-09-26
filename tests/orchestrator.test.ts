@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { appendTurn, FALLBACK_REPLY, runTurn } from '../src/orchestrator.js';
 import { initialSessionState } from '../src/state.js';
-import { SAFETY_MESSAGE, safetyMessageFor } from '../src/safety.js';
+import { safetyMessage, safetyMessageFor } from '../src/safety.js';
+import { UK_CLINICAL_HISTORY } from '../src/domains/index.js';
+
+const SIGNPOSTING = UK_CLINICAL_HISTORY.safety.signposting;
+const SAFETY_MESSAGE = safetyMessage(SIGNPOSTING);
 import type { JudgeClient, PatientInput } from '../src/llm.js';
 import type { JudgeVerdict } from '../src/types.js';
 import { loadDemoCase } from './loadCase.js';
@@ -101,7 +105,7 @@ describe('runTurn', () => {
     const r = await runTurn(c, initialSessionState(), line, fakeJudge(verdict()), patient, [], safety);
     expect(r).toMatchObject({ safetyBlocked: true, blockedBy: 'model', blockedCategory: 'medicines', verdict: null });
     // A medicines question is signposted to a pharmacist, not to "if you're unwell".
-    expect(r.reply).toBe(safetyMessageFor('medicines'));
+    expect(r.reply).toBe(safetyMessageFor('medicines', SIGNPOSTING));
     expect(r.reply).toContain('pharmacist');
     expect(patient.calls).toBe(0);
     expect(r.state).toEqual(initialSessionState());

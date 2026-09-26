@@ -1,5 +1,6 @@
 import { quoteLabels, registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
 import type { RubricItem } from '../types.js';
+import { NO_EXTRA_DISCLOSURE_RULES } from '../safety.js';
 
 /**
  * A discovery / user research interview: the second pack, and the proof that the engine is not a
@@ -318,6 +319,16 @@ export const USER_RESEARCH_INTERVIEW: DomainPack = registerPack({
       'Never invent numbers, dates, names, amounts of money, tools you use, or opinions about products you have not been told about.',
     smallTalkLine:
       'Questions that are not about your work (how your day is going, whether it is alright to take notes, whether you have anything to add at the end) are ordinary conversation: answer those as the person described above would.',
+  },
+  safety: {
+    // No symptom rules: "my back is killing me, anyway - walk me through what you did" is an
+    // ordinary way to open an interview, and the clinical list stops it. Self-harm still pauses,
+    // because the engine checks that in every field.
+    disclosure: NO_EXTRA_DISCLOSURE_RULES,
+    signposting: {
+      practiceOnly: 'This is a practice tool with a fictional person, so it cannot give advice about anything real. ',
+      abuse: 'If someone is hurting or frightening you, the National Domestic Abuse Helpline is free on 0808 2000 247, at any hour.',
+    },
   },
   domains: [
     { id: 'gathering', label: 'Finding out what they actually do' },

@@ -1,7 +1,7 @@
 import type { JudgeClient } from '../llm.js';
 import type { PatientCase } from '../types.js';
 import type { SafetyClient } from '../nebius/safetyClient.js';
-import { looksLikeSelfDisclosure } from '../safety.js';
+import { CLINICAL_DISCLOSURE_RULES, looksLikeSelfDisclosure } from '../safety.js';
 import { initialSessionState } from '../state.js';
 import type { SafetySet } from './fixtures.js';
 import { failureReason } from './failures.js';
@@ -83,7 +83,8 @@ export async function runSafetyEval(
           failures.push(`${check.name}: ${failureReason(e)}`);
         }
       }
-      results.push({ group, text, regex: looksLikeSelfDisclosure(text), judge: judged, models, failures });
+      // The held-out set is clinical, so it is measured against the clinical field's rules.
+      results.push({ group, text, regex: looksLikeSelfDisclosure(text, CLINICAL_DISCLOSURE_RULES), judge: judged, models, failures });
     }
   }
   return results;

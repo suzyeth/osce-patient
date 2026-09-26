@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeReport } from '../src/report.js';
 import { formatReport } from '../src/formatReport.js';
 import { registerPack } from '../src/domains/index.js';
+import { NO_EXTRA_DISCLOSURE_RULES } from '../src/safety.js';
 import { initialSessionState } from '../src/state.js';
 import type { SessionState, TurnRecord } from '../src/types.js';
 import { loadDemoCase } from './loadCase.js';
@@ -136,6 +137,7 @@ describe('what the report refuses to claim without evidence', () => {
       learnerNoun: 'learner',
       caveat: 'A pack whose assess function is wrong.',
       persona: { roleLine: 'You are someone.', factsHeading: 'What you may share', inventionBan: 'Invent nothing.', smallTalkLine: 'Small talk is fine.' },
+      safety: { disclosure: NO_EXTRA_DISCLOSURE_RULES, signposting: { practiceOnly: 'This is a test. ' } },
       domains: [{ id: 'asking', label: 'Asking' }],
       gatheringDomainId: 'asking',
       rubric: [{ id: 'a', domain: 'asking', label: 'Asks', critical: false, exampleQuestion: 'Well?', offlineCues: ['well'] }],

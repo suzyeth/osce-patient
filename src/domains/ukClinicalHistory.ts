@@ -1,5 +1,6 @@
 import { quoteLabels, registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
 import { DOMAIN_LABEL, FEEDBACK_STATEMENTS } from '../feedback.js';
+import { CLINICAL_DISCLOSURE_RULES } from '../safety.js';
 import { RUBRIC_SOURCES, STANDARD_RUBRIC } from '../cases/rubric.js';
 
 const GMC_SOURCE = 'GMC, Understanding your results (PLAB 2 guide), read 2026-09-26';
@@ -142,6 +143,14 @@ export const UK_CLINICAL_HISTORY: DomainPack = registerPack({
     inventionBan: 'Never invent symptoms, test results, names, medicines or diagnoses.',
     smallTalkLine:
       'Questions that are not about your health (how you are today, whether it is alright to ask you things, whether you have any questions at the end) are ordinary conversation: answer those as the person described above would.',
+  },
+  safety: {
+    disclosure: CLINICAL_DISCLOSURE_RULES,
+    signposting: {
+      practiceOnly: "This is a practice tool with a fictional patient, so it can't give advice about real health. ",
+      medicines: 'A pharmacist can answer questions about medicines, doses and interactions, free and without an appointment. ',
+      abuse: 'If someone is hurting or frightening you, the National Domestic Abuse Helpline is free on 0808 2000 247, at any hour.',
+    },
   },
   domains: [
     { id: 'data_gathering', label: DOMAIN_LABEL.data_gathering },

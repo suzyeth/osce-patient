@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { looksLikeSelfDisclosure, SAFETY_MESSAGE, safetyMessageFor } from '../src/safety.js';
+import { CLINICAL_DISCLOSURE_RULES, looksLikeSelfDisclosure, safetyMessage, safetyMessageFor } from '../src/safety.js';
+import { UK_CLINICAL_HISTORY } from '../src/domains/index.js';
+
+/** These sets are all clinical, so they are measured against the clinical field's own rules. */
+const RULES = CLINICAL_DISCLOSURE_RULES;
+const SIGNPOSTING = UK_CLINICAL_HISTORY.safety.signposting;
+const SAFETY_MESSAGE = safetyMessage(SIGNPOSTING);
 
 // Must always be caught: the original spec cases and every self-harm line from review.
 const FLAG = [
@@ -597,15 +603,15 @@ const ALLOW = [
 
 describe('looksLikeSelfDisclosure', () => {
   it.each(FLAG)('flags: %s', (s) => {
-    expect(looksLikeSelfDisclosure(s)).toBe(true);
+    expect(looksLikeSelfDisclosure(s, RULES)).toBe(true);
   });
 
   it.each(ALSO_CAUGHT)('also flags: %s', (s) => {
-    expect(looksLikeSelfDisclosure(s)).toBe(true);
+    expect(looksLikeSelfDisclosure(s, RULES)).toBe(true);
   });
 
   it.each(ALLOW)('allows: %s', (s) => {
-    expect(looksLikeSelfDisclosure(s)).toBe(false);
+    expect(looksLikeSelfDisclosure(s, RULES)).toBe(false);
   });
 });
 
@@ -626,7 +632,7 @@ describe('rapport is not a disclosure', () => {
       'Apologies, I have been coughing since dawn, it is just a cold.',
       "I've been coughing all morning, but I'm fine to carry on.",
     ]) {
-      expect(looksLikeSelfDisclosure(line), line).toBe(false);
+      expect(looksLikeSelfDisclosure(line, RULES), line).toBe(false);
     }
   });
 
@@ -637,27 +643,27 @@ describe('rapport is not a disclosure', () => {
       "I've been coughing for three weeks, should I be worried?",
       "I've been vomiting since last night, what should I take?",
     ]) {
-      expect(looksLikeSelfDisclosure(line), line).toBe(true);
+      expect(looksLikeSelfDisclosure(line, RULES), line).toBe(true);
     }
   });
 });
 
 describe('safetyMessageFor', () => {
   it('leads with the service that fits what was said', () => {
-    expect(safetyMessageFor('self_harm')).toContain('Samaritans free on 116 123');
-    expect(safetyMessageFor('abuse')).toContain('National Domestic Abuse Helpline is free on 0808 2000 247');
-    expect(safetyMessageFor('medicines')).toContain('pharmacist');
+    expect(safetyMessageFor('self_harm', SIGNPOSTING)).toContain('Samaritans free on 116 123');
+    expect(safetyMessageFor('abuse', SIGNPOSTING)).toContain('National Domestic Abuse Helpline is free on 0808 2000 247');
+    expect(safetyMessageFor('medicines', SIGNPOSTING)).toContain('pharmacist');
     // Someone asking about their child should not be told "if you're unwell".
-    expect(safetyMessageFor('advice_for_other')).toContain("anyone you're worried about");
-    expect(safetyMessageFor('advice_for_other')).not.toContain('Samaritans');
+    expect(safetyMessageFor('advice_for_other', SIGNPOSTING)).toContain("anyone you're worried about");
+    expect(safetyMessageFor('advice_for_other', SIGNPOSTING)).not.toContain('Samaritans');
   });
 
   it('falls back to the full message when the category is unknown', () => {
-    expect(safetyMessageFor(null)).toBe(SAFETY_MESSAGE);
-    expect(safetyMessageFor('none')).toBe(SAFETY_MESSAGE);
+    expect(safetyMessageFor(null, SIGNPOSTING)).toBe(SAFETY_MESSAGE);
+    expect(safetyMessageFor('none', SIGNPOSTING)).toBe(SAFETY_MESSAGE);
     // Every wording says what the tool is and offers a real route.
     for (const category of ['self_harm', 'abuse', 'medicines', 'advice_for_other', 'own_health', null]) {
-      const message = safetyMessageFor(category);
+      const message = safetyMessageFor(category, SIGNPOSTING);
       expect(message).toContain('practice tool with a fictional patient');
       expect(message).toMatch(/NHS 111|999|Samaritans|0808 2000 247/);
     }
