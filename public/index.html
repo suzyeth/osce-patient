@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OSCE history-taking practice</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>History-taking practice</h1>
+      <p class="banner" id="banner">
+        A practice tool with a fictional patient. Cases are <strong>not clinically reviewed</strong>. It does not give
+        medical advice; if you need help with your own health, contact NHS 111 or your GP.
+      </p>
+    </header>
+
+    <main>
+      <!-- Gate -->
+      <section id="gate" class="card">
+        <h2>Start a station</h2>
+        <p>
+          Eight minutes with a simulated patient, then a report on what you covered and what you missed. The patient
+          only knows what you ask about.
+        </p>
+        <form id="startForm">
+          <label for="code">Access code</label>
+          <input id="code" name="code" type="password" autocomplete="off" required placeholder="from the submission" />
+          <button type="submit" id="startButton">Start the station</button>
+        </form>
+        <p id="gateError" class="error" hidden></p>
+        <p class="muted">No code? <button type="button" class="link" id="sampleButton">See a finished report</button></p>
+      </section>
+
+      <!-- Station -->
+      <section id="station" class="card" hidden>
+        <div class="stationTop">
+          <p id="brief" class="brief"></p>
+          <div class="clock" aria-live="off"><span id="clock">8:00</span><small id="turns"></small></div>
+        </div>
+        <ol id="log" class="log" aria-live="polite"></ol>
+        <form id="turnForm">
+          <label for="input" class="visually-hidden">Your question</label>
+          <input id="input" name="input" type="text" autocomplete="off" maxlength="500" placeholder="Ask the patient a question" />
+          <button type="submit" id="send">Send</button>
+          <button type="button" id="finish" class="secondary">Finish</button>
+        </form>
+        <p id="turnError" class="error" hidden></p>
+      </section>
+
+      <!-- Report -->
+      <section id="reportView" class="card" hidden>
+        <h2 id="reportTitle">Your report</h2>
+        <p class="banner">
+          Practice feedback, not an exam result. The case is not clinically reviewed, and the marking is this tool's
+          own, not the GMC's.
+        </p>
+        <div id="scores" class="scores"></div>
+        <h3>What you covered</h3>
+        <ul id="covered" class="items"></ul>
+        <h3>What you missed</h3>
+        <ul id="missed" class="items"></ul>
+        <p class="banner">
+          Cases are not clinically reviewed. If anything here looks clinically wrong, please report it on the
+          repository's issue tracker.
+        </p>
+        <button type="button" id="again">Start another station</button>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Open source (MIT). Judge and patient run on Nemotron models via Nebius Token Factory. Locked facts are never
+        put in the patient's prompt.
+      </p>
+    </footer>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

@@ -11,7 +11,8 @@
     "play": "tsx src/cli/play.ts",
     "check-case": "tsx src/cli/checkCase.ts",
     "smoke": "tsx src/cli/smoke.ts",
-    "eval": "tsx src/cli/eval.ts"
+    "eval": "tsx src/cli/eval.ts",
+    "serve": "tsx src/cli/serve.ts"
   },
   "dependencies": {
     "zod": "^3.23.8"
