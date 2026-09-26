@@ -140,6 +140,15 @@ export interface DomainPack {
   statements: readonly FeedbackStatement[];
 }
 
+/**
+ * Item labels are written to read as a checklist row ("Asks about coughing up blood"), which does
+ * not fit inside a sentence. Quoting them keeps the report grammatical and keeps the wording exactly
+ * as the candidate sees it in the list, rather than inventing a second phrasing for each item.
+ */
+export function quoteLabels(items: readonly ItemResult[]): string {
+  return items.map((i) => `"${i.label}"`).join(', ');
+}
+
 const REGISTRY = new Map<string, DomainPack>();
 
 export function registerPack(pack: DomainPack): DomainPack {

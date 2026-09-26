@@ -18,7 +18,12 @@
       "label": "Explains who you are and what the session is for",
       "critical": false,
       "exampleQuestion": "Thanks for the time. I'm trying to understand how you get paid at the moment, not to show you anything.",
-      "offlineCues": ["what this is for", "trying to understand", "my name is", "i'm working on"]
+      "offlineCues": [
+        "what this is for",
+        "trying to understand",
+        "my name is",
+        "i'm working on"
+      ]
     },
     {
       "id": "consent_recording",
@@ -26,7 +31,13 @@
       "label": "Says it is voluntary, and agrees recording before starting",
       "critical": false,
       "exampleQuestion": "Is it alright if I take notes? You can stop at any point, or skip anything.",
-      "offlineCues": ["is it alright if", "take notes", "recording", "you can stop", "skip anything"]
+      "offlineCues": [
+        "is it alright if",
+        "take notes",
+        "recording",
+        "you can stop",
+        "skip anything"
+      ]
     },
     {
       "id": "open_question",
@@ -34,7 +45,12 @@
       "label": "Opens on their world, not on your idea",
       "critical": false,
       "exampleQuestion": "How do you handle getting paid at the moment?",
-      "offlineCues": ["how do you", "what do you currently", "walk me through", "tell me about"]
+      "offlineCues": [
+        "how do you",
+        "what do you currently",
+        "walk me through",
+        "tell me about"
+      ]
     },
     {
       "id": "recent_specific",
@@ -42,7 +58,12 @@
       "label": "Asks about a specific recent occasion",
       "critical": false,
       "exampleQuestion": "When did an invoice last go unpaid? Tell me about that one.",
-      "offlineCues": ["last time", "most recent", "when did that happen", "that time"]
+      "offlineCues": [
+        "last time",
+        "most recent",
+        "when did that happen",
+        "that time"
+      ]
     },
     {
       "id": "walk_through",
@@ -50,7 +71,12 @@
       "label": "Has them walk through what they actually did",
       "critical": false,
       "exampleQuestion": "What did you do first when you noticed, and then what?",
-      "offlineCues": ["what did you do", "step by step", "and then what", "walk me through"]
+      "offlineCues": [
+        "what did you do",
+        "step by step",
+        "and then what",
+        "walk me through"
+      ]
     },
     {
       "id": "current_workaround",
@@ -58,7 +84,12 @@
       "label": "Finds what they already do about it",
       "critical": false,
       "exampleQuestion": "What do you do about it today?",
-      "offlineCues": ["what do you do about", "how do you get around", "workaround", "instead"]
+      "offlineCues": [
+        "what do you do about",
+        "how do you get around",
+        "workaround",
+        "instead"
+      ]
     },
     {
       "id": "cost_of_problem",
@@ -66,7 +97,12 @@
       "label": "Finds what the problem has already cost them",
       "critical": true,
       "exampleQuestion": "Have you tried anything to fix it, or spent anything on it?",
-      "offlineCues": ["have you tried", "spent", "how long does that take", "cost you"]
+      "offlineCues": [
+        "have you tried",
+        "spent",
+        "how long does that take",
+        "cost you"
+      ]
     },
     {
       "id": "who_else_involved",
@@ -74,7 +110,12 @@
       "label": "Establishes who else is involved",
       "critical": false,
       "exampleQuestion": "Who else is part of this?",
-      "offlineCues": ["who else", "anyone else", "your team", "who decides"]
+      "offlineCues": [
+        "who else",
+        "anyone else",
+        "your team",
+        "who decides"
+      ]
     },
     {
       "id": "last_time_failed",
@@ -82,7 +123,12 @@
       "label": "Asks about an occasion when it went wrong",
       "critical": false,
       "exampleQuestion": "When did it last go wrong?",
-      "offlineCues": ["went wrong", "gone wrong", "a problem", "didn't work"]
+      "offlineCues": [
+        "went wrong",
+        "gone wrong",
+        "a problem",
+        "didn't work"
+      ]
     },
     {
       "id": "emotion_probe",
@@ -90,7 +136,12 @@
       "label": "Follows something they clearly felt strongly about",
       "critical": false,
       "exampleQuestion": "That sounded like it annoyed you. What was that like?",
-      "offlineCues": ["sounded", "how did that feel", "what was that like", "frustrating"]
+      "offlineCues": [
+        "sounded",
+        "how did that feel",
+        "what was that like",
+        "frustrating"
+      ]
     },
     {
       "id": "unprompted_priority",
@@ -98,7 +149,12 @@
       "label": "Lets them say what matters most, unprompted",
       "critical": false,
       "exampleQuestion": "Of everything you have told me, what gets in your way most?",
-      "offlineCues": ["what matters most", "biggest", "gets in your way", "most important to you"]
+      "offlineCues": [
+        "what matters most",
+        "biggest",
+        "gets in your way",
+        "most important to you"
+      ]
     },
     {
       "id": "closing_anything_else",
@@ -106,7 +162,12 @@
       "label": "Asks what you did not think to ask",
       "critical": false,
       "exampleQuestion": "Is there anything I should have asked and did not?",
-      "offlineCues": ["anything else", "should have asked", "anything i missed", "anything you expected"]
+      "offlineCues": [
+        "anything else",
+        "should have asked",
+        "anything i missed",
+        "anything you expected"
+      ]
     },
     {
       "id": "next_steps",
@@ -114,7 +175,12 @@
       "label": "Says what happens next with what they told you",
       "critical": false,
       "exampleQuestion": "I'll write this up for the team; nothing goes out with your name on it.",
-      "offlineCues": ["what happens next", "write this up", "share it with", "get back to you"]
+      "offlineCues": [
+        "what happens next",
+        "write this up",
+        "share it with",
+        "get back to you"
+      ]
     }
   ],
   "facts": [
@@ -122,7 +188,7 @@
       "id": "f_how_paid",
       "kind": "presenting",
       "rubricItemId": "open_question",
-      "text": "Most customers pay by card in the shop. Businesses that order framing in bulk get an invoice, and those are the ones that go unpaid.",
+      "text": "Most of my customers pay by card in the shop. The businesses that order framing in bulk get an invoice, and those are the ones that go unpaid.",
       "guardedTerms": [],
       "source": {
         "dataset": "authored",
@@ -134,8 +200,11 @@
       "id": "f_last_unpaid",
       "kind": "history",
       "rubricItemId": "recent_specific",
-      "text": "A design studio owes her for three jobs from February. It is about 1,900 pounds. She has chased it four times.",
-      "guardedTerms": ["1,900", "design studio"],
+      "text": "There's a design studio that owes me for three jobs from February. It's about 1,900 pounds. I've chased it four times.",
+      "guardedTerms": [
+        "1,900",
+        "design studio"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",
@@ -146,8 +215,10 @@
       "id": "f_what_she_did",
       "kind": "history",
       "rubricItemId": "walk_through",
-      "text": "She emailed, then rang and got voicemail, then emailed again with the invoice attached, then left it because she did not want to lose the account.",
-      "guardedTerms": ["voicemail"],
+      "text": "I emailed, then I rang and got voicemail, then I emailed again with the invoice attached. Then I left it, because I didn't want to lose the account.",
+      "guardedTerms": [
+        "voicemail"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",
@@ -158,8 +229,11 @@
       "id": "f_workaround",
       "kind": "history",
       "rubricItemId": "current_workaround",
-      "text": "She keeps a paper list by the till and rewrites it every Monday. Her employee does not use it.",
-      "guardedTerms": ["paper list", "till"],
+      "text": "I keep a paper list by the till and rewrite it every Monday. My employee doesn't use it.",
+      "guardedTerms": [
+        "paper list",
+        "till"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",
@@ -170,8 +244,11 @@
       "id": "f_cost",
       "kind": "red_flag",
       "rubricItemId": "cost_of_problem",
-      "text": "She paid an accountant 300 pounds last year to chase two invoices, and got one of them. She reckons she spends most of a Monday morning on it.",
-      "guardedTerms": ["300 pounds", "accountant"],
+      "text": "I paid an accountant 300 pounds last year to chase two invoices, and we got one of them back. And I lose most of a Monday morning to it.",
+      "guardedTerms": [
+        "300 pounds",
+        "accountant"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",
@@ -182,8 +259,10 @@
       "id": "f_who_else",
       "kind": "history",
       "rubricItemId": "who_else_involved",
-      "text": "Her employee Marek takes orders when she is out, and writes them on whatever is nearest.",
-      "guardedTerms": ["Marek"],
+      "text": "Marek takes orders when I'm out, and writes them on whatever's nearest.",
+      "guardedTerms": [
+        "Marek"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",
@@ -194,8 +273,10 @@
       "id": "f_went_wrong",
       "kind": "history",
       "rubricItemId": "last_time_failed",
-      "text": "In the spring she framed a large order on a verbal go-ahead and the customer changed their mind. She kept the frames and could not sell them.",
-      "guardedTerms": ["verbal go-ahead"],
+      "text": "In the spring I framed a big order on a verbal go-ahead and the customer changed their mind. I was left with the frames and couldn't sell them.",
+      "guardedTerms": [
+        "verbal go-ahead"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",
@@ -206,8 +287,11 @@
       "id": "f_real_worry",
       "kind": "concern",
       "rubricItemId": "emotion_probe",
-      "text": "What actually bothers her is having to ask. She says chasing money makes her feel like she is begging, and she would rather write it off than ring a third time.",
-      "guardedTerms": ["begging", "write it off"],
+      "text": "Honestly? It's having to ask. Chasing money makes me feel like I'm begging, and I'd rather write it off than ring a third time.",
+      "guardedTerms": [
+        "begging",
+        "write it off"
+      ],
       "minTrust": 70,
       "source": {
         "dataset": "authored",
@@ -219,8 +303,10 @@
       "id": "f_priority",
       "kind": "history",
       "rubricItemId": "unprompted_priority",
-      "text": "Asked what gets in her way most, she says it is not the money. It is not knowing, on any given day, who owes her what.",
-      "guardedTerms": ["not knowing"],
+      "text": "It isn't really the money. It's not knowing, on any given day, who owes me what.",
+      "guardedTerms": [
+        "not knowing"
+      ],
       "source": {
         "dataset": "authored",
         "ref": "cases/research-checkout.json",

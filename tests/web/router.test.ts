@@ -161,7 +161,18 @@ describe('POST /api/report and GET /api/sample', () => {
   it('lists the cases a visitor may choose, with nothing they should not see yet', async () => {
     const response = await handleApi(new Request('https://example.test/api/cases'), deps());
     const payload = (await response.json()) as { cases: Array<Record<string, unknown>> };
-    expect(payload.cases).toEqual([{ id: c.id, title: c.title, brief: c.candidateBrief, minutes: 8, reviewStatus: 'unreviewed' }]);
+    expect(payload.cases).toEqual([
+      {
+        id: c.id,
+        title: c.title,
+        brief: c.candidateBrief,
+        minutes: 8,
+        reviewStatus: 'unreviewed',
+        // The page is told what field this is and what to call the person, so it never assumes.
+        packLabel: 'UK clinical history taking',
+        personNoun: 'patient',
+      },
+    ]);
     const raw = JSON.stringify(payload);
     for (const fact of c.facts) expect(raw).not.toContain(fact.text);
     expect(raw).not.toContain(c.patient.persona);

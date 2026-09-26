@@ -4,6 +4,7 @@ import type { SafetyClient } from '../nebius/safetyClient.js';
 import { appendTurn, runTurn } from '../orchestrator.js';
 import { computeReport, type SessionReport } from '../report.js';
 import { initialSessionState } from '../state.js';
+import { packFor } from '../domains/index.js';
 import { checkAccess, checkTurn, type WebLimits } from './limits.js';
 import {
   joinCookieChunks,
@@ -122,6 +123,7 @@ async function start(request: Request, deps: WebDeps): Promise<Response> {
       title: patientCase.title,
       brief: patientCase.candidateBrief,
       patientName: patientCase.patient.name,
+      personNoun: packFor(patientCase.pack).personNoun,
       openingLine: patientCase.patient.openingLine,
       durationSeconds: patientCase.durationSeconds,
       secondsLeft: patientCase.durationSeconds,
@@ -203,13 +205,18 @@ async function report(request: Request, deps: WebDeps): Promise<Response> {
  * and never the persona, which the patient model reads but the candidate should not.
  */
 function cases(deps: WebDeps): Response {
-  const list = Object.values(deps.cases).map((c) => ({
-    id: c.id,
-    title: c.title,
-    brief: c.candidateBrief,
-    minutes: Math.round(c.durationSeconds / 60),
-    reviewStatus: c.reviewStatus,
-  }));
+  const list = Object.values(deps.cases).map((c) => {
+    const pack = packFor(c.pack);
+    return {
+      id: c.id,
+      title: c.title,
+      brief: c.candidateBrief,
+      minutes: Math.round(c.durationSeconds / 60),
+      reviewStatus: c.reviewStatus,
+      packLabel: pack.label,
+      personNoun: pack.personNoun,
+    };
+  });
   return json({ cases: list.sort((a, b) => a.id.localeCompare(b.id)) });
 }
 

@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "osce-offline",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "serve:offline"
+      ],
+      "port": 3101
+    }
+  ]
+}

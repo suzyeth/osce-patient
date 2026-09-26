@@ -147,9 +147,18 @@ createServer((req, res) => {
     const response = await handleApi(await toRequest(req), deps);
     const headers: Record<string, string | string[]> = {};
     response.headers.forEach((value, name) => {
-      // Cookies are marked Secure; over plain http on localhost the browser still keeps them.
-      headers[name] = name === 'set-cookie' && !req.headers.host?.startsWith('localhost') ? value : value.replace('; Secure', '');
+      if (name === 'set-cookie') return;
+      headers[name] = value;
     });
+    // The state does not fit in one cookie, so a response can set several. They have to stay
+    // separate headers: forEach() joins them with a comma, which the browser then reads as one
+    // malformed cookie and drops, and the station silently fails to resume.
+    const cookies = response.headers.getSetCookie();
+    if (cookies.length > 0) {
+      // Cookies are marked Secure; over plain http on localhost the browser would refuse them.
+      const local = req.headers.host?.startsWith('localhost') ?? false;
+      headers['set-cookie'] = local ? cookies.map((c) => c.replace('; Secure', '')) : cookies;
+    }
     res.writeHead(response.status, headers).end(Buffer.from(await response.arrayBuffer()));
   })();
 }).listen(PORT, () => {

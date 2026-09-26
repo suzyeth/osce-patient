@@ -66,8 +66,9 @@ async function loadCases() {
     const body = document.createElement('span');
     body.append(Object.assign(document.createElement('span'), { className: 'title', textContent: `${station.title} (${station.minutes} min)` }));
     body.append(Object.assign(document.createElement('span'), { className: 'brief', textContent: station.brief }));
+    body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: station.packLabel }));
     if (station.reviewStatus !== 'reviewed') {
-      body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: 'not clinically reviewed' }));
+      body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: 'not reviewed by an expert' }));
     }
     label.append(radio, body);
     box.append(label);
@@ -89,6 +90,8 @@ $('startForm').addEventListener('submit', async (event) => {
   $('brief').textContent = data.brief;
   $('brief').dataset.patient = data.patientName;
   $('turns').textContent = `up to ${data.maxTurns} questions`;
+  // What to call the person comes from the case's domain pack, not from this page.
+  $('input').placeholder = `Ask the ${data.personNoun} a question`;
   $('log').replaceChildren();
   say(data.patientName, data.openingLine, 'patient');
   show(station);
@@ -136,7 +139,7 @@ function itemRow(item, covered) {
   const mark = document.createElement('span');
   mark.className = covered ? 'tick' : 'cross';
   mark.textContent = covered ? '✓' : '✗';
-  li.append(mark, document.createTextNode(item.label + (item.critical ? ' (red flag)' : '')));
+  li.append(mark, document.createTextNode(item.label + (item.critical ? ' (critical)' : '')));
   // The words that earned the mark, so a candidate can disagree with it.
   if (covered) li.append(hint(item.quote ? `question ${item.turn}: “${item.quote}”` : `question ${item.turn}`));
   else li.append(hint(`Try: ${item.exampleQuestion}`));
@@ -169,6 +172,8 @@ function renderReport(title, report) {
     ...domains,
   );
   $('caveat').textContent = report.caveat;
+  $('reviewNote').textContent =
+    report.reviewStatus === 'reviewed' ? '' : 'This case has not been reviewed by anyone qualified in the field.';
   $('statements').replaceChildren(...report.statements.map(statementRow));
   $('covered').replaceChildren(...report.items.filter((i) => i.covered).map((i) => itemRow(i, true)));
   $('missed').replaceChildren(...report.items.filter((i) => !i.covered).map((i) => itemRow(i, false)));

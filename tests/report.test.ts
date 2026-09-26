@@ -108,7 +108,7 @@ describe('the GMC feedback statements', () => {
   it('flags a missed red flag under Issues, naming it', () => {
     const s = statement(initialSessionState(), 'issues');
     expect(s.outcome).toBe('concern');
-    expect(s.evidence.toLowerCase()).toContain('blood');
+    expect(s.evidence).toContain('You did not cover "Asks about coughing up blood"');
   });
 
   it('flags jargon and a missing check of understanding under Language, and quotes the jargon', () => {

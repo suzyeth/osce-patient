@@ -1,4 +1,4 @@
-import { registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
+import { quoteLabels, registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
 import { DOMAIN_LABEL, FEEDBACK_STATEMENTS } from '../feedback.js';
 import { RUBRIC_SOURCES, STANDARD_RUBRIC } from '../cases/rubric.js';
 
@@ -13,10 +13,9 @@ const consultation = (obs: Observations): StatementJudgement => ({
 
 const issues = (obs: Observations): StatementJudgement => {
   if (obs.missedCritical.length > 0) {
-    const missed = obs.missedCritical.map((i) => i.label.toLowerCase()).join('; ');
     return {
       outcome: 'concern',
-      evidence: `You did not ask about ${missed}. In this case that is what decides what has to happen to the patient next.`,
+      evidence: `You did not cover ${quoteLabels(obs.missedCritical)}. In this case that is what decides what has to happen to the patient next.`,
       quotes: [],
     };
   }

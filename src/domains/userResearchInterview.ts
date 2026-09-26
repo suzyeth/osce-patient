@@ -1,4 +1,4 @@
-import { registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
+import { quoteLabels, registerPack, type DomainPack, type FeedbackStatement, type Observations, type StatementJudgement } from './pack.js';
 import type { RubricItem } from '../types.js';
 
 /**
@@ -122,10 +122,9 @@ const STATEMENTS: readonly FeedbackStatement[] = [
           quotes: [],
         };
       }
-      const missed = obs.missedCritical.map((i) => i.label.toLowerCase()).join('; ');
       return {
         outcome: 'concern',
-        evidence: `You did not establish ${missed}. Without it you have an opinion, not evidence: people are willing to agree that a problem is annoying without ever having done anything about it.`,
+        evidence: `You did not cover ${quoteLabels(obs.missedCritical)}. Without it you have an opinion, not evidence: people are willing to agree that a problem is annoying without ever having done anything about it.`,
         quotes: [],
       };
     },
@@ -137,7 +136,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     `${MOM_TEST}: "Ask about specifics in the past instead of generics or opinions about the future". ${NNG_FUTURE}: "users can't predict something they haven't seen"`,
     (obs) => {
       const wanted = ['recent_specific', 'walk_through', 'last_time_failed'];
-      const missed = wanted.map((id) => obs.itemById(id)).filter((i) => i && !i.covered);
+      const missed = wanted.flatMap((id) => obs.itemById(id) ?? []).filter((i) => !i.covered);
       if (missed.length === 0) {
         return {
           outcome: 'no_concern',
@@ -147,7 +146,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
       }
       return {
         outcome: 'concern',
-        evidence: `You did not get to ${missed.map((i) => i?.label.toLowerCase()).join('; ')}. What someone says they usually do is a summary they have made up; what they did last Tuesday is data.`,
+        evidence: `You did not cover ${quoteLabels(missed)}. What someone says they usually do is a summary they have made up; what they did last Tuesday is data.`,
         quotes: [],
       };
     },
@@ -236,14 +235,10 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'Ended without asking what you failed to ask, or without saying what happens next.',
     `${GDS_CONSENT} on telling participants how the results will be used, and ${GDS_INTERVIEWS} on not sticking to the guide rigidly`,
     (obs) => {
-      const missed = ['closing_anything_else', 'next_steps'].map((id) => obs.itemById(id)).filter((i) => i && !i.covered);
+      const missed = ['closing_anything_else', 'next_steps'].flatMap((id) => obs.itemById(id) ?? []).filter((i) => !i.covered);
       return missed.length === 0
         ? { outcome: 'no_concern', evidence: 'You left room for what you had not thought of, and told them what happens with what they said.', quotes: [] }
-        : {
-            outcome: 'concern',
-            evidence: `You ended without ${missed.map((i) => i?.label.toLowerCase()).join('; ')}.`,
-            quotes: [],
-          };
+        : { outcome: 'concern', evidence: `You ended without covering ${quoteLabels(missed)}.`, quotes: [] };
     },
   ),
   statement(
@@ -252,12 +247,12 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'Started asking before explaining the purpose, or without agreeing that it was alright to go ahead.',
     `${GDS_CONSENT}: "Whenever you do user research, you must get the participant's informed consent". ${MRS_CODE}`,
     (obs) => {
-      const missed = ['intro_purpose', 'consent_recording'].map((id) => obs.itemById(id)).filter((i) => i && !i.covered);
+      const missed = ['intro_purpose', 'consent_recording'].flatMap((id) => obs.itemById(id) ?? []).filter((i) => !i.covered);
       return missed.length === 0
         ? { outcome: 'no_concern', evidence: 'You said what the session was for and checked it was alright before asking about their work.', quotes: [] }
         : {
             outcome: 'concern',
-            evidence: `You did not ${missed.map((i) => i?.label.toLowerCase()).join('; ')}. This is the one item on the list that is not a technique: it is the condition for the rest.`,
+            evidence: `You did not cover ${quoteLabels(missed)}. This is the one thing on the list that is not a technique: it is the condition for the rest.`,
             quotes: [],
           };
     },

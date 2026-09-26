@@ -95,6 +95,8 @@ describe('the engine is not a medical tool', () => {
     const evidence = r.statements.find((s) => s.key === 'evidence');
     expect(evidence?.outcome).toBe('concern');
     expect(evidence?.evidence).toContain('an opinion, not evidence');
+    // The checklist wording is quoted, not bent into a sentence, so the report stays grammatical.
+    expect(evidence?.evidence).toContain('You did not cover "Finds what the problem has already cost them"');
   });
 
   it('does not tell a research interviewee they are a patient', () => {
