@@ -131,6 +131,13 @@ export const UK_CLINICAL_HISTORY: DomainPack = registerPack({
   learnerNoun: 'candidate',
   caveat:
     'The GMC marks each station in three domains and the examiner picks from ten set feedback statements. It publishes no item-by-item mark scheme, so the content list here is ours, with its source shown against each item. Clinical management is not scored in this version; only safety netting is looked at.',
+  persona: {
+    roleLine: 'You are role-playing a patient in a medical history-taking practice session.',
+    factsHeading: 'The only facts about your health that you may share right now',
+    inventionBan: 'Never invent symptoms, test results, names, medicines or diagnoses.',
+    smallTalkLine:
+      'Questions that are not about your health (how you are today, whether it is alright to ask you things, whether you have any questions at the end) are ordinary conversation: answer those as the person described above would.',
+  },
   domains: [
     { id: 'data_gathering', label: DOMAIN_LABEL.data_gathering },
     { id: 'management', label: DOMAIN_LABEL.management },

@@ -18,26 +18,38 @@ import type { RubricItem } from '../types.js';
  * Sources for the content list and the statements are named per item. They are attributions to
  * published work, not verbatim quotations, except where the text says otherwise.
  */
+/**
+ * Verified 2026-09-26 against the pages and editions named. Two cautions kept deliberately:
+ *  - No verbatim sentence is attributed to Portigal's book. The editions are real (Rosenfeld Media,
+ *    1st ed 2013, 2nd ed October 2023) but no public excerpt could be reached, so only his own
+ *    published 2012 article is quoted, which he says he wrote for the book.
+ *  - The three Mom Test rules are quoted from Fitzpatrick 2013, chapter 1 (pp. 11-26), not from the
+ *    book's website, which does not publish them.
+ */
+const GDS_INTERVIEWS = 'UK GDS Service Manual, "Using in-depth interviews", gov.uk/service-manual/user-research/using-in-depth-interviews';
+const GDS_CONSENT = 'UK GDS Service Manual, "Getting informed consent for user research"';
+const GDS_NEEDS = 'UK GDS Service Manual, "Learning about users and their needs"';
+const MOM_TEST = 'Rob Fitzpatrick, The Mom Test (2013), ch. 1';
+const MRS_CODE = 'Market Research Society, Code of Conduct 2023, rule 30 (permission before data collection)';
+const PORTIGAL_2012 = 'Steve Portigal, "Seventeen types of interviewing questions" (portigal.com, 2012)';
+const NNG_INTERVIEWS = 'Rosala & Pernice, "User Interviews 101", Nielsen Norman Group, 2023';
+const NNG_LEADING = 'Amy Schade, "Avoid Leading Questions to Get Better Insights from Participants", Nielsen Norman Group, 2017';
+const NNG_FUTURE = 'Jakob Nielsen, "Interviewing Users", Nielsen Norman Group, 2010';
+
 const SOURCES: Readonly<Record<string, string>> = {
-  intro_purpose:
-    'UK Government Digital Service, Service Manual, user research: explain the purpose of the session before starting',
-  consent_recording:
-    'UK GDPR consent expectations and standard research ethics practice: participation is voluntary, the person may stop at any time, and recording is agreed before it starts',
-  warm_up: 'Steve Portigal, Interviewing Users (Rosenfeld Media): open broadly before narrowing',
-  open_question: 'Rob Fitzpatrick, The Mom Test (2013): talk about their life, not your idea',
-  recent_specific:
-    'Rob Fitzpatrick, The Mom Test (2013): ask about specific things that already happened rather than generalities',
-  walk_through: 'Steve Portigal, Interviewing Users: ask the person to walk through what they actually did, step by step',
-  current_workaround: 'Rob Fitzpatrick, The Mom Test (2013): find what they already do about the problem today',
-  cost_of_problem:
-    'Rob Fitzpatrick, The Mom Test (2013): a problem someone has spent time or money on is a problem that is real',
-  who_else_involved: 'Steve Portigal, Interviewing Users: establish who else is involved in the work being described',
-  last_time_failed:
-    'Rubin & Rubin, Qualitative Interviewing: ask for the concrete occasion, including when things went wrong',
-  emotion_probe: 'Steve Portigal, Interviewing Users: follow the feeling, not only the facts',
-  unprompted_priority: 'Rob Fitzpatrick, The Mom Test (2013): let them tell you what matters instead of ranking your list for you',
-  closing_anything_else: 'Steve Portigal, Interviewing Users: ask what you did not think to ask before ending',
-  next_steps: 'UK Government Digital Service, Service Manual, user research: tell the participant what happens with what they said',
+  intro_purpose: `${GDS_INTERVIEWS}: the introduction script "tells the participant who you are, explains the research and reminds them about things like recording"`,
+  consent_recording: `${GDS_CONSENT}: participants must understand "that their participation is voluntary, and that they can stop or withdraw their consent at any time". ${MRS_CODE} requires the same, plus "whether the data collection is to be recorded and/or observed"`,
+  open_question: `${GDS_INTERVIEWS}: "get participants talking with open, neutral questions like: how do you...? what are the different ways you...?"`,
+  recent_specific: `${MOM_TEST}: "Ask about specifics in the past instead of generics or opinions about the future". ${NNG_INTERVIEWS}: "Jog the memory by asking about specific events rather than about general processes"`,
+  walk_through: `${NNG_INTERVIEWS}: good open questions include "Walk me through a typical day for you"`,
+  current_workaround: `${GDS_NEEDS}: discovery covers "how they currently do it (for example, what services or channels they use)"`,
+  cost_of_problem: `${MOM_TEST}: the point of the interview is what they have already done about the problem, not what they say about it`,
+  who_else_involved: `${PORTIGAL_2012}: "Ask for the complete list ... This will require a series of follow up questions, e.g., What else?"`,
+  last_time_failed: `${GDS_NEEDS}: discovery covers "the problems or frustrations they experience". ${GDS_INTERVIEWS}: "focus on stories and real examples"`,
+  emotion_probe: 'UK GDS Service Manual, "Taking notes and recording user research sessions": observers look for "how they feel - for example, their motivations, reactions, fears and frustrations"',
+  unprompted_priority: `${GDS_NEEDS}: "Treat any opinions or suggestions that do not come from users as assumptions that have to be proven by doing research"`,
+  closing_anything_else: `${GDS_INTERVIEWS}: "do not stick to your discussion guide rigidly - let the conversation develop naturally"`,
+  next_steps: `${GDS_CONSENT}: participants must understand "how you will use the results of the research, and who you will share them with"`,
 };
 
 const item = (
@@ -52,7 +64,6 @@ const item = (
 const RUBRIC: readonly RubricItem[] = [
   item('intro_purpose', 'rapport', 'Explains who you are and what the session is for', "Thanks for your time. I'm trying to understand how you do this today, not to show you anything.", ['what this is for', 'trying to understand', 'my name is', "i'm working on"]),
   item('consent_recording', 'rapport', 'Says it is voluntary, and agrees recording before starting', 'Is it alright if I take notes? You can stop at any point, or skip anything.', ['is it alright if', 'take notes', 'recording', 'you can stop', 'skip anything']),
-  item('warm_up', 'rapport', 'Starts wide before narrowing down', 'Tell me about your work in general first.', ['tell me about your', 'in general', 'day to day', 'your role']),
   item('open_question', 'gathering', 'Opens on their world, not on your idea', 'How do you handle this at the moment?', ['how do you', 'what do you currently', 'walk me through', 'tell me about']),
   item('recent_specific', 'gathering', 'Asks about a specific recent occasion', 'When did this last happen? Tell me about that time.', ['last time', 'most recent', 'when did that happen', 'that time']),
   item('walk_through', 'gathering', 'Has them walk through what they actually did', 'What did you do first, and then what?', ['what did you do', 'step by step', 'and then what', 'walk me through']),
@@ -66,7 +77,12 @@ const RUBRIC: readonly RubricItem[] = [
   item('next_steps', 'analysis', 'Says what happens next with what they told you', 'I will write this up and share it with the team; nothing goes out with your name on it.', ['what happens next', 'write this up', 'share it with', 'get back to you']),
 ];
 
-/** No published feedback list exists for research interviews, so every statement here is ours. */
+/**
+ * No published feedback list exists for research interviews - checked 2026-09-26 against the MRS
+ * Code of Conduct, the AQR, the GDS Service Manual and survey-methodology behaviour coding, none of
+ * which is a feedback rubric for open discovery interviews. So every statement here is ours, each
+ * derived from one citable line rather than from a standard that does not exist.
+ */
 const statement = (
   key: string,
   label: string,
@@ -90,14 +106,14 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'structure',
     'Structure',
     'Jumped between topics, or narrowed down before understanding the person’s situation.',
-    'Steve Portigal, Interviewing Users: open broadly, then go deeper',
+    `${GDS_INTERVIEWS}: "focus on stories and real examples - avoid generalities and talking about how things should happen"`,
     (obs) => ({ outcome: obs.order.ordered ? 'no_concern' : 'concern', evidence: obs.order.detail, quotes: [] }),
   ),
   statement(
     'evidence',
     'Evidence',
     'Left the interview without one concrete thing the person has already done, spent or lost because of the problem.',
-    'Rob Fitzpatrick, The Mom Test (2013): commitment and past behaviour, not compliments',
+    `${MOM_TEST}: "Talk about their life instead of your idea"`,
     (obs) => {
       if (obs.missedCritical.length === 0) {
         return {
@@ -118,7 +134,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'specifics',
     'Specifics',
     'Accepted a generality, or asked what the person would do rather than what they did do.',
-    'Rob Fitzpatrick, The Mom Test (2013): specifics in the past, not generics or opinions about the future',
+    `${MOM_TEST}: "Ask about specifics in the past instead of generics or opinions about the future". ${NNG_FUTURE}: "users can't predict something they haven't seen"`,
     (obs) => {
       const wanted = ['recent_specific', 'walk_through', 'last_time_failed'];
       const missed = wanted.map((id) => obs.itemById(id)).filter((i) => i && !i.covered);
@@ -140,7 +156,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'talking',
     'Talking',
     'Talked too much, or filled the interview rather than letting the person fill it.',
-    'Rob Fitzpatrick, The Mom Test (2013): listen more than you talk',
+    `${MOM_TEST}: "Talk less and listen more". ${GDS_INTERVIEWS}: "try to stay quiet - the more you talk, the less your participant will talk"`,
     (obs) =>
       obs.turnsUsed > obs.roomForTurns
         ? {
@@ -158,7 +174,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'interrupting',
     'Interrupting',
     'Moved on before the person had finished, or asked the next question instead of following the last answer.',
-    'Steve Portigal, Interviewing Users: follow what they said, and let silence do the work',
+    `${NNG_INTERVIEWS}: "Avoid interrupting or rushing participants as these behaviors will harm your ability to build rapport"`,
     (obs) =>
       obs.interruptedTurns.length > 0
         ? {
@@ -176,7 +192,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'feelings',
     'Feelings',
     'Walked past something the person clearly felt strongly about.',
-    'Steve Portigal, Interviewing Users: follow the feeling, not only the facts',
+    'UK GDS Service Manual, "Taking notes and recording user research sessions": note "how they feel - for example, their motivations, reactions, fears and frustrations"',
     (obs) => {
       if (obs.concernElicited === false) {
         return {
@@ -204,7 +220,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'jargon',
     'Jargon',
     'Used your own or your product’s vocabulary instead of theirs.',
-    'Steve Portigal, Interviewing Users: use the participant’s own words',
+    `${NNG_LEADING}: a leading question "includes or implies the desired answer ... in the phrasing of the question itself", and "respondents are prone to simply mimic the words of the interviewer"`,
     (obs) =>
       obs.jargonTurns.length > 0
         ? {
@@ -218,7 +234,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'closing',
     'Closing',
     'Ended without asking what you failed to ask, or without saying what happens next.',
-    'UK Government Digital Service, Service Manual, user research, and Portigal on closing an interview',
+    `${GDS_CONSENT} on telling participants how the results will be used, and ${GDS_INTERVIEWS} on not sticking to the guide rigidly`,
     (obs) => {
       const missed = ['closing_anything_else', 'next_steps'].map((id) => obs.itemById(id)).filter((i) => i && !i.covered);
       return missed.length === 0
@@ -234,7 +250,7 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'consent',
     'Consent',
     'Started asking before explaining the purpose, or without agreeing that it was alright to go ahead.',
-    'UK Government Digital Service, Service Manual, user research, and standard research ethics practice',
+    `${GDS_CONSENT}: "Whenever you do user research, you must get the participant's informed consent". ${MRS_CODE}`,
     (obs) => {
       const missed = ['intro_purpose', 'consent_recording'].map((id) => obs.itemById(id)).filter((i) => i && !i.covered);
       return missed.length === 0
@@ -251,14 +267,14 @@ const STATEMENTS: readonly FeedbackStatement[] = [
     'silence',
     'Silence',
     'Filled every pause instead of waiting, so the person never went past their first answer.',
-    'Steve Portigal, Interviewing Users: silence is a technique',
+    `${GDS_INTERVIEWS}: "try to stay quiet - the more you talk, the less your participant will talk"`,
     'Typing has no pauses to sit in. This is the single most useful interviewing habit and a typed session cannot practise it at all.',
   ),
   unassessable(
     'pitching',
     'Pitching',
     'Started selling or explaining your own idea, so the person began reacting to you instead of describing their life.',
-    'Rob Fitzpatrick, The Mom Test (2013): a pitch turns an interview into a compliment',
+    `${MOM_TEST}: "Talk about their life instead of your idea"`,
     'Judging this needs to know what you are building, which this session is not told.',
   ),
 ];
@@ -274,6 +290,15 @@ export const USER_RESEARCH_INTERVIEW: DomainPack = registerPack({
   learnerNoun: 'interviewer',
   caveat:
     'No body assesses research interviews, so unlike the clinical pack every feedback statement here is ours, written from published interviewing guidance and attributed per statement. It is a practice aid, not an assessment, and it cannot see the two habits that matter most: using silence, and not pitching.',
+  persona: {
+    roleLine:
+      'You are role-playing someone taking part in a research interview about their own work. You are not a customer and you are not being sold anything.',
+    factsHeading: 'The only things about your work and your situation that you may share right now',
+    inventionBan:
+      'Never invent numbers, dates, names, amounts of money, tools you use, or opinions about products you have not been told about.',
+    smallTalkLine:
+      'Questions that are not about your work (how your day is going, whether it is alright to take notes, whether you have anything to add at the end) are ordinary conversation: answer those as the person described above would.',
+  },
   domains: [
     { id: 'gathering', label: 'Finding out what they actually do' },
     { id: 'rapport', label: 'Making it safe to be honest' },

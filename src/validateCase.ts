@@ -203,11 +203,14 @@ function factWarnings(c: PatientCase, f: Fact): string[] {
 
 /** Authoring checks that the schema cannot express. Errors block use; warnings are advice. */
 export function validateCase(c: PatientCase): CaseIssues {
+  // The pack is checked first and on its own: every later check needs it, and several would throw
+  // rather than report if it were missing.
+  const pack = packErrors(c);
+  if (pack.length > 0) return { errors: pack, warnings: [] };
   const errors = [
     ...duplicateRubricIds(c),
     ...factReferenceErrors(c),
     ...blankEntryErrors(c),
-    ...packErrors(c),
     ...earlyConcernErrors(c),
     ...promptLeakErrors(c),
     ...unguardedTextErrors(c),

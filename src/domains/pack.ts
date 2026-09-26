@@ -100,6 +100,22 @@ export interface FeedbackStatement {
   assess?: (obs: Observations) => StatementJudgement;
 }
 
+/**
+ * The parts of the simulated person's prompt that belong to a field rather than to the engine. The
+ * rules that stop the model inventing things are the engine's and are the same everywhere; what
+ * differs is who the person is and what kind of thing they know.
+ */
+export interface PersonaPrompt {
+  /** One sentence putting the model in role, e.g. "You are role-playing a patient in ...". */
+  roleLine: string;
+  /** Heading above the shareable facts, e.g. "The only facts about your health that you may share right now". */
+  factsHeading: string;
+  /** What the model must never make up, in this field's terms. */
+  inventionBan: string;
+  /** What counts as ordinary conversation rather than a question about the facts. */
+  smallTalkLine: string;
+}
+
 export interface DomainPack {
   id: string;
   label: string;
@@ -109,6 +125,7 @@ export interface DomainPack {
   learnerNoun: string;
   /** One line for the report saying what this pack does and does not claim to measure. */
   caveat: string;
+  persona: PersonaPrompt;
   domains: readonly ScoringDomain[];
   /** The domain whose items count as gathering information, for the order check. */
   gatheringDomainId: string;

@@ -7,6 +7,7 @@ import { initialSessionState } from '../../src/state.js';
 import { runTurn } from '../../src/orchestrator.js';
 import { offlineJudge, offlinePatient } from '../../src/offline.js';
 import { parseCase } from '../../src/types.js';
+import { buildPatientContext } from '../../src/patientContext.js';
 
 const research = parseCase(JSON.parse(readFileSync(new URL('../../cases/research-checkout.json', import.meta.url), 'utf8')));
 
@@ -16,6 +17,7 @@ const minimal = (over: Partial<DomainPack> = {}): DomainPack => ({
   personNoun: 'person',
   learnerNoun: 'learner',
   caveat: 'A test pack.',
+  persona: { roleLine: 'You are someone.', factsHeading: 'What you may share', inventionBan: 'Invent nothing.', smallTalkLine: 'Small talk is fine.' },
   domains: [{ id: 'asking', label: 'Asking' }],
   gatheringDomainId: 'asking',
   rubric: [{ id: 'a', domain: 'asking', label: 'Asks', critical: false, exampleQuestion: 'Well?', offlineCues: ['well'] }],
@@ -93,6 +95,19 @@ describe('the engine is not a medical tool', () => {
     const evidence = r.statements.find((s) => s.key === 'evidence');
     expect(evidence?.outcome).toBe('concern');
     expect(evidence?.evidence).toContain('an opinion, not evidence');
+  });
+
+  it('does not tell a research interviewee they are a patient', () => {
+    const prompt = buildPatientContext(research, initialSessionState());
+    expect(prompt).toContain('taking part in a research interview about their own work');
+    expect(prompt).toContain('The only things about your work and your situation that you may share right now');
+    // Whole words: the persona itself says she is "slightly impatient", which is not a leak.
+    for (const word of ['patient', 'doctor', 'symptom', 'health', 'consultation']) {
+      expect(prompt.toLowerCase().split(/[^a-z]+/), word).not.toContain(word);
+    }
+    // The rules that stop the model inventing things are the engine's, so they are still there.
+    expect(prompt).toContain('It is not a summary');
+    expect(prompt).toContain('Never invent numbers, dates, names, amounts of money');
   });
 
   it('runs a whole non-clinical turn through the same engine, gating and all', async () => {
