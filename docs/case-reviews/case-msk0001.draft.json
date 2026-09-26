@@ -1,0 +1,183 @@
+{
+  "title": "Acute Lower Back Pain with Radiation",
+  "patient": {
+    "name": "David Thompson",
+    "age": 65,
+    "persona": "Retired school teacher living alone, speaks calmly and provides clear answers without volunteering extra information.",
+    "openingLine": "I’ve got low back pain that started yesterday when I was unloading groceries."
+  },
+  "presentingProblem": "Low back pain",
+  "facts": [
+    {
+      "text": "The pain started yesterday while I was unloading groceries from my pickup truck.",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "quote": "It started yesterday, I was unloading groceries from my pickup truck when it suddenly started.",
+      "line": 11,
+      "guardedTerms": [
+        "groceries",
+        "pickup truck"
+      ]
+    },
+    {
+      "text": "The pain is in my lower back and feels stabbing.",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "quote": "It feels like it's stabbing just right in my lower back.",
+      "line": 19,
+      "guardedTerms": [
+        "stabbing",
+        "lower back"
+      ]
+    },
+    {
+      "text": "When I sit completely still, the pain is 2 out of 10.",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "quote": "If I'm sitting, uh completely still like like I am right now, it's a 2 out of 10.",
+      "line": 23,
+      "guardedTerms": [
+        "2 out of 10"
+      ]
+    },
+    {
+      "text": "The pain gets worse when I move, bend my back, or even cough.",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "quote": "Uh anytime I I move or bend my back or uh even cough it it worsens the pain significantly.",
+      "line": 27,
+      "guardedTerms": [
+        "move",
+        "bend",
+        "cough"
+      ]
+    },
+    {
+      "text": "The pain has not changed since it started yesterday.",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "quote": "No, it's been this same awful pain this whole time.",
+      "line": 31,
+      "guardedTerms": [
+        "same awful pain"
+      ]
+    },
+    {
+      "text": "I also feel the pain going into my right leg as an aching sensation.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "I also feel the pain uh into my right leg.",
+      "line": 39,
+      "guardedTerms": [
+        "right leg"
+      ]
+    },
+    {
+      "text": "I have had back pain over the years, but nothing like this before.",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "quote": "I've had back pain uh over the years, but nothing like this before.",
+      "line": 35,
+      "guardedTerms": [
+        "back pain",
+        "over the years"
+      ]
+    },
+    {
+      "text": "I have type 2 diabetes and take insulin for it.",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "quote": "Uh type 2 diabetes.",
+      "line": 111,
+      "guardedTerms": [
+        "type 2 diabetes"
+      ]
+    },
+    {
+      "text": "I take insulin for my diabetes.",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "quote": "Uh I, um insulin for diabetes.",
+      "line": 115,
+      "guardedTerms": [
+        "insulin"
+      ]
+    },
+    {
+      "text": "I have been taking Tylenol for the back pain, which only takes the edge off a little.",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "quote": "Uh just been taking Tylenol for the the back pain.",
+      "line": 119,
+      "guardedTerms": [
+        "Tylenol"
+      ]
+    },
+    {
+      "text": "I had hemorrhoids removed three years ago as day surgery.",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "quote": "Uh I had hemorrhoids removed three years ago.",
+      "line": 131,
+      "guardedTerms": [
+        "hemorrhoids",
+        "three years ago"
+      ]
+    },
+    {
+      "text": "My father had prostate cancer.",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "quote": "Uh my father had prostate cancer.",
+      "line": 139,
+      "guardedTerms": [
+        "prostate cancer"
+      ]
+    },
+    {
+      "text": "I am a retired school teacher and live alone in a house not far from here.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "I live alone um in a in a house uh not too far from here, actually.",
+      "line": 147,
+      "guardedTerms": [
+        "retired school teacher",
+        "live alone"
+      ]
+    },
+    {
+      "text": "I occasionally drink a glass of red wine on the weekend but not too often.",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "quote": "Um occasionally uh maybe I'll have a glass of red wine on the weekend or something like that, but uh not too often.",
+      "line": 151,
+      "guardedTerms": [
+        "glass of red wine",
+        "weekend"
+      ]
+    },
+    {
+      "text": "I smoke a pack of cigarettes per day and have done so for about 40 years.",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "quote": "Uh, I've smoked um yeah, I smoke a pack of cigarettes uh per day.",
+      "line": 155,
+      "guardedTerms": [
+        "pack of cigarettes",
+        "per day"
+      ]
+    },
+    {
+      "text": "I have been sexually active with more than one partner in the past year and always use condoms.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "Uh yes, I have, um um two women over the past year.",
+      "line": 183,
+      "guardedTerms": [
+        "two women",
+        "past year"
+      ]
+    }
+  ],
+  "redFlags": []
+}

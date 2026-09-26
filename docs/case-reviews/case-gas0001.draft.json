@@ -1,0 +1,194 @@
+{
+  "title": "Nausea and Vomiting Assessment",
+  "patient": {
+    "name": "Emma Clarke",
+    "age": 25,
+    "persona": "A young woman who works part-time in retail and lives with a roommate. She speaks hesitantly, often qualifying her answers, and provides details only when prompted. She is polite but not overly forthcoming, requiring gentle probing to elaborate on symptoms.",
+    "openingLine": "I've just been feeling like very nauseated for, it feels like all the time right now."
+  },
+  "presentingProblem": "Persistent nausea and vomiting",
+  "facts": [
+    {
+      "text": "I've just been feeling like very nauseated for, it feels like all the time right now.",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "quote": "I've just been feeling like very nauseated for, it feels like all the time right now.",
+      "line": 3,
+      "guardedTerms": []
+    },
+    {
+      "text": "It's been over a week. Maybe not quite two weeks, but like around then. Yeah, maybe like 9 days.",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "quote": "It's been over a week. Maybe not quite two weeks, but like around then. Yeah, maybe like 9 days.",
+      "line": 7,
+      "guardedTerms": [
+        "9 days"
+      ]
+    },
+    {
+      "text": "Oh, I think it's like worse when I am smelling something really bad, and it's worse in the morning. But I feel like it's always kind of there.",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "quote": "Oh, I think it's like worse when I am smelling something really bad, and it's worse in the morning. But I feel like it's always kind of there.",
+      "line": 11,
+      "guardedTerms": []
+    },
+    {
+      "text": "Uh, yeah, like um, yeah, like a lot of days I'll throw up like once or twice.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "Uh, yeah, like um, yeah, like a lot of days I'll throw up like once or twice.",
+      "line": 15,
+      "guardedTerms": []
+    },
+    {
+      "text": "Oh no, just, well, like I feel like I've I've had to pee a lot more. Um, but I don't, I don't think that's like related. I think maybe I have just been drinking a lot of water, so yeah.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "Oh no, just, well, like I feel like I've I've had to pee a lot more. Um, but I don't, I don't think that's like related. I think maybe I have just been drinking a lot of water, so yeah.",
+      "line": 23,
+      "guardedTerms": []
+    },
+    {
+      "text": "Oh, like, I feel like every couple hours right now.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "Oh, like, I feel like every couple hours right now.",
+      "line": 27,
+      "guardedTerms": []
+    },
+    {
+      "text": "Probably every probably every like 2, maybe, maybe every hour I get certain times in a day.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "Probably every probably every like 2, maybe, maybe every hour I get certain times in a day.",
+      "line": 31,
+      "guardedTerms": []
+    },
+    {
+      "text": "Oh, like it doesn't wake me up but it's like I wake up because I hear something. Then I'll be like, oh I think I should probably go to the bathroom.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "Oh, like it doesn't wake me up but it's like I wake up because I hear something. Then I'll be like, oh I think I should probably go to the bathroom.",
+      "line": 35,
+      "guardedTerms": []
+    },
+    {
+      "text": "Ah no, I don't think so, well my stomach has been like it feels like a little crampy. I thought that maybe it could be my period but like I'm not on my period.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "Ah no, I don't think so, well my stomach has been like it feels like a little crampy. I thought that maybe it could be my period but like I'm not on my period.",
+      "line": 55,
+      "guardedTerms": []
+    },
+    {
+      "text": "Oh well, let me think. Um, like six weeks ago. I guess that would be, I don't know. I don't really like keep track.",
+      "kind": "history",
+      "rubricItemId": "history",
+      "quote": "Oh well, let me think. Um, like six weeks ago. I guess that would be, I don't know. I don't really like keep track.",
+      "line": 59,
+      "guardedTerms": [
+        "six weeks ago"
+      ]
+    },
+    {
+      "text": "I think they're I think they're usually pretty regular, but I don't I don't like I don't calculate it like to the day.",
+      "kind": "history",
+      "rubricItemId": "history",
+      "quote": "I think they're I think they're usually pretty regular, but I don't I don't like I don't calculate it like to the day.",
+      "line": 63,
+      "guardedTerms": []
+    },
+    {
+      "text": "Oh, come to think of it, I don't, I don't think so.",
+      "kind": "history",
+      "rubricItemId": "history",
+      "quote": "Oh, come to think of it, I don't, I don't think so.",
+      "line": 68,
+      "guardedTerms": []
+    },
+    {
+      "text": "No, I mean, I've been taking like like I've been chewing like those ginger things that are supposed to help with nausea, but they weren't really helpful.",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "quote": "No, I mean, I've been taking like like I've been chewing like those ginger things that are supposed to help with nausea, but they weren't really helpful.",
+      "line": 108,
+      "guardedTerms": [
+        "ginger"
+      ]
+    },
+    {
+      "text": "So just like nickel, like in jewelry, if I wear not real jewellery, it'll give me a rash, but it's not food or like or medications or anything.",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "quote": "So just like nickel, like in jewelry, if I wear not real jewellery, it'll give me a rash, but it's not food or like or medications or anything.",
+      "line": 112,
+      "guardedTerms": [
+        "nickel"
+      ]
+    },
+    {
+      "text": "Um, like I I just I live with one roommate.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "Um, like I I just I live with one roommate.",
+      "line": 116,
+      "guardedTerms": []
+    },
+    {
+      "text": "Uh, no, very rarely because I always get a headache.",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "quote": "Uh, no, very rarely because I always get a headache.",
+      "line": 124,
+      "guardedTerms": []
+    },
+    {
+      "text": "Oh gosh, like like a month ago probably.",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "quote": "Oh gosh, like like a month ago probably.",
+      "line": 128,
+      "guardedTerms": []
+    },
+    {
+      "text": "No, no.",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "quote": "No, no.",
+      "line": 132,
+      "guardedTerms": []
+    },
+    {
+      "text": "Yeah just like with my boyfriend.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "Yeah just like with my boyfriend.",
+      "line": 136,
+      "guardedTerms": []
+    },
+    {
+      "text": "Yeah, we we just use condoms. I used to be on birth control but it always made me feel like like kind of sick so I don't use that anymore.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "Yeah, we we just use condoms. I used to be on birth control but it always made me feel like like kind of sick so I don't use that anymore.",
+      "line": 140,
+      "guardedTerms": [
+        "condoms",
+        "birth control"
+      ]
+    },
+    {
+      "text": "Uh, like I don't, I don't think so. I guess my dad my dad has like high blood pressure, yeah, I don't think there's anything else.",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "quote": "Uh, like I don't, I don't think so. I guess my dad my dad has like high blood pressure, yeah, I don't think there's anything else.",
+      "line": 145,
+      "guardedTerms": [
+        "high blood pressure"
+      ]
+    }
+  ],
+  "redFlags": []
+}

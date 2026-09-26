@@ -55,10 +55,10 @@ describe('buildCase', () => {
       expect(fact.source.dataset).toBe('fareez2022');
       expect(fact.source.ref).toMatch(/^RES0001\.txt#L\d+$/);
     }
-    // The red flag became a critical rubric item, placed among the symptom questions.
-    const item = result.patientCase.rubric.find((r) => r.id === 'haemoptysis');
+    // The red flag became the standard critical item, placed among the symptom questions.
+    const item = result.patientCase.rubric.find((r) => r.id === 'rf_haemoptysis');
     expect(item).toMatchObject({ critical: true, domain: 'data_gathering' });
-    expect(result.patientCase.rubric.map((r) => r.id).indexOf('haemoptysis')).toBe(5);
+    expect(result.patientCase.rubric.map((r) => r.id).indexOf('rf_haemoptysis')).toBe(5);
   });
 
   it('throws away a fact the patient never said, and says why', () => {
@@ -111,13 +111,19 @@ describe('buildCase', () => {
     expect(result.warnings.join(' ')).toContain('which belongs to the locked fact');
   });
 
-  it('says when a red flag is filed as ordinary history, and when the patient names a diagnosis', () => {
-    const asHistory = { ...draft.facts[2]!, kind: 'history' as const };
+  it('turns a fact that reads like a red flag into one, whatever the model called it', () => {
+    const asHistory = { ...draft.facts[2]!, kind: 'history' as const, rubricItemId: 'associated_symptoms' };
+    const result = built({ facts: [draft.facts[0]!, asHistory], redFlags: [] }) as BuiltCase;
+    const fact = result.patientCase.facts.find((f) => f.text.includes('streak of blood'));
+    expect(fact).toMatchObject({ kind: 'red_flag', rubricItemId: 'rf_haemoptysis' });
+    expect(result.patientCase.rubric.find((r) => r.id === 'rf_haemoptysis')).toMatchObject({ critical: true });
+    expect(result.warnings.join(' ')).toContain('became the red-flag item');
+  });
+
+  it('says when the patient names a diagnosis', () => {
     const diagnosis = { ...draft.facts[4]!, text: 'I think I have a pulmonary embolism.' };
-    const result = built({ facts: [draft.facts[0]!, asHistory, diagnosis] }) as BuiltCase;
-    const warnings = result.warnings.join(' ');
-    expect(warnings).toContain('mentions coughing up blood, which usually needs its own red-flag item');
-    expect(warnings).toContain('naming a diagnosis');
+    const result = built({ facts: [draft.facts[0]!, diagnosis] }) as BuiltCase;
+    expect(result.warnings.join(' ')).toContain('naming a diagnosis');
   });
 
   it('keeps exactly one presenting complaint', () => {

@@ -1,0 +1,406 @@
+{
+  "id": "case-res0001",
+  "title": "Chest Pain and Shortness of Breath Post-Hysterectomy",
+  "candidateBrief": "You are a doctor in a GP surgery. Jen Carter, 52, has come in about chest pain with associated shortness of breath. Take a focused history. You have 8 minutes.",
+  "durationSeconds": 480,
+  "reviewStatus": "unreviewed",
+  "patient": {
+    "name": "Jen Carter",
+    "age": 52,
+    "persona": "A 52-year-old female bank administrator who speaks clearly and provides detailed responses, volunteering relevant information such as recent surgery and lifestyle habits without prompting.",
+    "openingLine": "I’ve had chest pain for just over a week and it’s causing trouble breathing."
+  },
+  "rubric": [
+    {
+      "id": "intro_consent",
+      "domain": "interpersonal",
+      "label": "Introduces self and gains consent",
+      "critical": false,
+      "exampleQuestion": "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?",
+      "offlineCues": [
+        "my name is",
+        "i'm one of the doctors",
+        "is it okay if",
+        "happy for me to"
+      ]
+    },
+    {
+      "id": "open_question",
+      "domain": "interpersonal",
+      "label": "Opens with an open question and lets the patient speak",
+      "critical": false,
+      "exampleQuestion": "What brings you in today?",
+      "offlineCues": [
+        "what brings",
+        "tell me about",
+        "how can i help",
+        "what can i do for you"
+      ]
+    },
+    {
+      "id": "onset_duration",
+      "domain": "data_gathering",
+      "label": "Asks when it started and how it has changed",
+      "critical": false,
+      "exampleQuestion": "When did this start, and has it changed since?",
+      "offlineCues": [
+        "when did",
+        "how long",
+        "since when",
+        "getting worse"
+      ]
+    },
+    {
+      "id": "character_severity",
+      "domain": "data_gathering",
+      "label": "Asks what it is like and how bad it is",
+      "critical": false,
+      "exampleQuestion": "What does it feel like, and how bad is it out of ten?",
+      "offlineCues": [
+        "what does it feel",
+        "how bad",
+        "out of ten",
+        "describe the pain"
+      ]
+    },
+    {
+      "id": "associated_symptoms",
+      "domain": "data_gathering",
+      "label": "Asks about associated symptoms",
+      "critical": false,
+      "exampleQuestion": "Have you noticed anything else along with it?",
+      "offlineCues": [
+        "anything else",
+        "along with",
+        "other symptoms",
+        "have you noticed"
+      ]
+    },
+    {
+      "id": "rf_leg",
+      "domain": "data_gathering",
+      "label": "Asks about a painful or swollen leg",
+      "critical": true,
+      "exampleQuestion": "Have you had any pain or swelling in your calf?",
+      "offlineCues": [
+        "calf",
+        "leg pain",
+        "swollen"
+      ]
+    },
+    {
+      "id": "past_medical",
+      "domain": "data_gathering",
+      "label": "Takes a past medical history",
+      "critical": false,
+      "exampleQuestion": "Do you have any medical conditions, or have you had any operations?",
+      "offlineCues": [
+        "medical conditions",
+        "past medical",
+        "any operations",
+        "diagnosed with"
+      ]
+    },
+    {
+      "id": "medications_allergies",
+      "domain": "data_gathering",
+      "label": "Asks about medicines and allergies",
+      "critical": false,
+      "exampleQuestion": "Are you taking any medicines, and do you have any allergies?",
+      "offlineCues": [
+        "medication",
+        "medicines",
+        "tablets",
+        "allergic",
+        "allergies"
+      ]
+    },
+    {
+      "id": "family_history",
+      "domain": "data_gathering",
+      "label": "Asks about family history",
+      "critical": false,
+      "exampleQuestion": "Does anything like this run in your family?",
+      "offlineCues": [
+        "family history",
+        "in your family",
+        "run in the family",
+        "your parents"
+      ]
+    },
+    {
+      "id": "social_smoking_alcohol",
+      "domain": "data_gathering",
+      "label": "Takes a smoking and alcohol history",
+      "critical": false,
+      "exampleQuestion": "Do you smoke, and how much alcohol do you drink in a week?",
+      "offlineCues": [
+        "smoke",
+        "cigarette",
+        "vape",
+        "alcohol",
+        "drink"
+      ]
+    },
+    {
+      "id": "social_life",
+      "domain": "data_gathering",
+      "label": "Asks about work, home and daily life",
+      "critical": false,
+      "exampleQuestion": "What do you do for work, and who is at home with you?",
+      "offlineCues": [
+        "for work",
+        "your job",
+        "at home with",
+        "who do you live",
+        "day to day"
+      ]
+    },
+    {
+      "id": "systems_review",
+      "domain": "data_gathering",
+      "label": "Screens the other systems",
+      "critical": false,
+      "exampleQuestion": "Any weight loss, fevers or night sweats?",
+      "offlineCues": [
+        "weight loss",
+        "fevers",
+        "night sweats",
+        "appetite"
+      ]
+    },
+    {
+      "id": "ice_concerns",
+      "domain": "interpersonal",
+      "label": "Explores the patient's ideas, concerns and expectations",
+      "critical": false,
+      "exampleQuestion": "Is there anything in particular you are worried this might be?",
+      "offlineCues": [
+        "worried",
+        "worry",
+        "concern",
+        "what do you think is",
+        "hoping for today"
+      ]
+    },
+    {
+      "id": "closing",
+      "domain": "interpersonal",
+      "label": "Summarises, checks understanding and invites questions",
+      "critical": false,
+      "exampleQuestion": "Can I summarise what you have told me? Do you have any questions?",
+      "offlineCues": [
+        "summarise",
+        "summarize",
+        "to recap",
+        "any questions",
+        "have i got that right"
+      ]
+    },
+    {
+      "id": "safety_netting",
+      "domain": "management",
+      "label": "Says what to do if it gets worse",
+      "critical": false,
+      "exampleQuestion": "If it gets worse, or you feel much more unwell, call 111 or come straight back.",
+      "offlineCues": [
+        "if it gets worse",
+        "come back",
+        "call 111",
+        "go to a&e",
+        "straight back"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "f_onset_duration_1",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "text": "I’ve had this pain in my chest for just over a week now and it’s caused me to have trouble breathing.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L3",
+        "quote": "I so I've just had this pain in my chest for just over a week now and it's caused me to have trouble breathing."
+      }
+    },
+    {
+      "id": "f_character_severity_2",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "The chest pain is sharp and constant, but worsens when I take a deep breath.",
+      "guardedTerms": [
+        "sharp"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L15",
+        "quote": "Ahh it it is, but it's definitely worse that um, it's the breathing that's been bothering me a lot more. When I take a deep breath that the pain is a lot worse."
+      }
+    },
+    {
+      "id": "f_onset_duration_3",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "text": "Each episode of pain lasts about 15 to 20 minutes before easing off.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L19",
+        "quote": "Um I would say, uh. Around 15-20 minutes. It's it goes away over overtime."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_4",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I get short of breath when I exert myself, like walking a few blocks, but it improves when I rest.",
+      "guardedTerms": [
+        "short of breath"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L23",
+        "quote": "Uh no if I if I take a break or sit down to rest then I can usually catch my breath. But if even if I'm doing a little bit of exertion like walking a few a few blocks or something like that I'm finding it, I'm I'm short of breath."
+      }
+    },
+    {
+      "id": "f_character_severity_5",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "My shortness of breath reaches up to 7 or 8 out of 10 during exertion.",
+      "guardedTerms": [
+        "7 or 8"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L48",
+        "quote": "I would say when I'm exerting myself, it could get up to like a 7 or 8."
+      }
+    },
+    {
+      "id": "f_social_life_6",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "Before this, I used to run a few days a week, but now I can only walk about 100 meters before needing to rest.",
+      "guardedTerms": [
+        "100 meters"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L52",
+        "quote": "I I would say maybe 100 meters. But before I was able to run uh like I was running a few days per week so. So this is not like me."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_7",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I’ve had a dry cough for about a week, which started around the same time as the chest pain.",
+      "guardedTerms": [
+        "cough"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L32",
+        "quote": "Yeah, it's um. I still have a cough."
+      }
+    },
+    {
+      "id": "f_past_medical_8",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "text": "I had a hysterectomy a few weeks ago due to heavy bleeding from fibroids.",
+      "guardedTerms": [
+        "hysterectomy"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L141",
+        "quote": "No, like I've been um previously healthy, but I I guess I did have a hysterectomy a few weeks ago. I know it was, I I didn't bring it up before 'cause it's just a day procedure, but I was definitely spending a lot more time um relaxing at home after that, a few weeks ago."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_9",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "I smoke about half a pack of cigarettes per day and have smoked since my teenage years.",
+      "guardedTerms": [
+        "half a pack"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L190",
+        "quote": "Um I I smoke, I may be about half a pack of cigarettes per day. I've smoked ever since I was a teenager."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_10",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "I occasionally have a glass of wine on weekends but otherwise do not drink alcohol.",
+      "guardedTerms": [
+        "glass of wine"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L204",
+        "quote": "Uh may be a glass of wine on the weekends, but other than that no."
+      }
+    },
+    {
+      "id": "f_family_history_11",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "text": "My mother had a heart attack at age 56.",
+      "guardedTerms": [
+        "heart attack"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L174",
+        "quote": "Yeah, it's just my mom had a heart attack when she was 56."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_12",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I sometimes feel like my heart is racing, especially when I move around more.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L100",
+        "quote": "Uh, actually I did feel like that a little bit. Especially when I was moving a little bit more, I felt like my heart was racing."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_13",
+      "kind": "red_flag",
+      "rubricItemId": "rf_leg",
+      "text": "My left leg feels a little sore, though I’m not sure if there’s swelling.",
+      "guardedTerms": [
+        "left leg"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L104",
+        "quote": "Um yeah my left, my left leg's actually a little bit sore."
+      }
+    },
+    {
+      "id": "f_ice_concerns_14",
+      "kind": "concern",
+      "rubricItemId": "ice_concerns",
+      "text": "I am concerned this might be something serious like a blood clot, given my recent surgery and symptoms.",
+      "guardedTerms": [],
+      "minTrust": 60,
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "RES0001.txt#L27",
+        "quote": "I I had a cough about a week ago so I thought it might be a chest infection, but I'm not feverish, so I'm not sure."
+      }
+    }
+  ]
+}

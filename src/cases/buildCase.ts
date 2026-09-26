@@ -2,7 +2,7 @@ import { parseCase, type Fact, type PatientCase, type RubricItem } from '../type
 import { validateCase } from '../validateCase.js';
 import type { DraftCase, DraftFact } from './extract.js';
 import { knownIds } from './extract.js';
-import { namesDiagnosis, redFlagHint, redFlagItem, rubricFor } from './rubric.js';
+import { namesDiagnosis, redFlagHint, redFlagItem, redFlagItemFor, rubricFor } from './rubric.js';
 import { checkQuote, citation, type Transcript } from './transcript.js';
 
 /** Why a proposed fact did not make it into the case. Every rejection is reported, never hidden. */
@@ -106,10 +106,26 @@ export function buildCase(draft: DraftCase, transcript: Transcript, caseId: stri
   // Exactly one presenting fact: the rest become ordinary history.
   for (const extra of presenting.slice(1)) extra.fact = { ...extra.fact, kind: 'history' };
 
-  const usedRedFlags = draft.redFlags.filter((r) => kept.some((k) => k.fact.rubricItemId === r.id));
-  const rubric: RubricItem[] = rubricFor(
-    usedRedFlags.map((r) => redFlagItem(r.id, r.label, r.exampleQuestion, [r.label.toLowerCase().replace(/^asks about\s+/, '')])),
-  );
+  // Red flags are not left to the model: a fact whose words match the red-flag list becomes one,
+  // with the standard item for it. The model's own red flags are kept too. Every promotion is
+  // reported, because a person still has to agree it is one.
+  const promoted = new Map<string, RubricItem>();
+  for (const entry of kept) {
+    const reason = redFlagHint(entry.fact.text);
+    if (!reason) continue;
+    const item = redFlagItemFor(reason);
+    if (!item) continue;
+    if (entry.fact.kind !== 'red_flag' || entry.fact.rubricItemId !== item.id) {
+      notes.push(`${entry.fact.id} mentions ${reason}, so it became the red-flag item "${item.label}"; check that this case really needs it`);
+    }
+    entry.fact = { ...entry.fact, kind: 'red_flag', rubricItemId: item.id };
+    promoted.set(item.id, item);
+  }
+
+  const fromModel = draft.redFlags
+    .filter((r) => kept.some((k) => k.fact.rubricItemId === r.id) && !promoted.has(r.id))
+    .map((r) => redFlagItem(r.id, r.label, r.exampleQuestion, [r.label.toLowerCase().replace(/^asks about\s+/, '')]));
+  const rubric: RubricItem[] = rubricFor([...promoted.values(), ...fromModel]);
 
   const candidateBrief = [
     `You are a doctor in a GP surgery. ${draft.patient.name}, ${draft.patient.age}, has come in about ${draft.presentingProblem}.`,
@@ -144,12 +160,7 @@ export function buildCase(draft: DraftCase, transcript: Transcript, caseId: stri
     }
   }
 
-  // Two things a model gets wrong often enough to check by hand every time.
   for (const { fact } of kept) {
-    const hint = redFlagHint(fact.text);
-    if (hint && fact.kind !== 'red_flag') {
-      notes.push(`${fact.id} mentions ${hint}, which usually needs its own red-flag item; it is filed as ${fact.kind}`);
-    }
     if (namesDiagnosis(fact.text)) {
       notes.push(`${fact.id} has the patient naming a diagnosis; keep it only if the transcript really does, and consider rewording it as a symptom`);
     }

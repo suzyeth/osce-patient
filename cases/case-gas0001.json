@@ -1,0 +1,432 @@
+{
+  "id": "case-gas0001",
+  "title": "Nausea and Vomiting Assessment",
+  "candidateBrief": "You are a doctor in a GP surgery. Emma Clarke, 25, has come in about Persistent nausea and vomiting. Take a focused history. You have 8 minutes.",
+  "durationSeconds": 480,
+  "reviewStatus": "unreviewed",
+  "patient": {
+    "name": "Emma Clarke",
+    "age": 25,
+    "persona": "A young woman who works part-time in retail and lives with a roommate. She speaks hesitantly, often qualifying her answers, and provides details only when prompted. She is polite but not overly forthcoming, requiring gentle probing to elaborate on symptoms.",
+    "openingLine": "I've just been feeling like very nauseated for, it feels like all the time right now."
+  },
+  "rubric": [
+    {
+      "id": "intro_consent",
+      "domain": "interpersonal",
+      "label": "Introduces self and gains consent",
+      "critical": false,
+      "exampleQuestion": "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?",
+      "offlineCues": [
+        "my name is",
+        "i'm one of the doctors",
+        "is it okay if",
+        "happy for me to"
+      ]
+    },
+    {
+      "id": "open_question",
+      "domain": "interpersonal",
+      "label": "Opens with an open question and lets the patient speak",
+      "critical": false,
+      "exampleQuestion": "What brings you in today?",
+      "offlineCues": [
+        "what brings",
+        "tell me about",
+        "how can i help",
+        "what can i do for you"
+      ]
+    },
+    {
+      "id": "onset_duration",
+      "domain": "data_gathering",
+      "label": "Asks when it started and how it has changed",
+      "critical": false,
+      "exampleQuestion": "When did this start, and has it changed since?",
+      "offlineCues": [
+        "when did",
+        "how long",
+        "since when",
+        "getting worse"
+      ]
+    },
+    {
+      "id": "character_severity",
+      "domain": "data_gathering",
+      "label": "Asks what it is like and how bad it is",
+      "critical": false,
+      "exampleQuestion": "What does it feel like, and how bad is it out of ten?",
+      "offlineCues": [
+        "what does it feel",
+        "how bad",
+        "out of ten",
+        "describe the pain"
+      ]
+    },
+    {
+      "id": "associated_symptoms",
+      "domain": "data_gathering",
+      "label": "Asks about associated symptoms",
+      "critical": false,
+      "exampleQuestion": "Have you noticed anything else along with it?",
+      "offlineCues": [
+        "anything else",
+        "along with",
+        "other symptoms",
+        "have you noticed"
+      ]
+    },
+    {
+      "id": "past_medical",
+      "domain": "data_gathering",
+      "label": "Takes a past medical history",
+      "critical": false,
+      "exampleQuestion": "Do you have any medical conditions, or have you had any operations?",
+      "offlineCues": [
+        "medical conditions",
+        "past medical",
+        "any operations",
+        "diagnosed with"
+      ]
+    },
+    {
+      "id": "medications_allergies",
+      "domain": "data_gathering",
+      "label": "Asks about medicines and allergies",
+      "critical": false,
+      "exampleQuestion": "Are you taking any medicines, and do you have any allergies?",
+      "offlineCues": [
+        "medication",
+        "medicines",
+        "tablets",
+        "allergic",
+        "allergies"
+      ]
+    },
+    {
+      "id": "family_history",
+      "domain": "data_gathering",
+      "label": "Asks about family history",
+      "critical": false,
+      "exampleQuestion": "Does anything like this run in your family?",
+      "offlineCues": [
+        "family history",
+        "in your family",
+        "run in the family",
+        "your parents"
+      ]
+    },
+    {
+      "id": "social_smoking_alcohol",
+      "domain": "data_gathering",
+      "label": "Takes a smoking and alcohol history",
+      "critical": false,
+      "exampleQuestion": "Do you smoke, and how much alcohol do you drink in a week?",
+      "offlineCues": [
+        "smoke",
+        "cigarette",
+        "vape",
+        "alcohol",
+        "drink"
+      ]
+    },
+    {
+      "id": "social_life",
+      "domain": "data_gathering",
+      "label": "Asks about work, home and daily life",
+      "critical": false,
+      "exampleQuestion": "What do you do for work, and who is at home with you?",
+      "offlineCues": [
+        "for work",
+        "your job",
+        "at home with",
+        "who do you live",
+        "day to day"
+      ]
+    },
+    {
+      "id": "systems_review",
+      "domain": "data_gathering",
+      "label": "Screens the other systems",
+      "critical": false,
+      "exampleQuestion": "Any weight loss, fevers or night sweats?",
+      "offlineCues": [
+        "weight loss",
+        "fevers",
+        "night sweats",
+        "appetite"
+      ]
+    },
+    {
+      "id": "ice_concerns",
+      "domain": "interpersonal",
+      "label": "Explores the patient's ideas, concerns and expectations",
+      "critical": false,
+      "exampleQuestion": "Is there anything in particular you are worried this might be?",
+      "offlineCues": [
+        "worried",
+        "worry",
+        "concern",
+        "what do you think is",
+        "hoping for today"
+      ]
+    },
+    {
+      "id": "closing",
+      "domain": "interpersonal",
+      "label": "Summarises, checks understanding and invites questions",
+      "critical": false,
+      "exampleQuestion": "Can I summarise what you have told me? Do you have any questions?",
+      "offlineCues": [
+        "summarise",
+        "summarize",
+        "to recap",
+        "any questions",
+        "have i got that right"
+      ]
+    },
+    {
+      "id": "safety_netting",
+      "domain": "management",
+      "label": "Says what to do if it gets worse",
+      "critical": false,
+      "exampleQuestion": "If it gets worse, or you feel much more unwell, call 111 or come straight back.",
+      "offlineCues": [
+        "if it gets worse",
+        "come back",
+        "call 111",
+        "go to a&e",
+        "straight back"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "f_onset_duration_1",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "text": "I've just been feeling like very nauseated for, it feels like all the time right now.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L3",
+        "quote": "I've just been feeling like very nauseated for, it feels like all the time right now."
+      }
+    },
+    {
+      "id": "f_onset_duration_2",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "text": "It's been over a week. Maybe not quite two weeks, but like around then. Yeah, maybe like 9 days.",
+      "guardedTerms": [
+        "9 days"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L7",
+        "quote": "It's been over a week. Maybe not quite two weeks, but like around then. Yeah, maybe like 9 days."
+      }
+    },
+    {
+      "id": "f_character_severity_3",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "Oh, I think it's like worse when I am smelling something really bad, and it's worse in the morning. But I feel like it's always kind of there.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L11",
+        "quote": "Oh, I think it's like worse when I am smelling something really bad, and it's worse in the morning. But I feel like it's always kind of there."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_4",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "Uh, yeah, like um, yeah, like a lot of days I'll throw up like once or twice.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L15",
+        "quote": "Uh, yeah, like um, yeah, like a lot of days I'll throw up like once or twice."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_5",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "Oh no, just, well, like I feel like I've I've had to pee a lot more. Um, but I don't, I don't think that's like related. I think maybe I have just been drinking a lot of water, so yeah.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L23",
+        "quote": "Oh no, just, well, like I feel like I've I've had to pee a lot more. Um, but I don't, I don't think that's like related. I think maybe I have just been drinking a lot of water, so yeah."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_6",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "Oh, like, I feel like every couple hours right now.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L27",
+        "quote": "Oh, like, I feel like every couple hours right now."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_7",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "Probably every probably every like 2, maybe, maybe every hour I get certain times in a day.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L31",
+        "quote": "Probably every probably every like 2, maybe, maybe every hour I get certain times in a day."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_8",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "Oh, like it doesn't wake me up but it's like I wake up because I hear something. Then I'll be like, oh I think I should probably go to the bathroom.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L35",
+        "quote": "Oh, like it doesn't wake me up but it's like I wake up because I hear something. Then I'll be like, oh I think I should probably go to the bathroom."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_9",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "Ah no, I don't think so, well my stomach has been like it feels like a little crampy. I thought that maybe it could be my period but like I'm not on my period.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L55",
+        "quote": "Ah no, I don't think so, well my stomach has been like it feels like a little crampy. I thought that maybe it could be my period but like I'm not on my period."
+      }
+    },
+    {
+      "id": "f_medications_allergie_13",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "text": "No, I mean, I've been taking like like I've been chewing like those ginger things that are supposed to help with nausea, but they weren't really helpful.",
+      "guardedTerms": [
+        "ginger"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L108",
+        "quote": "No, I mean, I've been taking like like I've been chewing like those ginger things that are supposed to help with nausea, but they weren't really helpful."
+      }
+    },
+    {
+      "id": "f_medications_allergie_14",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "text": "So just like nickel, like in jewelry, if I wear not real jewellery, it'll give me a rash, but it's not food or like or medications or anything.",
+      "guardedTerms": [
+        "nickel"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L112",
+        "quote": "So just like nickel, like in jewelry, if I wear not real jewellery, it'll give me a rash, but it's not food or like or medications or anything."
+      }
+    },
+    {
+      "id": "f_social_life_15",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "Um, like I I just I live with one roommate.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L116",
+        "quote": "Um, like I I just I live with one roommate."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_16",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "Uh, no, very rarely because I always get a headache.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L124",
+        "quote": "Uh, no, very rarely because I always get a headache."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_17",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "Oh gosh, like like a month ago probably.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L128",
+        "quote": "Oh gosh, like like a month ago probably."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_18",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "No, no.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L132",
+        "quote": "No, no."
+      }
+    },
+    {
+      "id": "f_social_life_19",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "Yeah just like with my boyfriend.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L136",
+        "quote": "Yeah just like with my boyfriend."
+      }
+    },
+    {
+      "id": "f_social_life_20",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "Yeah, we we just use condoms. I used to be on birth control but it always made me feel like like kind of sick so I don't use that anymore.",
+      "guardedTerms": [
+        "condoms",
+        "birth control"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L140",
+        "quote": "Yeah, we we just use condoms. I used to be on birth control but it always made me feel like like kind of sick so I don't use that anymore."
+      }
+    },
+    {
+      "id": "f_family_history_21",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "text": "Uh, like I don't, I don't think so. I guess my dad my dad has like high blood pressure, yeah, I don't think there's anything else.",
+      "guardedTerms": [
+        "high blood pressure"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "GAS0001.txt#L145",
+        "quote": "Uh, like I don't, I don't think so. I guess my dad my dad has like high blood pressure, yeah, I don't think there's anything else."
+      }
+    }
+  ]
+}

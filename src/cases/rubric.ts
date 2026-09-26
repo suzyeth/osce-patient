@@ -144,6 +144,25 @@ const RED_FLAG_HINTS: ReadonlyArray<readonly [RegExp, string]> = [
 /** Diagnoses a patient would rarely name unprompted; worth a second look in the review. */
 const DIAGNOSIS_WORDS = /\b(pulmonary embolism|embolism|myocardial infarction|infarction|deep vein thrombosis|dvt|carcinoma|malignancy|angina|copd)\b/i;
 
+/** The rubric item a red flag becomes, so a case cannot be built without one when the words are there. */
+const RED_FLAG_ITEMS: Readonly<Record<string, { id: string; label: string; exampleQuestion: string; cues: string[] }>> = {
+  'coughing up blood': { id: 'rf_haemoptysis', label: 'Asks about coughing up blood', exampleQuestion: 'Have you coughed up any blood?', cues: ['blood', 'coughing up'] },
+  'a painful or swollen leg': { id: 'rf_leg', label: 'Asks about a painful or swollen leg', exampleQuestion: 'Have you had any pain or swelling in your calf?', cues: ['calf', 'leg pain', 'swollen'] },
+  'a swollen leg': { id: 'rf_leg', label: 'Asks about a painful or swollen leg', exampleQuestion: 'Have you had any pain or swelling in your calf?', cues: ['calf', 'leg pain', 'swollen'] },
+  'fainting or collapse': { id: 'rf_syncope', label: 'Asks about fainting or blacking out', exampleQuestion: 'Have you fainted or blacked out at any point?', cues: ['faint', 'passed out', 'blacked out'] },
+  'chest pain at rest': { id: 'rf_rest_pain', label: 'Asks whether the pain comes on at rest', exampleQuestion: 'Does the pain come on when you are resting?', cues: ['at rest', 'resting', 'lying down'] },
+  'weight loss with night sweats': { id: 'rf_constitutional', label: 'Asks about weight loss, fevers and night sweats', exampleQuestion: 'Have you lost weight, or had fevers or night sweats?', cues: ['weight loss', 'night sweats', 'fevers'] },
+  'a rash that does not fade': { id: 'rf_rash', label: 'Asks whether the rash fades under a glass', exampleQuestion: 'Does the rash fade when you press a glass against it?', cues: ['rash', 'glass', 'fade'] },
+  'sudden weakness or numbness': { id: 'rf_neuro', label: 'Asks about sudden weakness or numbness', exampleQuestion: 'Have you had any sudden weakness, numbness or trouble speaking?', cues: ['weakness', 'numbness', 'slurred'] },
+  'thoughts of self-harm': { id: 'rf_self_harm', label: 'Asks about thoughts of self-harm', exampleQuestion: 'Have you had any thoughts of harming yourself?', cues: ['harm yourself', 'end your life'] },
+};
+
+/** The rubric item for a red flag the hints found, or null when there is no standard one. */
+export function redFlagItemFor(reason: string): RubricItem | null {
+  const found = RED_FLAG_ITEMS[reason];
+  return found ? redFlagItem(found.id, found.label, found.exampleQuestion, found.cues) : null;
+}
+
 /** Text that reads like a red flag, with the plain-English reason, for the review sheet. */
 export function redFlagHint(text: string): string | null {
   for (const [pattern, reason] of RED_FLAG_HINTS) if (pattern.test(text)) return reason;

@@ -1,0 +1,428 @@
+{
+  "id": "case-msk0001",
+  "title": "Acute Lower Back Pain with Radiation",
+  "candidateBrief": "You are a doctor in a GP surgery. David Thompson, 65, has come in about Low back pain. Take a focused history. You have 8 minutes.",
+  "durationSeconds": 480,
+  "reviewStatus": "unreviewed",
+  "patient": {
+    "name": "David Thompson",
+    "age": 65,
+    "persona": "Retired school teacher living alone, speaks calmly and provides clear answers without volunteering extra information.",
+    "openingLine": "I’ve got low back pain that started yesterday when I was unloading groceries."
+  },
+  "rubric": [
+    {
+      "id": "intro_consent",
+      "domain": "interpersonal",
+      "label": "Introduces self and gains consent",
+      "critical": false,
+      "exampleQuestion": "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?",
+      "offlineCues": [
+        "my name is",
+        "i'm one of the doctors",
+        "is it okay if",
+        "happy for me to"
+      ]
+    },
+    {
+      "id": "open_question",
+      "domain": "interpersonal",
+      "label": "Opens with an open question and lets the patient speak",
+      "critical": false,
+      "exampleQuestion": "What brings you in today?",
+      "offlineCues": [
+        "what brings",
+        "tell me about",
+        "how can i help",
+        "what can i do for you"
+      ]
+    },
+    {
+      "id": "onset_duration",
+      "domain": "data_gathering",
+      "label": "Asks when it started and how it has changed",
+      "critical": false,
+      "exampleQuestion": "When did this start, and has it changed since?",
+      "offlineCues": [
+        "when did",
+        "how long",
+        "since when",
+        "getting worse"
+      ]
+    },
+    {
+      "id": "character_severity",
+      "domain": "data_gathering",
+      "label": "Asks what it is like and how bad it is",
+      "critical": false,
+      "exampleQuestion": "What does it feel like, and how bad is it out of ten?",
+      "offlineCues": [
+        "what does it feel",
+        "how bad",
+        "out of ten",
+        "describe the pain"
+      ]
+    },
+    {
+      "id": "associated_symptoms",
+      "domain": "data_gathering",
+      "label": "Asks about associated symptoms",
+      "critical": false,
+      "exampleQuestion": "Have you noticed anything else along with it?",
+      "offlineCues": [
+        "anything else",
+        "along with",
+        "other symptoms",
+        "have you noticed"
+      ]
+    },
+    {
+      "id": "past_medical",
+      "domain": "data_gathering",
+      "label": "Takes a past medical history",
+      "critical": false,
+      "exampleQuestion": "Do you have any medical conditions, or have you had any operations?",
+      "offlineCues": [
+        "medical conditions",
+        "past medical",
+        "any operations",
+        "diagnosed with"
+      ]
+    },
+    {
+      "id": "medications_allergies",
+      "domain": "data_gathering",
+      "label": "Asks about medicines and allergies",
+      "critical": false,
+      "exampleQuestion": "Are you taking any medicines, and do you have any allergies?",
+      "offlineCues": [
+        "medication",
+        "medicines",
+        "tablets",
+        "allergic",
+        "allergies"
+      ]
+    },
+    {
+      "id": "family_history",
+      "domain": "data_gathering",
+      "label": "Asks about family history",
+      "critical": false,
+      "exampleQuestion": "Does anything like this run in your family?",
+      "offlineCues": [
+        "family history",
+        "in your family",
+        "run in the family",
+        "your parents"
+      ]
+    },
+    {
+      "id": "social_smoking_alcohol",
+      "domain": "data_gathering",
+      "label": "Takes a smoking and alcohol history",
+      "critical": false,
+      "exampleQuestion": "Do you smoke, and how much alcohol do you drink in a week?",
+      "offlineCues": [
+        "smoke",
+        "cigarette",
+        "vape",
+        "alcohol",
+        "drink"
+      ]
+    },
+    {
+      "id": "social_life",
+      "domain": "data_gathering",
+      "label": "Asks about work, home and daily life",
+      "critical": false,
+      "exampleQuestion": "What do you do for work, and who is at home with you?",
+      "offlineCues": [
+        "for work",
+        "your job",
+        "at home with",
+        "who do you live",
+        "day to day"
+      ]
+    },
+    {
+      "id": "systems_review",
+      "domain": "data_gathering",
+      "label": "Screens the other systems",
+      "critical": false,
+      "exampleQuestion": "Any weight loss, fevers or night sweats?",
+      "offlineCues": [
+        "weight loss",
+        "fevers",
+        "night sweats",
+        "appetite"
+      ]
+    },
+    {
+      "id": "ice_concerns",
+      "domain": "interpersonal",
+      "label": "Explores the patient's ideas, concerns and expectations",
+      "critical": false,
+      "exampleQuestion": "Is there anything in particular you are worried this might be?",
+      "offlineCues": [
+        "worried",
+        "worry",
+        "concern",
+        "what do you think is",
+        "hoping for today"
+      ]
+    },
+    {
+      "id": "closing",
+      "domain": "interpersonal",
+      "label": "Summarises, checks understanding and invites questions",
+      "critical": false,
+      "exampleQuestion": "Can I summarise what you have told me? Do you have any questions?",
+      "offlineCues": [
+        "summarise",
+        "summarize",
+        "to recap",
+        "any questions",
+        "have i got that right"
+      ]
+    },
+    {
+      "id": "safety_netting",
+      "domain": "management",
+      "label": "Says what to do if it gets worse",
+      "critical": false,
+      "exampleQuestion": "If it gets worse, or you feel much more unwell, call 111 or come straight back.",
+      "offlineCues": [
+        "if it gets worse",
+        "come back",
+        "call 111",
+        "go to a&e",
+        "straight back"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "f_onset_duration_1",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "text": "The pain started yesterday while I was unloading groceries from my pickup truck.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L11",
+        "quote": "It started yesterday, I was unloading groceries from my pickup truck when it suddenly started."
+      }
+    },
+    {
+      "id": "f_character_severity_2",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "The pain is in my lower back and feels stabbing.",
+      "guardedTerms": [
+        "stabbing",
+        "lower back"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L19",
+        "quote": "It feels like it's stabbing just right in my lower back."
+      }
+    },
+    {
+      "id": "f_character_severity_3",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "When I sit completely still, the pain is 2 out of 10.",
+      "guardedTerms": [
+        "2 out of 10"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L23",
+        "quote": "If I'm sitting, uh completely still like like I am right now, it's a 2 out of 10."
+      }
+    },
+    {
+      "id": "f_character_severity_4",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "The pain gets worse when I move, bend my back, or even cough.",
+      "guardedTerms": [
+        "bend",
+        "cough"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L27",
+        "quote": "Uh anytime I I move or bend my back or uh even cough it it worsens the pain significantly."
+      }
+    },
+    {
+      "id": "f_onset_duration_5",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "text": "The pain has not changed since it started yesterday.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L31",
+        "quote": "No, it's been this same awful pain this whole time."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_6",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I also feel the pain going into my right leg as an aching sensation.",
+      "guardedTerms": [
+        "right leg"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L39",
+        "quote": "I also feel the pain uh into my right leg."
+      }
+    },
+    {
+      "id": "f_past_medical_7",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "text": "I have had back pain over the years, but nothing like this before.",
+      "guardedTerms": [
+        "over the years"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L35",
+        "quote": "I've had back pain uh over the years, but nothing like this before."
+      }
+    },
+    {
+      "id": "f_past_medical_8",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "text": "I have type 2 diabetes and take insulin for it.",
+      "guardedTerms": [
+        "type 2 diabetes"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L111",
+        "quote": "Uh type 2 diabetes."
+      }
+    },
+    {
+      "id": "f_medications_allergie_9",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "text": "I take insulin for my diabetes.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L115",
+        "quote": "Uh I, um insulin for diabetes."
+      }
+    },
+    {
+      "id": "f_medications_allergie_10",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "text": "I have been taking Tylenol for the back pain, which only takes the edge off a little.",
+      "guardedTerms": [
+        "Tylenol"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L119",
+        "quote": "Uh just been taking Tylenol for the the back pain."
+      }
+    },
+    {
+      "id": "f_past_medical_11",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "text": "I had hemorrhoids removed three years ago as day surgery.",
+      "guardedTerms": [
+        "hemorrhoids",
+        "three years ago"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L131",
+        "quote": "Uh I had hemorrhoids removed three years ago."
+      }
+    },
+    {
+      "id": "f_family_history_12",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "text": "My father had prostate cancer.",
+      "guardedTerms": [
+        "prostate cancer"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L139",
+        "quote": "Uh my father had prostate cancer."
+      }
+    },
+    {
+      "id": "f_social_life_13",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "I am a retired school teacher and live alone in a house not far from here.",
+      "guardedTerms": [
+        "live alone"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L147",
+        "quote": "I live alone um in a in a house uh not too far from here, actually."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_14",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "I occasionally drink a glass of red wine on the weekend but not too often.",
+      "guardedTerms": [
+        "glass of red wine",
+        "weekend"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L151",
+        "quote": "Um occasionally uh maybe I'll have a glass of red wine on the weekend or something like that, but uh not too often."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_15",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "I smoke a pack of cigarettes per day and have done so for about 40 years.",
+      "guardedTerms": [
+        "pack of cigarettes",
+        "per day"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L155",
+        "quote": "Uh, I've smoked um yeah, I smoke a pack of cigarettes uh per day."
+      }
+    },
+    {
+      "id": "f_social_life_16",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "I have been sexually active with more than one partner in the past year and always use condoms.",
+      "guardedTerms": [
+        "past year"
+      ],
+      "source": {
+        "dataset": "fareez2022",
+        "ref": "MSK0001.txt#L183",
+        "quote": "Uh yes, I have, um um two women over the past year."
+      }
+    }
+  ]
+}
