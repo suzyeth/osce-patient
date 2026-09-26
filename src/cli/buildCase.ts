@@ -13,6 +13,7 @@ import { describeConfigError, loadConfig, loadDotEnv, MODELS } from '../nebius/c
 import { buildCase, reviewSheet } from '../cases/buildCase.js';
 import { extractDraftCase, type DraftCase } from '../cases/extract.js';
 import { parseTranscript } from '../cases/transcript.js';
+import { parseConsultation } from '../cases/textgrid.js';
 
 const EXTRACT_MAX_TOKENS = 6000;
 const CAP_USD = 0.1;
@@ -32,7 +33,19 @@ const caseId = value('--id') ?? basename(path, '.txt').toLowerCase();
 const outDir = value('--out') ?? 'cases';
 const sheetDir = value('--sheets') ?? 'docs/case-reviews';
 
-const transcript = parseTranscript(basename(path), readFileSync(path, 'utf8'));
+/**
+ * Two shapes of source: a Fareez text transcript, or a PriMock57 consultation, which is a pair of
+ * Praat TextGrid files named <consultation>_doctor.TextGrid and <consultation>_patient.TextGrid.
+ */
+const primock = path.endsWith('.TextGrid');
+const dataset = primock ? 'primock57' : 'fareez2022';
+const transcript = primock
+  ? parseConsultation(
+      basename(path).replace(/_(doctor|patient)\.TextGrid$/, ''),
+      readFileSync(path.replace('_patient.TextGrid', '_doctor.TextGrid'), 'utf8'),
+      readFileSync(path.replace('_doctor.TextGrid', '_patient.TextGrid'), 'utf8'),
+    )
+  : parseTranscript(basename(path), readFileSync(path, 'utf8'));
 const patientCount = transcript.turns.filter((t) => t.speaker === 'patient').length;
 console.log(`${transcript.ref}: ${transcript.turns.length} turns, ${patientCount} from the patient.`);
 
@@ -66,7 +79,7 @@ mkdirSync(sheetDir, { recursive: true });
 // The draft is kept so a build can be repeated, and edited, without paying for the model again.
 writeFileSync(join(sheetDir, `${caseId}.draft.json`), `${JSON.stringify(draft, null, 2)}\n`);
 
-const result = buildCase(draft, transcript, caseId);
+const result = buildCase(draft, transcript, caseId, dataset);
 if ('ok' in result) {
   console.error(result.message);
   for (const { fact, reason } of result.rejected) console.error(`  dropped: ${fact.text} (${reason})`);

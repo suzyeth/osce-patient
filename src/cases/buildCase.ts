@@ -70,7 +70,14 @@ function factId(fact: DraftFact, index: number): string {
  * line they claim, said by the patient. This is the step that makes an invented fact impossible
  * to publish: the model's word is never enough.
  */
-export function buildCase(draft: DraftCase, transcript: Transcript, caseId: string): BuiltCase | BuildFailure {
+export type SourceDataset = 'fareez2022' | 'primock57';
+
+const SOURCE_CREDIT: Readonly<Record<SourceDataset, string>> = {
+  fareez2022: 'Fareez et al. 2022, CC0',
+  primock57: 'PriMock57 (Babylon Health) 2022, CC BY 4.0',
+};
+
+export function buildCase(draft: DraftCase, transcript: Transcript, caseId: string, dataset: SourceDataset = 'fareez2022'): BuiltCase | BuildFailure {
   const rejected: RejectedFact[] = [];
   const notes: string[] = [];
   const exposed = publicText(draft);
@@ -96,7 +103,7 @@ export function buildCase(draft: DraftCase, transcript: Transcript, caseId: stri
         text: fact.text,
         guardedTerms: guardedTermsIn(fact, draft.facts, exposed, notes),
         ...(fact.kind === 'concern' ? { minTrust: CONCERN_MIN_TRUST } : {}),
-        source: { dataset: 'fareez2022', ref: citation(transcript, fact.line), quote: fact.quote },
+        source: { dataset, ref: citation(transcript, fact.line), quote: fact.quote },
       },
     });
   }
@@ -185,10 +192,12 @@ export function buildCase(draft: DraftCase, transcript: Transcript, caseId: stri
  * medical knowledge, only a reading of the transcript.
  */
 export function reviewSheet(built: BuiltCase, transcript: Transcript, unusable: readonly string[] = []): string {
+  const dataset = built.patientCase.facts[0]?.source.dataset ?? 'fareez2022';
+  const credit = SOURCE_CREDIT[dataset as SourceDataset] ?? dataset;
   const lines = [
     `# Review sheet: ${built.patientCase.id}`,
     '',
-    `Source: ${transcript.ref} (Fareez et al. 2022, CC0). Case is marked **unreviewed**: no clinician has seen it.`,
+    `Source: ${transcript.ref} (${credit}). Case is marked **unreviewed**: no clinician has seen it.`,
     '',
     `Patient: ${built.patientCase.patient.name}, ${built.patientCase.patient.age}. ${built.patientCase.patient.persona}`,
     '',

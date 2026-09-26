@@ -1,0 +1,409 @@
+{
+  "id": "case-primock-01",
+  "title": "Acute Diarrhoea Assessment",
+  "candidateBrief": "You are a doctor in a GP surgery. David Hughes, 35, has come in about diarrhoea for three days. Take a focused history. You have 8 minutes.",
+  "durationSeconds": 480,
+  "reviewStatus": "unreviewed",
+  "patient": {
+    "name": "David Hughes",
+    "age": 35,
+    "persona": "An employed accountant who lives with his wife and two children, speaks clearly and provides detailed responses when questioned, remains cooperative throughout the consultation.",
+    "openingLine": "I've had diarrhoea for the last three days and it's been affecting my day-to-day activities."
+  },
+  "rubric": [
+    {
+      "id": "intro_consent",
+      "domain": "interpersonal",
+      "label": "Introduces self and gains consent",
+      "critical": false,
+      "exampleQuestion": "Hello, I'm one of the doctors. Is it okay if I ask you some questions today?",
+      "offlineCues": [
+        "my name is",
+        "i'm one of the doctors",
+        "is it okay if",
+        "happy for me to"
+      ]
+    },
+    {
+      "id": "open_question",
+      "domain": "interpersonal",
+      "label": "Opens with an open question and lets the patient speak",
+      "critical": false,
+      "exampleQuestion": "What brings you in today?",
+      "offlineCues": [
+        "what brings",
+        "tell me about",
+        "how can i help",
+        "what can i do for you"
+      ]
+    },
+    {
+      "id": "onset_duration",
+      "domain": "data_gathering",
+      "label": "Asks when it started and how it has changed",
+      "critical": false,
+      "exampleQuestion": "When did this start, and has it changed since?",
+      "offlineCues": [
+        "when did",
+        "how long",
+        "since when",
+        "getting worse"
+      ]
+    },
+    {
+      "id": "character_severity",
+      "domain": "data_gathering",
+      "label": "Asks what it is like and how bad it is",
+      "critical": false,
+      "exampleQuestion": "What does it feel like, and how bad is it out of ten?",
+      "offlineCues": [
+        "what does it feel",
+        "how bad",
+        "out of ten",
+        "describe the pain"
+      ]
+    },
+    {
+      "id": "associated_symptoms",
+      "domain": "data_gathering",
+      "label": "Asks about associated symptoms",
+      "critical": false,
+      "exampleQuestion": "Have you noticed anything else along with it?",
+      "offlineCues": [
+        "anything else",
+        "along with",
+        "other symptoms",
+        "have you noticed"
+      ]
+    },
+    {
+      "id": "past_medical",
+      "domain": "data_gathering",
+      "label": "Takes a past medical history",
+      "critical": false,
+      "exampleQuestion": "Do you have any medical conditions, or have you had any operations?",
+      "offlineCues": [
+        "medical conditions",
+        "past medical",
+        "any operations",
+        "diagnosed with"
+      ]
+    },
+    {
+      "id": "medications_allergies",
+      "domain": "data_gathering",
+      "label": "Asks about medicines and allergies",
+      "critical": false,
+      "exampleQuestion": "Are you taking any medicines, and do you have any allergies?",
+      "offlineCues": [
+        "medication",
+        "medicines",
+        "tablets",
+        "allergic",
+        "allergies"
+      ]
+    },
+    {
+      "id": "family_history",
+      "domain": "data_gathering",
+      "label": "Asks about family history",
+      "critical": false,
+      "exampleQuestion": "Does anything like this run in your family?",
+      "offlineCues": [
+        "family history",
+        "in your family",
+        "run in the family",
+        "your parents"
+      ]
+    },
+    {
+      "id": "social_smoking_alcohol",
+      "domain": "data_gathering",
+      "label": "Takes a smoking and alcohol history",
+      "critical": false,
+      "exampleQuestion": "Do you smoke, and how much alcohol do you drink in a week?",
+      "offlineCues": [
+        "smoke",
+        "cigarette",
+        "vape",
+        "alcohol",
+        "drink"
+      ]
+    },
+    {
+      "id": "social_life",
+      "domain": "data_gathering",
+      "label": "Asks about work, home and daily life",
+      "critical": false,
+      "exampleQuestion": "What do you do for work, and who is at home with you?",
+      "offlineCues": [
+        "for work",
+        "your job",
+        "at home with",
+        "who do you live",
+        "day to day"
+      ]
+    },
+    {
+      "id": "systems_review",
+      "domain": "data_gathering",
+      "label": "Screens the other systems",
+      "critical": false,
+      "exampleQuestion": "Any weight loss, fevers or night sweats?",
+      "offlineCues": [
+        "weight loss",
+        "fevers",
+        "night sweats",
+        "appetite"
+      ]
+    },
+    {
+      "id": "ice_concerns",
+      "domain": "interpersonal",
+      "label": "Explores the patient's ideas, concerns and expectations",
+      "critical": false,
+      "exampleQuestion": "Is there anything in particular you are worried this might be?",
+      "offlineCues": [
+        "worried",
+        "worry",
+        "concern",
+        "what do you think is",
+        "hoping for today"
+      ]
+    },
+    {
+      "id": "closing",
+      "domain": "interpersonal",
+      "label": "Summarises, checks understanding and invites questions",
+      "critical": false,
+      "exampleQuestion": "Can I summarise what you have told me? Do you have any questions?",
+      "offlineCues": [
+        "summarise",
+        "summarize",
+        "to recap",
+        "any questions",
+        "have i got that right"
+      ]
+    },
+    {
+      "id": "safety_netting",
+      "domain": "management",
+      "label": "Says what to do if it gets worse",
+      "critical": false,
+      "exampleQuestion": "If it gets worse, or you feel much more unwell, call 111 or come straight back.",
+      "offlineCues": [
+        "if it gets worse",
+        "come back",
+        "call 111",
+        "go to a&e",
+        "straight back"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "f_onset_duration_1",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "text": "I've had diarrhoea for the last three days.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L2",
+        "quote": "I've just had some diarrhea for the last three days"
+      }
+    },
+    {
+      "id": "f_social_life_2",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "It's been affecting my day-to-day activities and I need to stay close to the toilet.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L2",
+        "quote": "it's been affecting me I need to stay close to the toilet. And, um, yeah, it's been affecting my day-to-day activities."
+      }
+    },
+    {
+      "id": "f_character_severity_3",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "My stools are loose and watery, and I go to the toilet about six or seven times a day.",
+      "guardedTerms": [
+        "loose and watery"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L4",
+        "quote": "Yeah, so it's like loose and watery stool, going to the toilet quite often"
+      }
+    },
+    {
+      "id": "f_character_severity_4",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "text": "I have cramp-like pain in my lower left abdomen that comes and goes.",
+      "guardedTerms": [
+        "cramp"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L14",
+        "quote": "it feels, um, like a cramp, like a muscular cramp"
+      }
+    },
+    {
+      "id": "f_associated_symptoms_5",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I feel weak and shaky, especially when the symptoms started.",
+      "guardedTerms": [
+        "weak and shaky"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L14",
+        "quote": "yeah i feel a bit uh weak and shaky."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_6",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I had a fever around three or four days ago when the symptoms started.",
+      "guardedTerms": [
+        "three or four days"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L20",
+        "quote": "I did notice um a temperature when the symptoms started, so, um, yeah around about three or four days ago."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_7",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I vomited at the start of the symptoms but have now stopped vomiting.",
+      "guardedTerms": [
+        "vomited"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L24",
+        "quote": "I vomited at the start of the symptoms but now um I've stopped vomiting."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_8",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I've had a loss of appetite but I can still hold down fluids.",
+      "guardedTerms": [
+        "loss of appetite"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L28",
+        "quote": "I had a loss of appetite, um, so I haven't been eating as much, but I've been able to hold down fluids."
+      }
+    },
+    {
+      "id": "f_associated_symptoms_9",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "text": "I've been eating soups, smoothies and other liquid foods.",
+      "guardedTerms": [
+        "soups"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L30",
+        "quote": "just soups, and, uh, yeah, light foods. Like smoothies and, yeah, liquid foods mainly."
+      }
+    },
+    {
+      "id": "f_onset_duration_10",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "text": "I had takeaway from a Chinese restaurant about four days ago.",
+      "guardedTerms": [
+        "takeaway"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L32",
+        "quote": "Yeah, so I had takeaway about four days ago"
+      }
+    },
+    {
+      "id": "f_family_history_11",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "text": "No one else in my household has had the same symptoms as me.",
+      "guardedTerms": [
+        "same symptoms"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L36",
+        "quote": "no one else in the family, so ... a wife and two kids and one, um, child was vomiting, but they haven't got diarrhea. There's no one with the same symptoms."
+      }
+    },
+    {
+      "id": "f_past_medical_12",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "text": "I have asthma but it is well-controlled with an inhaler.",
+      "guardedTerms": [
+        "asthma"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L38",
+        "quote": "other than um athsma, um I use an inhaler, everything uh else is fine."
+      }
+    },
+    {
+      "id": "f_medications_allergie_13",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "text": "I am not taking any other medications besides my inhaler.",
+      "guardedTerms": [
+        "medications"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L44",
+        "quote": "Uh, no, no other medications."
+      }
+    },
+    {
+      "id": "f_social_smoking_alcoh_14",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "text": "I do not smoke or drink alcohol.",
+      "guardedTerms": [
+        "smoke"
+      ],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L54",
+        "quote": "Uh, no, I don't smoke."
+      }
+    },
+    {
+      "id": "f_social_life_15",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "text": "I work as an accountant and have been going to work despite the symptoms, which has been difficult.",
+      "guardedTerms": [],
+      "source": {
+        "dataset": "primock57",
+        "ref": "day1_consultation01#L48",
+        "quote": "Uh, yes, yeah. I I work, er. Um, I'm an accountant."
+      }
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "title": "Acute Diarrhoea Assessment",
+  "patient": {
+    "name": "David Hughes",
+    "age": 35,
+    "persona": "An employed accountant who lives with his wife and two children, speaks clearly and provides detailed responses when questioned, remains cooperative throughout the consultation.",
+    "openingLine": "I've had diarrhoea for the last three days and it's been affecting my day-to-day activities."
+  },
+  "presentingProblem": "diarrhoea for three days",
+  "facts": [
+    {
+      "text": "I've had diarrhoea for the last three days.",
+      "kind": "presenting",
+      "rubricItemId": "onset_duration",
+      "quote": "I've just had some diarrhea for the last three days",
+      "line": 2,
+      "guardedTerms": [
+        "three days"
+      ]
+    },
+    {
+      "text": "It's been affecting my day-to-day activities and I need to stay close to the toilet.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "it's been affecting me I need to stay close to the toilet. And, um, yeah, it's been affecting my day-to-day activities.",
+      "line": 2,
+      "guardedTerms": [
+        "day-to-day"
+      ]
+    },
+    {
+      "text": "My stools are loose and watery, and I go to the toilet about six or seven times a day.",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "quote": "Yeah, so it's like loose and watery stool, going to the toilet quite often",
+      "line": 4,
+      "guardedTerms": [
+        "loose and watery"
+      ]
+    },
+    {
+      "text": "I have cramp-like pain in my lower left abdomen that comes and goes.",
+      "kind": "history",
+      "rubricItemId": "character_severity",
+      "quote": "it feels, um, like a cramp, like a muscular cramp",
+      "line": 14,
+      "guardedTerms": [
+        "cramp"
+      ]
+    },
+    {
+      "text": "I feel weak and shaky, especially when the symptoms started.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "yeah i feel a bit uh weak and shaky.",
+      "line": 14,
+      "guardedTerms": [
+        "weak and shaky"
+      ]
+    },
+    {
+      "text": "I had a fever around three or four days ago when the symptoms started.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "I did notice um a temperature when the symptoms started, so, um, yeah around about three or four days ago.",
+      "line": 20,
+      "guardedTerms": [
+        "three or four days"
+      ]
+    },
+    {
+      "text": "I vomited at the start of the symptoms but have now stopped vomiting.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "I vomited at the start of the symptoms but now um I've stopped vomiting.",
+      "line": 24,
+      "guardedTerms": [
+        "vomited"
+      ]
+    },
+    {
+      "text": "I've had a loss of appetite but I can still hold down fluids.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "I had a loss of appetite, um, so I haven't been eating as much, but I've been able to hold down fluids.",
+      "line": 28,
+      "guardedTerms": [
+        "loss of appetite"
+      ]
+    },
+    {
+      "text": "I've been eating soups, smoothies and other liquid foods.",
+      "kind": "history",
+      "rubricItemId": "associated_symptoms",
+      "quote": "just soups, and, uh, yeah, light foods. Like smoothies and, yeah, liquid foods mainly.",
+      "line": 30,
+      "guardedTerms": [
+        "soups"
+      ]
+    },
+    {
+      "text": "I had takeaway from a Chinese restaurant about four days ago.",
+      "kind": "history",
+      "rubricItemId": "onset_duration",
+      "quote": "Yeah, so I had takeaway about four days ago",
+      "line": 32,
+      "guardedTerms": [
+        "takeaway"
+      ]
+    },
+    {
+      "text": "No one else in my household has had the same symptoms as me.",
+      "kind": "history",
+      "rubricItemId": "family_history",
+      "quote": "no one else in the family, so ... a wife and two kids and one, um, child was vomiting, but they haven't got diarrhea. There's no one with the same symptoms.",
+      "line": 36,
+      "guardedTerms": [
+        "same symptoms"
+      ]
+    },
+    {
+      "text": "I have asthma but it is well-controlled with an inhaler.",
+      "kind": "history",
+      "rubricItemId": "past_medical",
+      "quote": "other than um athsma, um I use an inhaler, everything uh else is fine.",
+      "line": 38,
+      "guardedTerms": [
+        "asthma"
+      ]
+    },
+    {
+      "text": "I am not taking any other medications besides my inhaler.",
+      "kind": "history",
+      "rubricItemId": "medications_allergies",
+      "quote": "Uh, no, no other medications.",
+      "line": 44,
+      "guardedTerms": [
+        "medications"
+      ]
+    },
+    {
+      "text": "I do not smoke or drink alcohol.",
+      "kind": "history",
+      "rubricItemId": "social_smoking_alcohol",
+      "quote": "Uh, no, I don't smoke.",
+      "line": 54,
+      "guardedTerms": [
+        "smoke"
+      ]
+    },
+    {
+      "text": "I work as an accountant and have been going to work despite the symptoms, which has been difficult.",
+      "kind": "history",
+      "rubricItemId": "social_life",
+      "quote": "Uh, yes, yeah. I I work, er. Um, I'm an accountant.",
+      "line": 48,
+      "guardedTerms": [
+        "accountant"
+      ]
+    },
+    {
+      "text": "I am worried that my symptoms might be caused by something serious since they are not improving quickly enough.",
+      "kind": "concern",
+      "rubricItemId": "ice_concerns",
+      "quote": "Because if it is ongoing then we have to wonder whether something else caused your symptoms.",
+      "line": 75,
+      "guardedTerms": [
+        "ongoing"
+      ]
+    }
+  ],
+  "redFlags": []
+}

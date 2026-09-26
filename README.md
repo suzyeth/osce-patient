@@ -116,13 +116,48 @@ so it is no longer untouched, and the misses from the first run shaped the devel
 Plan 1 (the offline core engine), Plan 2 (Nemotron clients with spend caps) and Plan 3 (the evaluation
 harness) are complete. Next: a case pipeline from open transcripts, and a web app (Plan 4).
 
+## Building a case from a transcript
+
+`npm run build-case` turns one published consultation into a draft case and a review sheet:
+
+```bash
+npm run build-case -- data/raw/transcripts/RES0001.txt --id case-res0001
+npm run build-case -- data/raw/primock57/transcripts/day1_consultation01_patient.TextGrid --id case-primock-01
+npm run build-case -- <transcript> --id <id> --draft docs/case-reviews/<id>.draft.json   # rebuild, no model call
+```
+
+The model proposes facts; code decides what survives:
+
+- **Every fact must quote the patient.** The quote has to be in the transcript, word for word, on
+  the line the fact cites, said by the patient. A fact that fails is dropped and named in the
+  sheet. In the four cases built so far this caught an invented symptom, a line taken from the
+  doctor, and two quotes attributed to the wrong line.
+- **Red flags are chosen by code, not by the model,** which filed a painful calf and coughing up
+  blood as ordinary history every time. A short list of wording promotes such a fact to the
+  standard critical item and says so.
+- **Guarded terms are dropped** when the brief already gives them away or when they belong to more
+  than one fact, because either way the output guard could not protect them.
+- **The sheet is the human step.** Each fact sits beside the words it came from, with the line
+  number, so checking needs no medical knowledge: read the transcript, tick or cross. Cases stay
+  `reviewStatus: unreviewed` until a clinician says otherwise, which has not happened.
+
 ## Sources and licences
 
 - **Code:** MIT. See `LICENSE`.
 - **`cases/demo-cough.json`:** written for this repository as synthetic test content. It is not clinical
   material and has not been reviewed by a clinician.
-- **Planned case material:** Fareez et al. 2022, a set of simulated consultation transcripts released under
-  CC0 (figshare article 16550013), and AgentClinic-MedQA (MIT). Neither is in this repository yet.
+- **`cases/case-res0001.json`, `case-msk0001.json`, `case-gas0001.json`:** derived from Fareez et al. 2022,
+  *A dataset of simulated patient-physician medical interviews* (figshare article 16550013), released under
+  **CC0 1.0**. Every fact carries the transcript file, line and the patient's exact words.
+- **`cases/case-primock-01.json`:** derived from **PriMock57** (Papadopoulos Korfiatis et al., Babylon Health,
+  github.com/babylonhealth/primock57), released under **CC BY 4.0**. Facts derived from it are covered by that
+  licence and carry the attribution in their `source` field; the repository's MIT licence covers the code.
+- **Not used:** MIMIC-III/IV and anything derived from them (credentialed access, and the data use agreement
+  forbids sharing derivatives), PMC-Patients (CC BY-NC-SA, incompatible with an MIT tool), MedDialog (no licence
+  granted, and the scraped sites' terms forbid redistribution), and the AgentClinic NEJM subset (NEJM copyright).
+- **The raw datasets are not in this repository.** `data/raw/` is ignored by git; the commands above expect you
+  to download them yourself from the links given here.
+- **AgentClinic-MedQA** (MIT, 214 structured OSCE cases) is a possible third source; nothing from it is here yet.
 - **Planned checking against NHS pages:** NHS website content is Crown copyright under the Open Government
   Licence v3.0, which requires attribution and does not imply NHS endorsement. Any case that quotes it will
   carry that attribution in its `source` field.

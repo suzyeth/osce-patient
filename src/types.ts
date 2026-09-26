@@ -7,7 +7,7 @@ export type FactKind = (typeof FACT_KINDS)[number];
 export type GlobalJudgement = 'Unsatisfactory' | 'Borderline' | 'Satisfactory' | 'Good';
 
 export const SourceSchema = z.object({
-  dataset: z.enum(['fareez2022', 'agentclinic-medqa', 'authored']),
+  dataset: z.enum(['fareez2022', 'primock57', 'agentclinic-medqa', 'authored']),
   /** Where the fact came from, e.g. "RES0001.txt#L12". */
   ref: z.string().min(1),
   /** Verbatim source sentence, or an authoring note for dataset "authored". */
