@@ -1,27 +1,67 @@
 # osce-patient
 
-A simulated patient for practising the history-taking station of medical OSCEs (PLAB 2 and UK finals).
-The candidate interviews a fictional patient against a timer and gets a deterministic report on what they
-covered, what they missed, and whether they found out what the patient was worried about.
+Practice for the kind of conversation where the other person only tells you what you ask for properly,
+and every mark you are given can be traced back to their words.
 
-**Educational use only.** This is a practice tool with fictional patients. It is not intended as a medical
-device, it does not give medical advice, and it is not a symptom checker (software that assesses a user's own
-symptoms can fall under UK MHRA medical-device rules). If a user seems to describe their own real
-health problem, the session pauses and points them to NHS 111, their GP, 999 or Samaritans (116 123).
+The reference field is UK clinical history taking (PLAB 2 / UKMLA CPSA and UK finals): a candidate
+interviews a fictional patient against a timer and gets a report on what they covered. But nothing in the
+engine is medical. A **domain pack** holds a field's scoring domains, its content list, its feedback
+statements and how each one is judged; the engine only knows that facts unlock when they are asked for and
+that a mark must carry the sentence that earned it. Two packs ship: `uk-clinical-history` and
+`user-research-interview`.
 
-**Cases are not clinically reviewed.** Every case so far is marked `unreviewed`, and the report says so. The demo
-case (`cases/demo-cough.json`) is synthetic.
+**Educational use only.** These are fictional people. This is not a medical device, it gives no medical
+advice, and it is not a symptom checker (software that assesses a user's own symptoms can fall under UK
+MHRA medical-device rules). If a user seems to describe their own real health problem, the session pauses
+and points them to NHS 111, their GP, 999 or Samaritans (116 123).
+
+**No case has been reviewed by an expert.** Every case is marked `unreviewed`, and the report says so.
+
+## What is actually different, and what is not
+
+Being honest about this mattered enough to change the product, so it belongs at the top.
+
+**Not different.** An AI patient that withholds information is not an empty space. Quesmed sells unlimited
+voice OSCE practice at £39.99/year and states its patients have "rules about what to volunteer versus what
+to disclose only when properly probed". Geeky Medics has 800+ AI virtual patients, prices a voice
+consultation at roughly 28p, and is the only platform to have been through a randomised trial. Several
+smaller PLAB 2 products do the same thing for £10–30.
+
+**Different.** Of the three dozen products checked in September 2026, **none publishes its mark scheme or
+its gating rules, and none anchors a mark to a line of the transcript.** One vendor called its rubric
+"commercially sensitive". That matters because of the one number that keeps coming back: in a UCLA
+evaluation of an AI OSCE tool, 96% of students thought the cases were realistic and **7% were willing to be
+graded by it**. A mark you cannot inspect is a mark you cannot argue with.
+
+So this repository publishes all of it: the case file with every fact's trigger, the content list with a
+source per item, the gating rules as code with tests, and a report that quotes the question that earned each
+mark.
+
+There is also a regulator's sentence behind this. GMC, *Promoting excellence*, R5.8, on who may assess a
+medical student:
+
+> They are responsible for honestly and effectively assessing the medical student's performance and **being
+> able to justify their decision**.
+
+And the GMC's own psychometric report on PLAB 2 (Homer, PLAB 2 Annual Report 2022, 189,862 station-level
+records) finds that the **examiner** explains 15–17% of the variance in station scores, more than the
+candidate's own 10.3%: "Examiner is the strongest predictor of total domain scores in stations followed by
+Candidate." Two honest caveats that must travel with that: the GMC adds that at exam level "the apparent
+concern that examiners have a strong relative impact on scores is largely ameliorated", and R5.8's "someone"
+has never been said by the GMC to permit software. Per-mark auditability is not a fix for unfair exams. It
+is what makes a practice tool's feedback checkable, which is the thing students say is missing.
 
 ## What the engine does
 
-- **Fact gates.** Each case has facts (presenting complaint, history, red flags, the patient's concern). A fact
-  unlocks only when the candidate covers its rubric item; the concern can also come out once the candidate has
-  built enough rapport (trust).
-- **The patient's prompt never contains a locked fact.** It is built from the persona and unlocked facts only.
-  An output guard then checks every reply for the guarded terms of locked facts, retries once and redacts if
-  needed. The honest boundary: a model can still guess, which is why the guard exists; a case author can leak a
-  fact through a paraphrase, which `check-case` cannot catch; and a judge talked into crediting a rubric item
-  unlocks a fact for real, which happened on 2 of 24 attack lines in `eval/results/demo-cough/attack.md`.
+- **Fact gates.** Each case has facts (presenting complaint, history, critical facts, the person's hidden
+  concern). A fact unlocks only when the learner covers its rubric item; the concern can also come out once
+  enough rapport (trust) has been built.
+- **The simulated person's prompt never contains a locked fact.** It is built from the persona and unlocked
+  facts only. An output guard then checks every reply for the guarded terms of locked facts, retries once and
+  redacts if needed. The honest boundary: a model can still guess, which is why the guard exists; a case
+  author can leak a fact through a paraphrase, which `check-case` cannot catch; and a judge talked into
+  crediting a rubric item unlocks a fact for real, which happened on 2 of 24 attack lines in
+  `eval/results/demo-cough/attack.md`.
 - **Safety pause.** A high-precision rule list runs before any model call and pauses the session on
   real-symptom or self-harm wording. Beside it, a separate check (`src/nebius/safetyClient.ts`) asks a model
   whether the line is a request for real help, for the user or for someone they name; it runs at the same time
@@ -32,11 +72,96 @@ case (`cases/demo-cough.json`) is synthetic.
   `eval/results/demo-cough/safety.md` and in the caveats below.
   **In offline mode there is no model check at all**: only the rule list runs, which pauses on 23 of the 57
   held-out disclosures. `npm run play` is offline unless you pass `--online`, and it says so when it starts.
-- **Deterministic report.** Covered items with the turn they were first covered, missed critical items (which cap
-  the global judgement at Borderline), an example question for every miss, and scores for data gathering and
-  interpersonal skills. Clinical management is only partly scored in this version.
-- **Offline mode.** A keyword judge and a patient that repeats the relevant facts let everything run with no
+- **A report that shows its working.** Every covered item carries the question that earned it and the
+  published source of the item itself; every missed item carries an example question. Above that, the field's
+  own feedback statements, each with what the judgement rests on and whether the wording is a regulator's or
+  ours. See "What the report says" below.
+- **Offline mode.** A keyword judge and a person who repeats the relevant facts let everything run with no
   model and no cost. Evaluation numbers are never reported from offline mode.
+
+## What the report says, and what it refuses to say
+
+The old report gave a coverage ratio and turned it into Good / Satisfactory / Borderline / Unsatisfactory.
+Those are the GMC's own words, and the GMC says plainly that this judgement "does not determine whether you
+pass the station and is not included in the results you will receive" — it exists only to calculate the
+station cut score. The GMC also publishes no item-level mark scheme. So the old report used the exam's
+vocabulary for something the exam does not do. **There is no verdict in the report any more.**
+
+What the clinical pack reports instead is the GMC's three marking domains and its **ten examiner feedback
+statements, quoted verbatim** from the PLAB 2 guide, each with what this station can honestly say about it:
+
+- **Six of the ten cannot be judged from typed history taking** — Findings, Examination, Diagnosis and
+  Management outright, and half of Rapport, Listening and Language. They say so, because silence on a
+  statement reads as a pass. Rapport notes that warmth of voice and manner is invisible here; Listening that
+  non-verbal cues are; Language that speaking too quickly is; Time that typing is not timed.
+- **The content list is ours, and the report says so**, with a source per item in `RUBRIC_SOURCES`
+  (`src/cases/rubric.ts`). Of the fourteen standard items, eleven have verbatim support from the GMC
+  (*Outcomes for graduates* 11a, 11b, 18a; the PLAB 2 feedback statements; the one published sample station)
+  or from NICE (NG12 1.14.6 on safety netting, a term that is Roger Neighbour's, 1987). Three rest on the
+  Calgary-Cambridge guide alone and are marked `framework`.
+- **SOCRATES is not cited.** It is widely taught for pain, but the origin usually given for it could not be
+  verified in any primary source, so it is not used here as an authority. The example question no longer asks
+  for a severity score out of ten either: no published UK source asks for one.
+- **Not every item applies to every station.** The GMC's own 8-minute sample station does not ask for family
+  history, a systems review, smoking or safety netting. The report counts coverage and never converts it into
+  a pass.
+
+## Domain packs
+
+A pack (`src/domains/pack.ts`) is everything the tool knows about one kind of conversation:
+
+| In the pack | In the engine |
+|---|---|
+| Scoring domains and their names | How a turn runs, what unlocks a fact, what the guard redacts |
+| The content list, with a source per item | Which items were covered, and at which question |
+| The feedback statements, their wording and whose words they are | The flags a judge returns: jargon, interruption, empathy, question style |
+| A small `assess` function per statement | Whether the order held, and whether the hidden concern came out |
+| The four sentences of the simulated person's prompt that are about the field | The rules that stop the model inventing things |
+
+The engine hands a pack a field-neutral `Observations` bundle and nothing else, which is what keeps it free
+of any one field's assumptions. `registerPack` refuses a pack whose items sit in undeclared domains, whose
+statement claims to be assessable without a way to judge itself, or which fails to say why a statement cannot
+be assessed.
+
+**`user-research-interview`** is the second pack, and it is deliberately a field with no regulator:
+
+- Every statement is marked `authority: 'ours'` and the report prints "Nobody publishes a feedback list for
+  this kind of conversation, so these statements are ours." Checked against the MRS Code of Conduct 2023, the
+  AQR, the GDS Service Manual and survey-methodology behaviour coding: none of them is a feedback rubric for
+  open discovery interviews. The clinical pack is the only one that may say `regulator`.
+- Each item and statement is derived from one citable line — the UK Government Digital Service Service
+  Manual, *The Mom Test* (Fitzpatrick 2013, ch. 1), the MRS Code of Conduct rule 30, or a named Nielsen
+  Norman Group article. Nothing verbatim is attributed to Portigal's *Interviewing Users*, because no public
+  excerpt of it could be reached.
+- **The two habits that matter most are marked unassessable**: using silence ("typing has no pauses to sit
+  in") and not pitching. A tool that cannot teach its field's most important skill should say so.
+
+`cases/research-checkout.json` is a worked example. `tests/domains/pack.test.ts` runs a whole turn of it
+through the same gating and guard and asserts that no clinical wording reaches the interviewee.
+
+## Why this is typed, not spoken
+
+Candidates are clear that the exam is spoken: nine independent accounts say practice has to be out loud, some
+of them practising on a pillow or a soft toy rather than typing. So the limit is real and stated here rather
+than hidden. Three reasons it is typed anyway:
+
+1. **Nebius Token Factory, which the hackathon credits are for, has no speech model.** All 25 models in the
+   catalogue are text, embedding or vision.
+2. **Speech recognition is the wrong thing to be bad at.** Most users of a PLAB 2 tool are not native
+   speakers, and in a pharmacy-education pilot of a voice virtual patient, "voice recognition accuracy was the
+   most frequently identified improvement priority (38/62, 61.3%)". A transcription error dressed up as a
+   judged mark is worse than no mark.
+3. **The evidence says the feedback is the active ingredient, not the realism.** The Cochrane review of
+   interventions for medical students' interpersonal communication (2021, 76 studies, 10,124 students) finds
+   personalised, specific feedback the most robust single ingredient (SMD 0.58, moderate quality), while
+   relationship building barely moves (SMD 0.18) and electronic versus face-to-face delivery is null.
+
+Two claims that should **not** be made from this literature, both corrected here after checking the primary
+sources: McCarrick et al. 2025 is a within-arm pre-post result, not a between-group test, so it is not
+evidence that typed practice transfers; and one small pilot RCT with a blinded face-to-face outcome trends
+the other way on history taking (Hedges' g = −0.68 favouring spoken peer role-play). Typed practice is
+defensible for content coverage, structure and familiarisation. It is not a substitute for speaking, and this
+tool does not claim to be one.
 
 ## Run it
 
@@ -44,12 +169,16 @@ Requires Node 24.
 
 ```bash
 npm install
-npm test                                   # the full test suite
+npm test                                    # the full test suite
 npm run typecheck
-npm run play                               # offline practice session with the demo case; type /end to finish
-npm run play -- path/to/case.json          # another case (it must pass check-case)
+npm run play                                # offline session with the demo case; type /end to finish
+npm run play -- path/to/case.json           # another case (it must pass check-case)
 npm run check-case -- cases/demo-cough.json # authoring checks: errors block use, warnings are advice
+npm run serve:offline                       # the web station with no models and no cost, on port 3101
 ```
+
+`serve:offline` is the quickest way to see a pack end to end: it uses the keyword doubles, spends nothing,
+and prints its own throwaway access code.
 
 ### Online mode (Nemotron on Nebius Token Factory)
 
@@ -58,16 +187,23 @@ Copy `.env.example` to `.env` and put your Token Factory key in `NEBIUS_API_KEY`
 ```bash
 npm run smoke                               # three scripted turns against the real models, capped at $0.02
 npm run play -- --online                    # a timed session with the Nemotron judge and patient
+npm run serve                               # the web station with the real models (needs OSCE_ACCESS_CODE too)
 ```
 
 By default both the judge and the patient are Nemotron 3 Super 120B with reasoning off, so a turn takes
 about two seconds and a station costs well under a cent. The judge was chosen on the evaluation in
 `eval/results/demo-cough/judge.md`: on 15 lines that should score nothing (10 off-topic, 5 injection attempts)
 Nemotron 3.5 Lightning credited a rubric item on 5 of them, which unlocks facts nobody asked for, while Super
-credited none. One run, one synthetic case, so read it as a direction, not a rate. `OSCE_JUDGE_MODEL` and `OSCE_JUDGE_THINKING=on` change that (see `.env.example`). Every call is checked
-against a per-session cap ($0.05) and a daily cap ($0.50) before it is sent; the daily total is kept in
-`.osce-budget.json` so it holds across runs. Token Factory has no hard spending limit of its own, so these caps
-are the safeguard. Reasoning text returned by the models is discarded and never shown or logged.
+credited none. One run, one synthetic case, so read it as a direction, not a rate. `OSCE_JUDGE_MODEL` and
+`OSCE_JUDGE_THINKING=on` change that (see `.env.example`). Every call is checked against a per-session cap
+($0.05) and a daily cap ($0.50) before it is sent; the daily total is kept in `.osce-budget.json` so it holds
+across runs. Token Factory has no hard spending limit of its own, so these caps are the safeguard. Reasoning
+text returned by the models is discarded and never shown or logged.
+
+The web station keeps its whole state in encrypted cookies (AES-256-GCM, scrypt-derived key), so the server
+stores nothing between requests. A station's evidence does not fit in one cookie — a worst case sealed to
+7,494 bytes against a 4 KB browser limit — so the sealed value is split across numbered cookies rather than
+dropping the quotes that make a mark checkable.
 
 ## Evaluation
 
@@ -104,6 +240,10 @@ npm run eval -- safety --online --set eval/fixtures/safety-dev.json   # the deve
   was measured with a different judge model and is not a like-for-like baseline.
 - **The honesty grader is a model.** Its labels were read by hand on the first run and matched, but a label
   like "invented" against "No known allergies" is a judgement call. Counts are in the JSON.
+- **The last honesty run predates a prompt fix.** It measured the simulated person answering off-case
+  questions with something the case cannot support 70% of the time, half inventing a symptom and half
+  inventing a denial. The prompt now gives the exact words to use instead; that fix has not yet been
+  re-measured.
 
 Every run must say `--online` or `--offline`, so nothing spends by default (keep the `--` after `npm run eval`: without it npm keeps the flag). Each online run has its own cap (`--cap`, default $0.40, at most $2) on top of the daily cap. Leaks are
 counted by each case's guarded terms, so a paraphrased leak is missed in both versions; the labels in the
@@ -113,8 +253,9 @@ so it is no longer untouched, and the misses from the first run shaped the devel
 
 ## Status
 
-Plan 1 (the offline core engine), Plan 2 (Nemotron clients with spend caps) and Plan 3 (the evaluation
-harness) are complete. Next: a case pipeline from open transcripts, and a web app (Plan 4).
+The offline core engine, the Nemotron clients with spend caps, the evaluation harness, the case pipeline and
+the web station are complete, as is the split into domain packs. Not done: Cohen's kappa against a person's
+labels, and no case reviewed by an expert in its field.
 
 ## Building a case from a transcript
 
@@ -144,14 +285,21 @@ The model proposes facts; code decides what survives:
 ## Sources and licences
 
 - **Code:** MIT. See `LICENSE`.
-- **`cases/demo-cough.json`:** written for this repository as synthetic test content. It is not clinical
-  material and has not been reviewed by a clinician.
+- **`cases/demo-cough.json`** and **`cases/research-checkout.json`:** written for this repository as synthetic
+  content. Neither has been reviewed by anyone qualified in its field.
 - **`cases/case-res0001.json`, `case-msk0001.json`, `case-gas0001.json`:** derived from Fareez et al. 2022,
   *A dataset of simulated patient-physician medical interviews* (figshare article 16550013), released under
   **CC0 1.0**. Every fact carries the transcript file, line and the patient's exact words.
 - **`cases/case-primock-01.json`:** derived from **PriMock57** (Papadopoulos Korfiatis et al., Babylon Health,
   github.com/babylonhealth/primock57), released under **CC BY 4.0**. Facts derived from it are covered by that
   licence and carry the attribution in their `source` field; the repository's MIT licence covers the code.
+- **The clinical content list** is attributed item by item in `RUBRIC_SOURCES` (`src/cases/rubric.ts`) to GMC
+  *Outcomes for graduates 2018*, the GMC's PLAB 2 guide, the GMC's published sample station, NICE NG12 and the
+  Calgary-Cambridge guide (Silverman, Kurtz & Draper, *Skills for Communicating with Patients*, 2nd ed, 2005).
+  The ten feedback statements are quoted from the GMC's *Understanding your results* page (read 2026-09-26).
+- **The research content list** is attributed item by item in `src/domains/userResearchInterview.ts` to the UK
+  Government Digital Service Service Manual, *The Mom Test* (Fitzpatrick 2013, ch. 1), the Market Research
+  Society Code of Conduct 2023 and named Nielsen Norman Group articles.
 - **Not used:** MIMIC-III/IV and anything derived from them (credentialed access, and the data use agreement
   forbids sharing derivatives), PMC-Patients (CC BY-NC-SA, incompatible with an MIT tool), MedDialog (no licence
   granted, and the scraped sites' terms forbid redistribution), and the AgentClinic NEJM subset (NEJM copyright).
