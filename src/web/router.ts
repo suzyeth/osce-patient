@@ -160,9 +160,25 @@ async function report(request: Request, deps: WebDeps): Promise<Response> {
   );
 }
 
+/**
+ * What a visitor may choose from. Only the station's framing: never a fact, never the rubric,
+ * and never the persona, which the patient model reads but the candidate should not.
+ */
+function cases(deps: WebDeps): Response {
+  const list = Object.values(deps.cases).map((c) => ({
+    id: c.id,
+    title: c.title,
+    brief: c.candidateBrief,
+    minutes: Math.round(c.durationSeconds / 60),
+    reviewStatus: c.reviewStatus,
+  }));
+  return json({ cases: list.sort((a, b) => a.id.localeCompare(b.id)) });
+}
+
 /** The whole API. Anything not listed is a 404, including GET on a POST route. */
 export async function handleApi(request: Request, deps: WebDeps): Promise<Response> {
   const path = new URL(request.url).pathname;
+  if (request.method === 'GET' && path === '/api/cases') return cases(deps);
   if (request.method === 'POST' && path === '/api/start') return start(request, deps);
   if (request.method === 'POST' && path === '/api/turn') return turn(request, deps);
   if (request.method === 'POST' && path === '/api/report') return report(request, deps);

@@ -138,6 +138,16 @@ describe('POST /api/report and GET /api/sample', () => {
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
   });
 
+  it('lists the cases a visitor may choose, with nothing they should not see yet', async () => {
+    const response = await handleApi(new Request('https://example.test/api/cases'), deps());
+    const payload = (await response.json()) as { cases: Array<Record<string, unknown>> };
+    expect(payload.cases).toEqual([{ id: c.id, title: c.title, brief: c.candidateBrief, minutes: 8, reviewStatus: 'unreviewed' }]);
+    const raw = JSON.stringify(payload);
+    for (const fact of c.facts) expect(raw).not.toContain(fact.text);
+    expect(raw).not.toContain(c.patient.persona);
+    for (const item of c.rubric) expect(raw).not.toContain(item.label);
+  });
+
   it('serves the sample report without a code', async () => {
     const response = await handleApi(new Request('https://example.test/api/sample'), deps());
     expect(response.status).toBe(200);

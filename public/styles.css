@@ -98,6 +98,15 @@ button[disabled] { opacity: 0.55; cursor: not-allowed; }
 .log .paused { background: color-mix(in srgb, var(--warn) 14%, transparent); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
 .log .who { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 2px; }
 
+.cases { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 16px 0 0; }
+.cases legend { color: var(--muted); font-size: 0.85rem; padding: 0 6px; }
+.cases label { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border-radius: 8px; cursor: pointer; color: var(--text); }
+.cases label:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.cases input { margin-top: 4px; }
+.cases .title { font-weight: 600; }
+.cases .brief { display: block; color: var(--muted); font-size: 0.88rem; margin: 2px 0 0; max-width: none; }
+.cases .tag { font-size: 0.75rem; color: var(--warn); }
+
 .scores { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
 .score { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 150px; }
 .score b { display: block; font-size: 1.3rem; }

@@ -51,17 +51,43 @@ function error(element, message) {
   element.hidden = !message;
 }
 
+/** The stations on offer. Chosen before the code, so a visitor can see what is there. */
+async function loadCases() {
+  const { ok, data } = await api('/api/cases');
+  const box = $('caseChoice');
+  if (!ok || !data.cases?.length) {
+    $('casesLoading').textContent = 'No stations are available right now.';
+    return;
+  }
+  box.replaceChildren(Object.assign(document.createElement('legend'), { textContent: 'Choose a station' }));
+  for (const [index, station] of data.cases.entries()) {
+    const label = document.createElement('label');
+    const radio = Object.assign(document.createElement('input'), { type: 'radio', name: 'caseId', value: station.id, checked: index === 0 });
+    const body = document.createElement('span');
+    body.append(Object.assign(document.createElement('span'), { className: 'title', textContent: `${station.title} (${station.minutes} min)` }));
+    body.append(Object.assign(document.createElement('span'), { className: 'brief', textContent: station.brief }));
+    if (station.reviewStatus !== 'reviewed') {
+      body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: 'not clinically reviewed' }));
+    }
+    label.append(radio, body);
+    box.append(label);
+  }
+}
+
+const chosenCase = () => document.querySelector('input[name="caseId"]:checked')?.value;
+
 $('startForm').addEventListener('submit', async (event) => {
   event.preventDefault();
   error($('gateError'), '');
   $('startButton').disabled = true;
-  const { ok, data } = await api('/api/start', { code: $('code').value });
+  const { ok, data } = await api('/api/start', { code: $('code').value, caseId: chosenCase() });
   $('startButton').disabled = false;
   if (!ok) {
     error($('gateError'), data.error ?? 'Could not start.');
     return;
   }
   $('brief').textContent = data.brief;
+  $('brief').dataset.patient = data.patientName;
   $('turns').textContent = `up to ${data.maxTurns} questions`;
   $('log').replaceChildren();
   say(data.patientName, data.openingLine, 'patient');
@@ -156,6 +182,8 @@ $('again').addEventListener('click', () => {
   show(gate);
   $('code').focus();
 });
+void loadCases();
+
 $('sampleButton').addEventListener('click', async () => {
   const { ok, data } = await api('/api/sample');
   if (!ok) {
