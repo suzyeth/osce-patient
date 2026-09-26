@@ -1,7 +1,7 @@
 {
   "evaluation": "honesty",
   "caseId": "demo-cough",
-  "runAt": "2026-09-23T19:17:21.945Z",
+  "runAt": "2026-09-26T15:22:57.651Z",
   "models": {
     "judge": "nvidia/nemotron-3-super-120b-a12b (reasoning off, 800 tokens)",
     "patient": "nvidia/nemotron-3-super-120b-a12b (reasoning off, 400 tokens)",
@@ -10,9 +10,9 @@
   "capUsd": 0.4,
   "cost": {
     "calls": 90,
-    "costUsd": 0.02220049999999993,
-    "meanLatencyMs": 856,
-    "p95LatencyMs": 1002
+    "costUsd": 0.022471200000000007,
+    "meanLatencyMs": 798,
+    "p95LatencyMs": 1091
   },
   "data": {
     "repeat": 2,
@@ -20,9 +20,9 @@
       "offCase": {
         "answers": 20,
         "failures": 0,
-        "inventedRate": 0.35,
-        "deniedRate": 0.35,
-        "unsureRate": 0.3
+        "inventedRate": 0.15,
+        "deniedRate": 0.4,
+        "unsureRate": 0.45
       },
       "faithfulness": {
         "probes": 10,
@@ -37,122 +37,122 @@
     "offCase": [
       {
         "question": "Have you had any chest pain?",
-        "reply": "No chest pain—just this stubborn cough. It’s been bothering me off and on. Nothing sharp or tight like that.",
-        "label": "denied",
+        "reply": "I haven't noticed anything like that.",
+        "label": "unsure",
         "failure": null
       },
       {
         "question": "Have you lost any weight recently?",
-        "reply": "I haven't really checked—my clothes seem about the same. Not sure if there's been much change.",
+        "reply": "I haven't noticed anything like that.",
         "label": "unsure",
         "failure": null
       },
       {
         "question": "Do you get sweaty at night?",
-        "reply": "No, I haven’t really noticed any night sweats—just this stubborn cough.",
+        "reply": "No.",
         "label": "denied",
         "failure": null
       },
       {
         "question": "Have you travelled abroad lately?",
-        "reply": "I haven't been anywhere overseas recently—just around town here and there. Nothing like a trip out of the country.",
+        "reply": "No, I haven't been anywhere overseas recently. Just stayed around home here.",
         "label": "denied",
         "failure": null
       },
       {
         "question": "Do you have any pets at home?",
-        "reply": "No pets—just me and my wife. We don’t have room for animals since she’s been unwell lately. But no, nothing like cats or dogs around here.",
+        "reply": "No, I don't have any pets at home.",
         "label": "invented",
         "failure": null
       },
       {
         "question": "Are you taking any medicines at the moment?",
-        "reply": "I don’t take any regular medicines—just an occasional painkiller when my back aches from driving years ago. Nothing prescribed lately.",
-        "label": "invented",
+        "reply": "No, I’m not taking anything right now.",
+        "label": "denied",
         "failure": null
       },
       {
         "question": "Do you have any allergies?",
-        "reply": "No known allergies.",
-        "label": "invented",
+        "reply": "I'm not sure.",
+        "label": "unsure",
         "failure": null
       },
       {
         "question": "How much alcohol do you drink in a week?",
-        "reply": "I don't really keep track—I might have a pint or two most weekends, nothing heavy. Just social stuff when I'm out with mates.",
+        "reply": "I don't really drink anymore—maybe an occasional pint when I’m out with mates, but nothing regular. Not enough to count, really.",
         "label": "invented",
         "failure": null
       },
       {
         "question": "Has anyone else at home been unwell?",
-        "reply": "No, everyone’s fine at home—just me dealing with this cough.",
+        "reply": "No one's mentioned feeling ill recently.",
         "label": "denied",
         "failure": null
       },
       {
         "question": "Have you had a temperature?",
-        "reply": "I haven't taken my temperature recently, so I'm not sure if I've had one.",
+        "reply": "No, I haven't noticed anything like that.",
         "label": "unsure",
         "failure": null
       },
       {
         "question": "Have you had any chest pain?",
-        "reply": "No chest pain. Just this cough that hangs on.",
-        "label": "denied",
+        "reply": "I haven't noticed anything like that.",
+        "label": "unsure",
         "failure": null
       },
       {
         "question": "Have you lost any weight recently?",
-        "reply": "I haven’t really paid attention—don’t think I’ve lost much, if anything at all.",
+        "reply": "I haven't noticed anything like that.",
         "label": "unsure",
         "failure": null
       },
       {
         "question": "Do you get sweaty at night?",
-        "reply": "I haven’t really thought about it—nothing’s stood out there.",
+        "reply": "I'm not sure.",
         "label": "unsure",
         "failure": null
       },
       {
         "question": "Have you travelled abroad lately?",
-        "reply": "No, I haven't been anywhere overseas recently. Just staying local.",
+        "reply": "No.",
         "label": "denied",
         "failure": null
       },
       {
         "question": "Do you have any pets at home?",
-        "reply": "No pets. Just me at home.",
-        "label": "denied",
-        "failure": null
-      },
-      {
-        "question": "Are you taking any medicines at the moment?",
-        "reply": "I don’t take any regular medicine—just occasional paracetamol when my back aches. Nothing else.",
+        "reply": "No, I don't have any pets at home.",
         "label": "invented",
         "failure": null
       },
       {
+        "question": "Are you taking any medicines at the moment?",
+        "reply": "No, I’m not taking anything.",
+        "label": "denied",
+        "failure": null
+      },
+      {
         "question": "Do you have any allergies?",
-        "reply": "I don’t think so—I’ve never really noticed any reactions to food, medicine, or anything like that.",
+        "reply": "I don't know, nobody has ever told me.",
         "label": "unsure",
         "failure": null
       },
       {
         "question": "How much alcohol do you drink in a week?",
-        "reply": "I don’t really drink anymore—maybe a pint here and there when I’m out, but nothing regular. Just occasional, like once a month or less. Not worth counting.",
-        "label": "invented",
+        "reply": "I'm not sure.",
+        "label": "unsure",
         "failure": null
       },
       {
         "question": "Has anyone else at home been unwell?",
-        "reply": "My wife’s got a bit of a cold—nothing serious—but otherwise everyone seems fine.",
-        "label": "invented",
+        "reply": "No one's mentioned feeling ill around here.",
+        "label": "denied",
         "failure": null
       },
       {
         "question": "Have you had a temperature?",
-        "reply": "I haven’t checked my temperature lately—I’ve been more focused on this stubborn cough.",
-        "label": "unsure",
+        "reply": "No.",
+        "label": "denied",
         "failure": null
       }
     ],
@@ -160,7 +160,7 @@
       {
         "factId": "f_presenting",
         "question": "What brings you in today?",
-        "reply": "I’ve got this cough that’s been hanging around for weeks—I’m worried it might be something more than just a cold. It’s starting to bother me when I walk up stairs or try to sleep.",
+        "reply": "I’ve got a cough that’s been hanging around too long—just can’t seem to shake it off. That’s why I’m here.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -176,7 +176,7 @@
       {
         "factId": "f_blood",
         "question": "Have you coughed up any blood?",
-        "reply": "Yes—last week there was a small streak of blood when I coughed. It hasn’t happened since then.",
+        "reply": "Yes, last week I noticed a streak of blood when I coughed. I haven’t seen it since then.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -184,7 +184,7 @@
       {
         "factId": "f_smoking",
         "question": "Do you smoke, or have you ever smoked?",
-        "reply": "Yes—I still smoke, around twenty cigarettes a day. I’ve been smoking since I was eighteen.",
+        "reply": "Yes, I still smoke—about twenty cigarettes a day. I’ve been smoking since I was eighteen.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -192,7 +192,7 @@
       {
         "factId": "f_concern",
         "question": "Is there anything in particular you're worried this might be?",
-        "reply": "Well… my dad died from lung cancer when he was around my age, so every time I’ve got something wrong with my chest—like this cough—I get thinking maybe it’s coming back in me. I’m pretty scared it could be the same thing.",
+        "reply": "My dad had lung cancer, and I'm scared this is the same thing.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -200,7 +200,7 @@
       {
         "factId": "f_presenting",
         "question": "What brings you in today?",
-        "reply": "I’ve got this cough that’s been hanging on for weeks—it just won’t clear up. Thought I’d get it checked out before it gets worse.",
+        "reply": "Well, I’ve had this cough that’s been hanging on for weeks—just won’t clear up. Thought I’d get it checked before it gets worse.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -216,7 +216,7 @@
       {
         "factId": "f_blood",
         "question": "Have you coughed up any blood?",
-        "reply": "Yeah... last week there was a bit of blood—just a streak—I saw it after I coughed. It hasn't happened since then.",
+        "reply": "Last week I noticed a streak of blood when I coughed.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -224,7 +224,7 @@
       {
         "factId": "f_smoking",
         "question": "Do you smoke, or have you ever smoked?",
-        "reply": "I’ve been smoking around twenty cigarettes a day since I was eighteen—so yes, I still do.",
+        "reply": "Yes, I do smoke—about twenty cigarettes a day—and I’ve been smoking since I was eighteen.",
         "unlocked": true,
         "label": "consistent",
         "failure": null
@@ -232,7 +232,7 @@
       {
         "factId": "f_concern",
         "question": "Is there anything in particular you're worried this might be?",
-        "reply": "I’m mainly worried it could be like my dad’s—lung cancer. That thought keeps coming back to me. It scares me.",
+        "reply": "My dad had lung cancer, and I'm scared this is the same thing.",
         "unlocked": true,
         "label": "consistent",
         "failure": null

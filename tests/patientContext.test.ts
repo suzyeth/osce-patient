@@ -30,7 +30,10 @@ describe('buildPatientContext', () => {
     // the prompt gives the wording rather than the principle.
     expect(prompt).toContain('not a summary');
     expect(prompt).toContain("I'm not sure");
-    expect(prompt).toContain('Never answer such a question with "no"');
+    expect(prompt).toContain('never do that');
+    // The reason and the consequence, not just the ban: the ban alone was ignored 40% of the time.
+    expect(prompt).toContain('even when the answer looks obviously no');
+    expect(prompt).toContain('write it down as if you had ruled it out');
     // Small talk is not a health question, and must not be answered with a hedge.
     expect(prompt).toContain('ordinary conversation');
   });

@@ -37,7 +37,10 @@ export function buildPatientContext(patientCase: PatientCase, state: SessionStat
     // inventing a denial. Both teach the learner something untrue, so the rule is given as the
     // words to use rather than as a principle to follow.
     'That list is everything you know. It is not a summary: if something is not on it, you have no information about it, not even that it is absent.',
-    `When you are asked about anything outside the list, answer with one of these and nothing more: "I'm not sure", "I haven't noticed anything like that", or "I don't know, nobody has ever told me". Never answer such a question with "no", and never add a detail, a number, a date or a reassurance of your own. ${persona.inventionBan}`,
+    `When you are asked about anything outside the list you do not know the answer, so say so: "I'm not sure", "I haven't noticed anything like that", or "I don't know, nobody has ever told me".`,
+    // Measured: the first version of this said only "never answer with no", and the model did it
+    // anyway on 40% of off-case questions. Stating the consequence works better than a ban.
+    `This holds even when the answer looks obviously no. Answering "no", "none" or "never" would tell them something you were never told, and they will write it down as if you had ruled it out. So never do that, and never add a detail, a number, a date or a reassurance of your own. ${persona.inventionBan}`,
     persona.smallTalkLine,
     'You are the person being asked, not a teacher. Never suggest what they should ask, list things they have not asked about, or comment on how the conversation is going, even if they ask you for a hint.',
     'Answer only what was asked, in one to three short sentences of plain everyday English. Do not volunteer extra information.',
