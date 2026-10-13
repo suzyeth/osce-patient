@@ -142,6 +142,29 @@ describe('the transcript in the cookie', () => {
   });
 });
 
+describe('the derived key', () => {
+  it('derives once per secret, so a turn does not pay for scrypt twice', () => {
+    // scrypt's cost is there to make guessing the secret expensive; paying it again for the same
+    // secret buys nothing. Measured before this was cached: 45 ms of CPU a turn, all of it scrypt.
+    const stored = toStored('demo-cough', 1, state, [], 0);
+    sealSession(stored, SECRET);
+    const start = process.hrtime.bigint();
+    for (let i = 0; i < 50; i++) openSession(sealSession(stored, SECRET), SECRET);
+    const perTurn = Number(process.hrtime.bigint() - start) / 1e6 / 50;
+    // A single scrypt at these parameters is over 20 ms, so this fails loudly if the cache goes.
+    expect(perTurn).toBeLessThan(5);
+  });
+
+  it('still refuses a secret too short to derive from', () => {
+    expect(() => sealSession(toStored('demo-cough', 1, state, [], 0), 'short')).toThrow(SessionCookieError);
+  });
+
+  it('gives different secrets different keys, so one cannot open the other', () => {
+    const cookie = sealSession(toStored('demo-cough', 1, state, [], 0), SECRET);
+    expect(() => openSession(cookie, OTHER)).toThrow(SessionCookieError);
+  });
+});
+
 describe('splitting the cookie', () => {
   it('needs no split for a short session and leaves it byte for byte the same', () => {
     const cookie = sealSession(toStored('demo-cough', 1, state, [], 0), SECRET);

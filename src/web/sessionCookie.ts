@@ -124,10 +124,24 @@ function toTurnRecord(x: StoredTurn): TurnRecord {
   };
 }
 
-/** A key derived once per secret; scrypt is deliberate about the cost of a guessed secret. */
+/**
+ * The key for a secret, derived once and kept.
+ *
+ * scrypt is deliberately slow, and that slowness is there to make guessing the secret expensive.
+ * Re-deriving the same key from the same secret on every request buys none of that and costs all of
+ * it: measured, sealing and opening a cookie took 45 ms of CPU a turn, every millisecond of it
+ * scrypt, because each call derived the key again. The secret is already in this process's memory,
+ * so holding the key beside it exposes nothing new.
+ */
+const KEYS = new Map<string, Buffer>();
+
 function keyFor(secret: string): Buffer {
   if (secret.length < 16) throw new SessionCookieError('the session secret must be at least 16 characters');
-  return scryptSync(secret, 'osce-session-v1', 32);
+  const known = KEYS.get(secret);
+  if (known !== undefined) return known;
+  const derived = scryptSync(secret, 'osce-session-v1', 32);
+  KEYS.set(secret, derived);
+  return derived;
 }
 
 export function toStored(caseId: string, startedAt: number, state: SessionState, history: readonly ConversationTurn[], spentUsd: number): StoredSession {
