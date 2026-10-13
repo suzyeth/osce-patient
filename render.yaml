@@ -1,0 +1,40 @@
+# Render blueprint. Nothing secret is in here: the two secrets are marked sync: false, so Render
+# asks for them once in the dashboard and keeps them out of the repository and out of git history.
+#
+# The free plan sleeps after 15 minutes without traffic and takes about a minute to wake, showing a
+# loading page. A free external cron (cron-job.org) pings /healthz every 10 minutes between 07:00
+# and 01:00 UK, which keeps it awake for the hours a judge is likely to visit and uses about 558 of
+# the 750 free instance hours a month. Do not use GitHub Actions for this: a scheduled workflow in a
+# public repository is disabled automatically after 60 days without repository activity.
+services:
+  - type: web
+    name: osce-patient
+    runtime: node
+    plan: free
+    region: frankfurt
+    # --include=dev on purpose: the start command runs through tsx, which is a devDependency, and a
+    # plain npm ci skips devDependencies whenever NODE_ENV is production. Without this the build
+    # succeeds and the service then fails to start, which is the worst way for this to go wrong.
+    buildCommand: npm ci --include=dev
+    startCommand: npm run serve
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # Asked for in the dashboard, never committed.
+      - key: NEBIUS_API_KEY
+        sync: false
+      - key: OSCE_SESSION_SECRET
+        sync: false
+      - key: OSCE_ACCESS_CODE
+        sync: false
+      # What a public URL is allowed to cost. The per-station cap is enforced from the sealed cookie
+      # and survives a restart; the daily total is a file on an ephemeral disk, so it resets on a
+      # deploy or an instance replacement. The access code, not the daily cap, is what actually
+      # bounds the spending: without it a visitor only ever sees the precomputed sample report,
+      # which makes no model call at all.
+      - key: OSCE_WEB_SESSION_BUDGET_USD
+        value: '0.05'
+      - key: OSCE_WEB_DAILY_BUDGET_USD
+        value: '1'
+      - key: OSCE_WEB_MAX_TURNS
+        value: '40'

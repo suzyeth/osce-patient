@@ -281,6 +281,34 @@ stores nothing between requests. A station's evidence does not fit in one cookie
 7,494 bytes against a 4 KB browser limit — so the sealed value is split across numbered cookies rather than
 dropping the quotes that make a mark checkable.
 
+## Deploying it
+
+`render.yaml` is a Render blueprint for the free plan. Nothing secret is in it: the three secrets are
+marked `sync: false`, so Render asks for them once and they stay out of the repository.
+
+```
+NEBIUS_API_KEY        the Token Factory key
+OSCE_SESSION_SECRET   at least 16 characters; seals each station in its cookie
+OSCE_ACCESS_CODE      at least 4 characters; without it a visitor only sees the sample report
+```
+
+The service refuses to start if the secret is too short or the code is missing, so it fails closed
+rather than serving an open station.
+
+Two things about a free plan worth knowing before trusting it:
+
+- **It sleeps after 15 minutes without traffic**, and takes about a minute to wake while showing a
+  loading page. `/healthz` exists for an external cron to knock on: it spends nothing and needs no
+  access code. Pinging it every 10 minutes between 07:00 and 01:00 UK keeps it awake for the hours
+  anyone is likely to visit and uses about 558 of the 750 free instance hours a month. Do not use
+  GitHub Actions for this - a scheduled workflow in a public repository is disabled automatically
+  after 60 days without repository activity.
+- **The daily spend total is a file on an ephemeral disk**, so it resets on a deploy or when the
+  instance is replaced. The per-station cap is enforced from the sealed cookie and does survive. What
+  actually bounds the spending on a public URL is the access code: without it a visitor only ever
+  reaches the sample report, which is played once at startup against the offline doubles and makes no
+  model call at all.
+
 ## Evaluation
 
 `npm run eval` measures the engine against fixed, committed test sets and writes a Markdown table and the

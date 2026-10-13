@@ -174,6 +174,14 @@ const MAX_HEADER_BYTES = 32 * 1024;
 
 createServer({ maxHeaderSize: MAX_HEADER_BYTES }, (req, res) => {
   const path = (req.url ?? '/').split('?')[0] ?? '/';
+  // For the host's health check and for the keep-warm ping. It spends nothing and needs no access
+  // code: a free instance sleeps after 15 minutes of no traffic and takes about a minute to wake, so
+  // something has to knock on the door, and that something must not be able to cost anything.
+  if (path === '/healthz') {
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    res.end(JSON.stringify({ ok: true, cases: Object.keys(all).length, models: nebius !== null || offline }));
+    return;
+  }
   if (!path.startsWith('/api/')) {
     serveFile(path, res);
     return;
