@@ -1,0 +1,186 @@
+{
+  "caseId": "case-res0001",
+  "labelledBy": "TODO: your name, before running the agreement evaluation",
+  "conversations": [
+    {
+      "id": "RES0001.txt-1",
+      "turns": [
+        {
+          "student": "What brings you in today?",
+          "patient": "I so I've just had this pain in my chest for just over a week now and it's caused me to have trouble breathing.",
+          "items": []
+        },
+        {
+          "student": "OK, um how old are you, Jen?",
+          "patient": "Um 52.",
+          "items": []
+        },
+        {
+          "student": "OK when did this pain start? You said a week back?",
+          "patient": "Uh, yeah, just about that I I think maybe 8 days ago.",
+          "items": []
+        },
+        {
+          "student": "OK, and is it a constant pain? Is it always there?",
+          "patient": "Ahh it it is, but it's definitely worse that um, it's the breathing that's been bothering me a lot more. When I take a deep breath that the pain is a lot worse.",
+          "items": []
+        },
+        {
+          "student": "OK, OK um. And when you do get that, get that pain. How long does it last?",
+          "patient": "Um I would say, uh. Around 15-20 minutes. It's it goes away over overtime.",
+          "items": []
+        },
+        {
+          "student": "OK, and the shortness of breath do you have that at rest as well?",
+          "patient": "Uh no if I if I take a break or sit down to rest then I can usually catch my breath. But if even if I'm doing a little bit of exertion like walking a few a few blocks or something like that I'm finding it, I'm I'm short of breath.",
+          "items": []
+        },
+        {
+          "student": "OK um do, did anything trigger this a week back? Any trauma to the chest area? Anything like that?",
+          "patient": "Uh, No, no one else has been sick. I I had a cough about a week ago so I thought it might be a chest infection, but I'm not feverish, so I'm not sure.",
+          "items": []
+        },
+        {
+          "student": "OK, the cough is it still there?",
+          "patient": "Yeah, it's um. I still have a cough.",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "RES0001.txt-2",
+      "turns": [
+        {
+          "student": "OK, and are you coughing up any blood?",
+          "patient": "No, I haven't. I haven't noticed any any blood.",
+          "items": []
+        },
+        {
+          "student": "OK, how about sputum?",
+          "patient": "Um, no sputum.",
+          "items": []
+        },
+        {
+          "student": "No, OK. And do you feel like you're wheezing?",
+          "patient": "Oh no wheezing.",
+          "items": []
+        },
+        {
+          "student": "No wheezing, OK. Um, the shortness of breath 1 to 10, 10 being the worst, the most severe. How bad is your shortness of breath?",
+          "patient": "I would say when I'm exerting myself, it could get up to like a 7 or 8.",
+          "items": []
+        },
+        {
+          "student": "OK, and you mentioned how, how far can you walk before you need to rest.",
+          "patient": "I I would say maybe 100 meters. But before I was able to run uh like I was running a few days per week so. So this is not like me.",
+          "items": []
+        },
+        {
+          "student": "OK and the chest pain. Is it sharp or is a dull crampy? What does it feel like?",
+          "patient": "I say it's sharp.",
+          "items": []
+        },
+        {
+          "student": "OK, have you ever experienced this before?",
+          "patient": "No, nothing like like this before at all. I I have never had any, any problems like this before?",
+          "items": []
+        },
+        {
+          "student": "OK um, and has it changed since it started a week back or has have your symptoms been pretty much the same?",
+          "patient": "They've been pretty much the the the same.",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "RES0001.txt-3",
+      "turns": [
+        {
+          "student": "OK, OK Um, do you have anything like COPD, Congestive heart failure, anything like that?",
+          "patient": "No, I've never had any heart problems, uh in the past. I've been healthy up to this point though, nothing I see a doctor regularly for.",
+          "items": []
+        },
+        {
+          "student": "OK, OK. This you mentioned, no fevers, no chills. And no night sweats too I guess?",
+          "patient": "Yeah, no night sweats.",
+          "items": []
+        },
+        {
+          "student": "OK, and how about weight loss? Any weight loss?",
+          "patient": "No weight loss",
+          "items": []
+        },
+        {
+          "student": "No, OK. Um, have you experienced any changes in your vision?",
+          "patient": "Yeah no, my visions been been, been fine.",
+          "items": []
+        },
+        {
+          "student": "OK hearing?",
+          "patient": "Hearing has been OK.",
+          "items": []
+        },
+        {
+          "student": "OK, how about smell?",
+          "patient": "No changes in smell.",
+          "items": []
+        },
+        {
+          "student": "No, um have you had a stuffy nose or runny nose in the past week or so.",
+          "patient": "No, it's just that the dry cough.",
+          "items": []
+        },
+        {
+          "student": "OK, dry cough. Any changes in your skin like rashes?",
+          "patient": "no rashes.",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "RES0001.txt-4",
+      "turns": [
+        {
+          "student": "OK, and you mentioned some chest pain. Any palpitations like you feel like your hearts racing?",
+          "patient": "Uh, actually I did feel like that a little bit. Especially when I was moving a little bit more, I felt like my heart was racing.",
+          "items": []
+        },
+        {
+          "student": "OK, um, any calf pain.",
+          "patient": "Um yeah my left, my left leg's actually a little bit sore.",
+          "items": []
+        },
+        {
+          "student": "OK, any swelling in the area?",
+          "patient": "um uh nope, I don't see any swelling there.",
+          "items": []
+        },
+        {
+          "student": "OK, no?",
+          "patient": "Um, Yeah, we'll say that there is swelling.",
+          "items": []
+        },
+        {
+          "student": "Oh, OK. And, and you mentioned shortness some shortness of breath on exertion, how about when you're laying down?",
+          "patient": "Not when I'm laying down.",
+          "items": []
+        },
+        {
+          "student": "No OK, and not when you're OK, not when you're laying down, OK. Um alright and in terms of like your stool, so bowel movements and urination. Like all of that's normal?",
+          "patient": "Yeah, all that's been normal.",
+          "items": []
+        },
+        {
+          "student": "OK, any headaches?",
+          "patient": "Um no headaches.",
+          "items": []
+        },
+        {
+          "student": "no, no confusion?",
+          "patient": "No confusion.",
+          "items": []
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,8 @@
     "eval": "tsx src/cli/eval.ts",
     "serve": "tsx src/cli/serve.ts",
     "build-case": "tsx src/cli/buildCase.ts",
-    "serve:offline": "tsx src/cli/serveOffline.ts"
+    "serve:offline": "tsx src/cli/serveOffline.ts",
+    "label-sheet": "tsx src/cli/labelSheet.ts"
   },
   "dependencies": {
     "zod": "^3.23.8"

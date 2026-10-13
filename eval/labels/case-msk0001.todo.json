@@ -1,0 +1,186 @@
+{
+  "caseId": "case-msk0001",
+  "labelledBy": "TODO: your name, before running the agreement evaluation",
+  "conversations": [
+    {
+      "id": "MSK0001.txt-1",
+      "turns": [
+        {
+          "student": "And what brings you to the emergency department today?",
+          "patient": "Low back pain.",
+          "items": []
+        },
+        {
+          "student": "OK, and where exactly is uh is the back pain?",
+          "patient": "So the pain's just right in the in the lower back.",
+          "items": []
+        },
+        {
+          "student": "Just in the lower back, OK. And when did this pain start?",
+          "patient": "It started yesterday, I was unloading groceries from my pickup truck when it suddenly started.",
+          "items": []
+        },
+        {
+          "student": "OK, so, and, did you kind of make any kind of movement? Or did you pick up something really heavy?",
+          "patient": "I'm not sure. I just noticed the pain after um after that.",
+          "items": []
+        },
+        {
+          "student": "OK, and what kind of pain are you experiencing? Is it like a dull cramping pain or is it more like a sharp or stabbing pain?",
+          "patient": "It feels like it's stabbing just right in my lower back.",
+          "items": []
+        },
+        {
+          "student": "OK. And, um, on a scale of 1 to 10, uh 1 being like the least pain that you felt in your life, 10 being the worst, how much would you rate this pain?",
+          "patient": "If I'm sitting, uh completely still like like I am right now, it's a 2 out of 10.",
+          "items": []
+        },
+        {
+          "student": "OK. Um and when does it get worse?",
+          "patient": "Uh anytime I I move or bend my back or uh even cough it it worsens the pain significantly.",
+          "items": []
+        },
+        {
+          "student": "OK, and has this pain changed at all since yesterday?",
+          "patient": "No, it's been this same awful pain this whole time.",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "MSK0001.txt-2",
+      "turns": [
+        {
+          "student": "OK and have have you ever had this kind of pain before?",
+          "patient": "I've had back pain uh over the years, but nothing like this before.",
+          "items": []
+        },
+        {
+          "student": "OK. And does it, does the pain go anywhere or does it just stay in the lower back?",
+          "patient": "I also feel the pain uh into my right leg.",
+          "items": []
+        },
+        {
+          "student": "OK, and is it the same kind of aching or like stabbing pain that goes into your right leg? Or is it uh just like an aching pain?",
+          "patient": "Uh it's it's a, uh, an aching pain.",
+          "items": []
+        },
+        {
+          "student": "OK. And do you have any other symptoms besides the pain? Like are you experiencing any kind of weakness or any kind of, any other changes in your health?",
+          "patient": "Uh no it's just the uh the low back pain.",
+          "items": []
+        },
+        {
+          "student": "OK, and have you ever uh experienced any kind of trauma to your back? Like something has hit you or you've fall down, anything like that?",
+          "patient": "No, I can't remember any injuries like that in the past.",
+          "items": []
+        },
+        {
+          "student": "OK, any uh fevers or chills or night sweats?",
+          "patient": "Um no fever, uh no chills, no night sweats.",
+          "items": []
+        },
+        {
+          "student": "OK, any uh symptoms of feeling very tired, fatigued, anything like that?",
+          "patient": "Uh no, I've been OK recently.",
+          "items": []
+        },
+        {
+          "student": "OK. Any changes to your skin at all? Uh I mean, any rashes?",
+          "patient": "No.",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "MSK0001.txt-3",
+      "turns": [
+        {
+          "student": "OK, any pain in your joints at all?",
+          "patient": "Uh just the back pain.",
+          "items": []
+        },
+        {
+          "student": "OK. Uh any new coughs or any um symptoms and runny nose or anything like that?",
+          "patient": "Uh no.",
+          "items": []
+        },
+        {
+          "student": "Any changes in your um bowel movements at all like diarrhea, constipation or anything?",
+          "patient": "Nothing like that, been regular.",
+          "items": []
+        },
+        {
+          "student": "OK, how about, uh, any urinary problems?",
+          "patient": "Uh no, nothing to report there.",
+          "items": []
+        },
+        {
+          "student": "OK, and how has your appetite been?",
+          "patient": "Uh appetite's been normal.",
+          "items": []
+        },
+        {
+          "student": "Any significant weight loss or weight gain recently?",
+          "patient": "No, the weight's been about the same.",
+          "items": []
+        },
+        {
+          "student": "OK, any recent infections that you know of?",
+          "patient": "No, I've been feeling well otherwise.",
+          "items": []
+        },
+        {
+          "student": "OK. Any uh tingling sensation or numbness uh in your back or lower limbs, in your legs?",
+          "patient": "Uh no numbness or tingling.",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "MSK0001.txt-4",
+      "turns": [
+        {
+          "student": "OK. Any muscle weakness at all?",
+          "patient": "Uh no muscle weakness.",
+          "items": []
+        },
+        {
+          "student": "OK, have you been uh having any uh kind of erectile dysfunction?",
+          "patient": "Uh no concerns with uh erectile dysfunction.",
+          "items": []
+        },
+        {
+          "student": "OK, and any issues with uh incontinence, like uh having accidents at all, at night or during the day?",
+          "patient": "Uh no, I haven't had any problems with bowel or bladder incontinence.",
+          "items": []
+        },
+        {
+          "student": "OK, alright, and in terms of your past medical history, have you have you been diagnosed with any conditions like high blood pressure, diabetes?",
+          "patient": "Uh type 2 diabetes.",
+          "items": []
+        },
+        {
+          "student": "OK, and do you take any medications for it?",
+          "patient": "Uh I, um insulin for diabetes.",
+          "items": []
+        },
+        {
+          "student": "OK, and any other medications at all?",
+          "patient": "Uh just been taking Tylenol for the the back pain.",
+          "items": []
+        },
+        {
+          "student": "And has that worked for you at all? Or has it not made a difference?",
+          "patient": "Uh maybe it's taking the edge off a little bit, but it hasn't done too much uh to help the pain.",
+          "items": []
+        },
+        {
+          "student": "OK, any allergies?",
+          "patient": "Uh nope.",
+          "items": []
+        }
+      ]
+    }
+  ]
+}
