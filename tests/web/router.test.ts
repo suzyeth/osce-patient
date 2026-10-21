@@ -6,6 +6,8 @@ import { offlineJudge, offlinePatient } from '../../src/offline.js';
 import { computeReport } from '../../src/report.js';
 import { initialSessionState } from '../../src/state.js';
 import { loadDemoCase } from '../loadCase.js';
+import { readFileSync } from 'node:fs';
+import { parseCase } from '../../src/types.js';
 
 const c = loadDemoCase();
 const SECRET = 'a-secret-of-at-least-16-chars';
@@ -193,12 +195,25 @@ describe('POST /api/report and GET /api/sample', () => {
         // The page is told what field this is and what to call the person, so it never assumes.
         packLabel: 'UK clinical history taking',
         personNoun: 'patient',
+        note: null,
       },
     ]);
     const raw = JSON.stringify(payload);
     for (const fact of c.facts) expect(raw).not.toContain(fact.text);
     expect(raw).not.toContain(c.patient.persona);
     for (const item of c.rubric) expect(raw).not.toContain(item.label);
+  });
+
+  it('lists real stations first, then the synthetic demo, then other fields marked as an engine example', async () => {
+    const research = parseCase(JSON.parse(readFileSync(new URL('../../cases/research-checkout.json', import.meta.url), 'utf8')));
+    const real = { ...c, id: 'zz-real' };
+    const response = await handleApi(
+      new Request('https://example.test/api/cases'),
+      deps({ cases: { [research.id]: research, [c.id]: c, [real.id]: real } }),
+    );
+    const payload = (await response.json()) as { cases: Array<{ id: string; note: string | null }> };
+    expect(payload.cases.map((x) => x.id)).toEqual(['zz-real', c.id, research.id]);
+    expect(payload.cases.map((x) => x.note)).toEqual([null, null, 'Example: the engine is not tied to medicine']);
   });
 
   it('serves the sample report without a code', async () => {

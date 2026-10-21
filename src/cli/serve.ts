@@ -74,11 +74,15 @@ function cases(): Record<string, PatientCase> {
  * The questions are the case's own example questions, so this works for any domain pack, and it
  * deliberately leaves the later items unasked so the sample shows misses as well as hits.
  */
+const SAMPLE_CASE_ID = 'case-res0001';
+
 async function sampleReport(all: Record<string, PatientCase>) {
   // Prefer a case with a critical item, so the one thing most visitors see demonstrates a missed
   // critical item as well as earned marks. Falls back to whatever is first.
+  // Named rather than found: directory order is not guaranteed on Linux, and this is the only real
+  // case with both a critical item and a hidden concern.
   const cases = Object.values(all);
-  const patientCase = cases.find((c) => c.rubric.some((r) => r.critical)) ?? cases[0]!;
+  const patientCase = all[SAMPLE_CASE_ID] ?? cases.find((c) => c.rubric.some((r) => r.critical)) ?? cases[0]!;
   const judge = offlineJudge();
   const patient = offlinePatient();
   let state = initialSessionState();

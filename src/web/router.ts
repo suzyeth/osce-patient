@@ -235,6 +235,10 @@ async function report(request: Request, deps: WebDeps): Promise<Response> {
   return json({ caseTitle: patientCase.title, reviewStatus: patientCase.reviewStatus, report: computed });
 }
 
+/** The field the site is for. Real stations from it come first, then its synthetic demo, then other fields. */
+const PRIMARY_PACK = 'uk-clinical-history';
+const ENGINE_EXAMPLE_NOTE = 'Example: the engine is not tied to medicine';
+
 /**
  * What a visitor may choose from. Only the station's framing: never a fact, never the rubric,
  * and never the persona, which the patient model reads but the candidate should not.
@@ -242,6 +246,7 @@ async function report(request: Request, deps: WebDeps): Promise<Response> {
 function cases(deps: WebDeps): Response {
   const list = Object.values(deps.cases).map((c) => {
     const pack = packFor(c.pack);
+    const primary = pack.id === PRIMARY_PACK;
     return {
       id: c.id,
       title: c.title,
@@ -250,9 +255,14 @@ function cases(deps: WebDeps): Response {
       reviewStatus: c.reviewStatus,
       packLabel: pack.label,
       personNoun: pack.personNoun,
+      // A station from another field is there to show the engine is not medical; say so, or it
+      // reads as a stray among exam stations.
+      note: primary ? null : ENGINE_EXAMPLE_NOTE,
+      rank: !primary ? 2 : c.id.startsWith('demo-') ? 1 : 0,
     };
   });
-  return json({ cases: list.sort((a, b) => a.id.localeCompare(b.id)) });
+  const ordered = list.sort((a, b) => a.rank - b.rank || a.id.localeCompare(b.id)).map(({ rank: _rank, ...shown }) => shown);
+  return json({ cases: ordered });
 }
 
 /** The whole API. Anything not listed is a 404, including GET on a POST route. */
