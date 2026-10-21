@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { appendTurn, FALLBACK_REPLY, respondGuarded, runTurn } from '../src/orchestrator.js';
+import { appendTurn, FALLBACK_REPLY, respondGuarded, runTurn, UNCLEAR_REPLY } from '../src/orchestrator.js';
 import { initialSessionState } from '../src/state.js';
 import { safetyMessage, safetyMessageFor } from '../src/safety.js';
 import { OFF_CASE_FALLBACK } from '../src/offCase.js';
@@ -83,6 +83,24 @@ describe('the off-case answer guard', () => {
     const patient = scriptedPatient('I smoke about twenty a day.');
     const r = await runTurn(c, initialSessionState(), 'Do you smoke?', credited, patient);
     expect(r.reply).toBe('I smoke about twenty a day.');
+    expect(patient.calls).toBe(1);
+  });
+});
+
+describe('a line the judge cannot make sense of', () => {
+  it('gets a fixed request to repeat, and the patient model is never asked', async () => {
+    const patient = scriptedPatient('I have been dizzy and I have no fever. What brings you in today?');
+    const r = await runTurn(c, initialSessionState(), '。。nb', fakeJudge(verdict({ unclear: true, questionStyle: 'none' })), patient);
+    expect(r.reply).toBe(UNCLEAR_REPLY);
+    expect(patient.calls).toBe(0);
+    expect(r.newlyUnlocked).toEqual([]);
+    expect(r.state.turnsUsed).toBe(1);
+  });
+
+  it('is answered normally when the judge still credited something in it', async () => {
+    const patient = scriptedPatient('Twenty a day.');
+    const r = await runTurn(c, initialSessionState(), 'smoke??', fakeJudge(verdict({ unclear: true, rubricItemIds: ['smoking'] })), patient);
+    expect(r.reply).toBe('Twenty a day.');
     expect(patient.calls).toBe(1);
   });
 });

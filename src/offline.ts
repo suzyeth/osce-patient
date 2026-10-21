@@ -51,6 +51,8 @@ export function offlineJudge(): JudgeClient {
         // A question mark and a second person: crude, but it is the offline double's whole character,
         // and it keeps greetings and closings out of the off-case guard the way the real judge does.
         asksAboutFacts: trimmed.endsWith('?') && /\byou\b|\byour\b/i.test(trimmed) && !SMALL_TALK.test(trimmed),
+        // The offline patient only repeats facts it was given, so it has nothing to invent from noise.
+        unclear: false,
         trustDelta: empathy ? EMPATHY_TRUST_DELTA : DEFAULT_TRUST_DELTA,
         reasoning: 'offline keyword judge',
       };

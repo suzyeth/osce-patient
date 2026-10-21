@@ -91,6 +91,12 @@ export const JudgeVerdictSchema = z.object({
    * Defaults to false, so a judge that omits it leaves the engine doing what it did before.
    */
   asksAboutFacts: z.boolean().default(false),
+  /**
+   * True when the latest line cannot be read as anything a person would say: a typo, a fragment,
+   * stray letters. Given one, the patient model carried the conversation on by itself, playing the
+   * doctor and inventing symptoms, so the engine answers it without that model. Defaults to false.
+   */
+  unclear: z.boolean().default(false),
   trustDelta: z.number(),
   reasoning: z.string(),
 });

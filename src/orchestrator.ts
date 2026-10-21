@@ -32,6 +32,9 @@ const LEAK_WARNING =
 // are not a customer and not being sold anything: both go into the same prompt.
 const EMPTY_WARNING = '\n\nNote: your previous answer was empty. Answer in character, in one to three short sentences.';
 
+/** Said in character to a line the judge could not make sense of, without asking the patient model. */
+export const UNCLEAR_REPLY = "Sorry, I didn't catch that. What did you want to ask?";
+
 /** Said in character when the patient model returns nothing twice. */
 export const FALLBACK_REPLY = "Sorry, I didn't quite catch that. Could you say it again?";
 
@@ -151,6 +154,13 @@ export async function runTurn(
     ...afterVerdict,
     unlockedFactIds: [...afterVerdict.unlockedFactIds, ...newlyUnlocked],
   };
+
+  // Nothing in a line nobody could read, so nothing for the patient model to answer. Asked anyway,
+  // it carried the conversation on alone: it played the doctor and invented symptoms. A line the
+  // judge still credited something in is answered as usual, since that credit is what unlocks facts.
+  if (verdict.unclear && verdict.rubricItemIds.length === 0 && newlyUnlocked.length === 0) {
+    return { state: nextState, reply: UNCLEAR_REPLY, verdict, newlyUnlocked, guardTriggered: false, safetyBlocked: false, blockedBy: null, blockedCategory: null };
+  }
 
   const base: PatientInput = {
     context: buildPatientContext(patientCase, nextState),
