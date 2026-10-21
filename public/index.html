@@ -50,27 +50,34 @@
           <button type="submit" id="send">Send</button>
           <button type="button" id="finish" class="secondary">Finish</button>
         </form>
+        <p class="muted dictation">On a phone, your keyboard's microphone lets you speak instead of typing.</p>
         <p id="turnError" class="error" hidden></p>
       </section>
 
-      <!-- Report -->
+      <!-- Report: the result first, the reasoning behind it underneath. -->
       <section id="reportView" class="card" hidden>
         <h2 id="reportTitle">Your report</h2>
-        <p class="banner">
-          Practice feedback, not an assessment, and nothing here predicts an outcome. The list of content below is
-          ours, with its source shown against each item.
-        </p>
-        <!-- What this particular field does and does not measure; written by the case's domain pack. -->
-        <p id="caveat" class="banner"></p>
-        <p id="reviewNote" class="muted"></p>
-        <h3>What a reviewer would comment on</h3>
-        <p class="muted">Each statement shows whose words it is and where it comes from.</p>
-        <ul id="statements" class="items"></ul>
-        <h3>Content you covered</h3>
-        <div id="scores" class="scores"></div>
-        <ul id="covered" class="items"></ul>
-        <h3>Content you did not cover</h3>
+        <!-- One notice: what this is not, whether the case was reviewed, and what this field cannot measure. -->
+        <div class="banner" id="notice">
+          <p>Practice feedback, not an assessment, and nothing here predicts an outcome.</p>
+          <p id="reviewNote"></p>
+          <p id="caveat"></p>
+        </div>
+        <div id="summary" class="summary"></div>
+        <h3>What you missed</h3>
         <ul id="missed" class="items"></ul>
+        <h3>What you covered</h3>
+        <p class="muted">Each mark quotes the question that earned it. Click a quote to see it in the conversation.</p>
+        <ul id="covered" class="items"></ul>
+        <details id="statementsBox">
+          <summary id="statementsSummary">How a reviewer would comment</summary>
+          <p class="muted">Each statement shows whose words it is and where it comes from.</p>
+          <ul id="statements" class="items"></ul>
+        </details>
+        <details id="conversationBox">
+          <summary>Show the whole conversation</summary>
+          <ol id="transcript" class="log transcript"></ol>
+        </details>
         <p class="banner">
           If anything here looks wrong, please report it on the repository's issue tracker. The case file, the
           content list and its sources are all published, so a mark can be checked and argued with.

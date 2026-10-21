@@ -1,4 +1,14 @@
 // The page holds no case data and no key: it sends a line and shows what comes back.
+import {
+  fromSampleTranscript,
+  linkableTurn,
+  openingEntry,
+  orderStatements,
+  recordTurn,
+  STATEMENT_WORDING,
+  summarise,
+} from './reportModel.js';
+
 const $ = (id) => document.getElementById(id);
 const gate = $('gate');
 const station = $('station');
@@ -6,6 +16,9 @@ const reportView = $('reportView');
 
 let endsAt = 0;
 let ticking = null;
+// The conversation as this page saw it. The server keeps only the turns that earned a mark, without
+// the replies, so this copy is what lets a mark open the line it came from. Memory only.
+let log = [];
 
 function show(section) {
   for (const s of [gate, station, reportView]) s.hidden = s !== section;
@@ -67,6 +80,7 @@ async function loadCases() {
     body.append(Object.assign(document.createElement('span'), { className: 'title', textContent: `${station.title} (${station.minutes} min)` }));
     body.append(Object.assign(document.createElement('span'), { className: 'brief', textContent: station.brief }));
     body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: station.packLabel }));
+    if (station.note) body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: station.note }));
     if (station.reviewStatus !== 'reviewed') {
       body.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: 'not reviewed by an expert' }));
     }
@@ -96,6 +110,7 @@ $('startForm').addEventListener('submit', async (event) => {
   // nothing and the page cut the candidate off without saying why.
   if (data.maxInputChars) $('input').maxLength = data.maxInputChars;
   $('log').replaceChildren();
+  log = [openingEntry(data.openingLine)];
   say(data.patientName, data.openingLine, 'patient');
   show(station);
   startClock(data.secondsLeft);
@@ -118,6 +133,7 @@ $('turnForm').addEventListener('submit', async (event) => {
     $('input').focus();
     return;
   }
+  log = recordTurn(log, { turnsUsed: data.turnsUsed, candidate: input, reply: data.reply, paused: Boolean(data.paused) });
   say(data.paused ? 'Practice paused' : $('brief').dataset.patient ?? 'Patient', data.reply, data.paused ? 'paused' : 'patient');
   $('turns').textContent = `${data.turnsUsed} of ${data.maxTurns} questions`;
   startClock(data.secondsLeft);
@@ -143,15 +159,23 @@ function itemRow(item, covered) {
   mark.className = covered ? 'tick' : 'cross';
   mark.textContent = covered ? '✓' : '✗';
   li.append(mark, document.createTextNode(item.label + (item.critical ? ' (critical)' : '')));
-  // The words that earned the mark, so a candidate can disagree with it.
-  if (covered) {
-    li.append(
-      hint(
-        item.quote
-          ? `question ${item.turn}: “${item.quote}”`
-          : `question ${item.turn} — the words that earned this were not kept, so this mark cannot be checked`,
-      ),
-    );
+  // The words that earned the mark, so a candidate can disagree with it. When this page still has
+  // that line, the quote opens it in the conversation.
+  if (covered && item.quote) {
+    const text = `question ${item.turn}: “${item.quote}”`;
+    const turn = linkableTurn(log, item);
+    if (turn === null) {
+      li.append(hint(text));
+    } else {
+      const link = Object.assign(document.createElement('a'), { href: `#turn-${turn}`, className: 'hint quote', textContent: text });
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        showTurn(turn);
+      });
+      li.append(link);
+    }
+  } else if (covered) {
+    li.append(hint(`question ${item.turn} — the words that earned this were not kept, so this mark cannot be checked`));
   } else {
     li.append(hint(`Try: ${item.exampleQuestion}`));
   }
@@ -159,14 +183,15 @@ function itemRow(item, covered) {
   return li;
 }
 
-const STATEMENT_MARK = { concern: ['cross', '✗'], no_concern: ['tick', '✓'], not_assessed: ['muted', '–'] };
-
 function statementRow(s) {
   const li = document.createElement('li');
   if (s.outcome === 'concern') li.className = 'critical';
-  const [cls, glyph] = STATEMENT_MARK[s.outcome] ?? STATEMENT_MARK.not_assessed;
-  const mark = Object.assign(document.createElement('span'), { className: cls, textContent: glyph });
-  li.append(mark, Object.assign(document.createElement('b'), { textContent: s.label }));
+  if (s.outcome === 'not_assessed') li.className = 'unassessed';
+  // The statements are written as faults, so an outcome is said in words: a tick beside "Shows poor
+  // time management" reads as agreeing with it.
+  const outcome = STATEMENT_WORDING[s.outcome] ?? STATEMENT_WORDING.not_assessed;
+  li.append(Object.assign(document.createElement('b'), { className: `outcome ${s.outcome}`, textContent: outcome }));
+  li.append(document.createTextNode(` · ${s.label}`));
   li.append(hint(s.text));
   li.append(hint(s.evidence));
   // Whose words these are matters: a regulator's statement and ours are not the same thing.
@@ -183,21 +208,81 @@ function statementRow(s) {
   return li;
 }
 
-function renderReport(title, report) {
-  $('reportTitle').textContent = title;
+function line(text, className) {
+  return Object.assign(document.createElement('p'), { className, textContent: text });
+}
+
+/** Opens the conversation at a question and marks it, so a mark can be checked against its words. */
+function showTurn(turn) {
+  $('conversationBox').open = true;
+  const target = document.getElementById(`turn-${turn}`);
+  if (!target) return;
+  for (const old of document.querySelectorAll('.transcript .hit')) old.classList.remove('hit');
+  target.classList.add('hit');
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/** The first thing read: how much was covered, which critical item was missed, whether the concern came out. */
+function renderSummary(report) {
+  const summary = summarise(report);
   // The domains and their names come from the case's domain pack, not from this page.
   const domains = report.domains.filter((d) => d.total > 0).map((d) => scoreCard(d.label, d));
-  $('scores').replaceChildren(
-    scoreCard('Items covered', { covered: report.items.filter((i) => i.covered).length, total: report.items.length }),
-    ...domains,
-  );
+  const scores = Object.assign(document.createElement('div'), { className: 'scores' });
+  scores.append(scoreCard('Items covered', summary), ...domains);
+  const { kind, labels } = summary.critical;
+  const critical =
+    kind === 'missed'
+      ? line(`Critical item missed: ${labels.join('; ')}`, 'flag bad')
+      : kind === 'none-missed'
+        ? line('No critical item missed.', 'flag good')
+        : line('This case marks no item as critical.', 'flag');
+  const concern =
+    summary.concern === 'elicited'
+      ? [line(`The ${report.personNoun}'s hidden concern came out.`, 'flag good')]
+      : summary.concern === 'not-elicited'
+        ? [line(`The ${report.personNoun}'s hidden concern did not come out.`, 'flag bad')]
+        : [];
+  $('summary').replaceChildren(scores, critical, ...concern);
+}
+
+/** The whole conversation, each question numbered as the report numbers it, with what it earned. */
+function renderTranscript(report) {
+  const earned = (turn) => report.items.filter((i) => i.covered && i.turn === turn).map((i) => i.label);
+  const rows = log.flatMap((entry) => {
+    const reply = Object.assign(document.createElement('li'), { className: entry.paused ? 'paused' : 'patient' });
+    reply.append(Object.assign(document.createElement('span'), { className: 'who', textContent: entry.paused ? 'Practice paused' : report.personNoun }));
+    reply.append(document.createTextNode(entry.reply));
+    if (entry.candidate === null) return [reply];
+    const asked = Object.assign(document.createElement('li'), { className: 'you' });
+    if (entry.turn !== null) asked.id = `turn-${entry.turn}`;
+    asked.append(Object.assign(document.createElement('span'), { className: 'who', textContent: entry.turn ? `Question ${entry.turn}` : 'You' }));
+    asked.append(document.createTextNode(entry.candidate));
+    const marks = entry.turn ? earned(entry.turn) : [];
+    if (marks.length) asked.append(hint(`Earned: ${marks.join('; ')}`));
+    return [asked, reply];
+  });
+  $('transcript').replaceChildren(...rows);
+}
+
+function renderReport(title, report) {
+  $('reportTitle').textContent = title;
   $('caveat').textContent = report.caveat;
-  $('reviewNote').textContent =
-    report.reviewStatus === 'reviewed' ? '' : 'This case has not been reviewed by anyone qualified in the field.';
-  $('statements').replaceChildren(...report.statements.map(statementRow));
-  $('covered').replaceChildren(...report.items.filter((i) => i.covered).map((i) => itemRow(i, true)));
-  $('missed').replaceChildren(...report.items.filter((i) => !i.covered).map((i) => itemRow(i, false)));
+  $('reviewNote').hidden = report.reviewStatus === 'reviewed';
+  $('reviewNote').textContent = 'This case has not been reviewed by anyone qualified in the field.';
+  renderSummary(report);
+  const criticalFirst = (a, b) => Number(b.critical) - Number(a.critical);
+  const missed = report.items.filter((i) => !i.covered).sort(criticalFirst);
+  const covered = report.items.filter((i) => i.covered);
+  $('missed').replaceChildren(...(missed.length ? missed.map((i) => itemRow(i, false)) : [line('Nothing on the list.', 'muted')]));
+  $('covered').replaceChildren(...(covered.length ? covered.map((i) => itemRow(i, true)) : [line('Nothing yet.', 'muted')]));
+  const statements = orderStatements(report.statements);
+  $('statementsSummary').textContent = `How a reviewer would comment (${statements.length} statements)`;
+  $('statements').replaceChildren(...statements.map(statementRow));
+  $('statementsBox').open = false;
+  renderTranscript(report);
+  $('conversationBox').open = false;
   show(reportView);
+  reportView.scrollIntoView({ block: 'start' });
 }
 
 let finishing = false;
@@ -220,6 +305,7 @@ async function finish() {
 $('finish').addEventListener('click', finish);
 $('again').addEventListener('click', () => {
   finishing = false;
+  log = [];
   show(gate);
   $('code').focus();
 });
@@ -231,5 +317,6 @@ $('sampleButton').addEventListener('click', async () => {
     error($('gateError'), data.error ?? 'No sample available.');
     return;
   }
+  log = fromSampleTranscript(data.transcript ?? []);
   renderReport(`Sample report: ${data.caseTitle}`, data.report);
 });
