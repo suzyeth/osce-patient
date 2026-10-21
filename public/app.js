@@ -33,6 +33,7 @@ function say(who, text, className) {
   li.append(name, document.createTextNode(text));
   $('log').append(li);
   $('log').scrollTop = $('log').scrollHeight;
+  return li;
 }
 
 function clock(secondsLeft) {
@@ -122,12 +123,16 @@ $('turnForm').addEventListener('submit', async (event) => {
   const input = $('input').value.trim();
   if (!input) return;
   error($('turnError'), '');
-  say('You', input, 'you');
+  const asked = say('You', input, 'you');
   $('input').value = '';
   $('send').disabled = true;
   const { ok, data } = await api('/api/turn', { input });
   $('send').disabled = false;
   if (!ok) {
+    // The server did not take the line, so it is not part of the conversation: take it back off the
+    // page and give it back to the candidate to edit, rather than leave a question nobody answered.
+    asked.remove();
+    $('input').value = input;
     error($('turnError'), data.error ?? 'Something went wrong.');
     if (typeof data.secondsLeft === 'number') startClock(data.secondsLeft);
     $('input').focus();
