@@ -34,7 +34,7 @@ randomised evidence too, so this is uncommon rather than unique. Several smaller
 patients for £10–30.
 
 Tying a mark to the candidate's words is not new either, and an earlier version of this README said it was.
-Oscelyra (iPhone, spoken, 53 stations), launched on r/PLABprep in September 2026, says "every mark links to
+Oscelyra (iPhone, spoken, 53 stations), in its post on r/PLABprep on 12 September 2026, says "every mark links to
 the exact line in your transcript that earned it. ... Tap the mark, check the receipt." Quesmed's OSCE-AI
 marker reads the transcript against the station's mark scheme and decides each criterion "citing what you
 actually said", and Quesmed has published a pilot of it (*We put our AI marker through an exam of its own*,
@@ -46,14 +46,18 @@ Holding back what was not asked for is not new in research: *Patients With Perso
 MIT-licensed code) simulates patients through "controlled diversity and selective disclosure". That is a
 research framework for simulating patients; this is a practice tool built on the same idea.
 
-**Different.** Of the products checked in September 2026 and again on 21 October 2026, **none publishes its
-mark scheme or its rules for what unlocks what openly, outside its own app or account**: Quesmed's criteria
-can be opened on Quesmed, Oscelyra describes a "written mark scheme" without publishing it, and one vendor
-called its rubric "commercially sensitive". None publishes a measured leak rate (how often the patient says
-what was not asked for), invention rate or safety figure; Quesmed's published figures are about marking
-agreement, which this project has not measured yet (see Status). Here, facts that have not been asked for
-are not in the patient's prompt at all, by construction, and the evaluation below measures how often
-something gets out anyway. And what students say they do not want is to be marked by it. In an interim UCLA
+**Different.** Of the three dozen products checked in September 2026, none published its mark scheme or its
+rules for what unlocks what openly, and one vendor called its rubric "commercially sensitive". On 21 October
+2026 sixteen were checked again or found for the first time (among them Quesmed, Oscelyra, Geeky Medics,
+Plabable, SimsBuddy, OSCEPilot and RehearseMD; three could not be opened or were still a waiting list). Of
+those that could be opened, none publishes its mark scheme openly: Quesmed's and SimsBuddy's criteria can be
+opened inside their own sites, and Oscelyra describes a "written mark scheme" without publishing it. None
+publishes a measured leak rate (how often the patient says what was not asked for), invention rate or safety
+figure; Quesmed's published figures are about marking agreement, which this project has not measured yet (see
+Status). Here, facts that have not been asked for are not in the patient's prompt at all, by construction,
+and the evaluation below measures how often something gets out anyway.
+
+Students also say they do not want to be graded by an AI marker they cannot inspect. In an interim UCLA
 student-poster evaluation of Geeky Medics' AI OSCE in an obstetrics and gynaecology clerkship (n = 27, data
 collection still ongoing), 96% agreed the cases were "reflective of what they had learned on their rotation
 and appropriate for their level of training", but only **41%** agreed it was "a comparable learning
