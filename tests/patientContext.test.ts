@@ -38,6 +38,14 @@ describe('buildPatientContext', () => {
     expect(prompt).toContain('ordinary conversation');
   });
 
+  it('says the person speaks only as themselves, with no narration', () => {
+    // Seen live: the model wrote the doctor's lines, asked their questions, and added "(Emma glances up)".
+    const prompt = buildPatientContext(c, initialSessionState());
+    expect(prompt).toContain(
+      "You only ever speak as yourself. Never write the other person's lines or ask their questions for them, and never add narration or stage directions, such as actions in brackets or between asterisks.",
+    );
+  });
+
   it('changes openness with trust', () => {
     expect(buildPatientContext(c, { ...initialSessionState(), trust: 80 })).toContain('talk openly');
     expect(buildPatientContext(c, { ...initialSessionState(), trust: 10 })).toContain('minimal answers');
