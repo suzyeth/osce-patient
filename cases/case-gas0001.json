@@ -1,8 +1,8 @@
 {
   "id": "case-gas0001",
   "pack": "uk-clinical-history",
-  "title": "Nausea and Vomiting Assessment",
-  "candidateBrief": "You are a doctor in a GP surgery. Emma Clarke, 25, has come in about Persistent nausea and vomiting. Take a focused history. You have 8 minutes.",
+  "title": "Nausea",
+  "candidateBrief": "You are a doctor in a GP surgery. Emma Clarke, 25, has come in about nausea. Take a focused history. You have 8 minutes.",
   "durationSeconds": 480,
   "reviewStatus": "unreviewed",
   "patient": {

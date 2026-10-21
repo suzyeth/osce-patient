@@ -1,12 +1,12 @@
 {
-  "title": "Acute Lower Back Pain with Radiation",
+  "title": "Low back pain",
   "patient": {
     "name": "David Thompson",
     "age": 65,
     "persona": "Retired school teacher living alone, speaks calmly and provides clear answers without volunteering extra information.",
     "openingLine": "I’ve got low back pain that started yesterday when I was unloading groceries."
   },
-  "presentingProblem": "Low back pain",
+  "presentingProblem": "low back pain",
   "facts": [
     {
       "text": "The pain started yesterday while I was unloading groceries from my pickup truck.",

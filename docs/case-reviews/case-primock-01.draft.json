@@ -1,12 +1,12 @@
 {
-  "title": "Acute Diarrhoea Assessment",
+  "title": "Diarrhoea",
   "patient": {
     "name": "David Hughes",
     "age": 35,
     "persona": "An employed accountant who lives with his wife and two children, speaks clearly and provides detailed responses when questioned, remains cooperative throughout the consultation.",
     "openingLine": "I've had diarrhoea for the last three days and it's been affecting my day-to-day activities."
   },
-  "presentingProblem": "diarrhoea for three days",
+  "presentingProblem": "diarrhoea",
   "facts": [
     {
       "text": "I've had diarrhoea for the last three days.",

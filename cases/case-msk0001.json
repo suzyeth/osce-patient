@@ -1,8 +1,8 @@
 {
   "id": "case-msk0001",
   "pack": "uk-clinical-history",
-  "title": "Acute Lower Back Pain with Radiation",
-  "candidateBrief": "You are a doctor in a GP surgery. David Thompson, 65, has come in about Low back pain. Take a focused history. You have 8 minutes.",
+  "title": "Low back pain",
+  "candidateBrief": "You are a doctor in a GP surgery. David Thompson, 65, has come in about low back pain. Take a focused history. You have 8 minutes.",
   "durationSeconds": 480,
   "reviewStatus": "unreviewed",
   "patient": {

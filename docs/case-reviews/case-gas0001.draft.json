@@ -1,12 +1,12 @@
 {
-  "title": "Nausea and Vomiting Assessment",
+  "title": "Nausea",
   "patient": {
     "name": "Emma Clarke",
     "age": 25,
     "persona": "A young woman who works part-time in retail and lives with a roommate. She speaks hesitantly, often qualifying her answers, and provides details only when prompted. She is polite but not overly forthcoming, requiring gentle probing to elaborate on symptoms.",
     "openingLine": "I've just been feeling like very nauseated for, it feels like all the time right now."
   },
-  "presentingProblem": "Persistent nausea and vomiting",
+  "presentingProblem": "nausea",
   "facts": [
     {
       "text": "I've just been feeling like very nauseated for, it feels like all the time right now.",

@@ -1,12 +1,12 @@
 {
-  "title": "Chest Pain and Shortness of Breath Post-Hysterectomy",
+  "title": "Chest pain and breathlessness",
   "patient": {
     "name": "Jen Carter",
     "age": 52,
     "persona": "A 52-year-old female bank administrator who speaks clearly and provides detailed responses, volunteering relevant information such as recent surgery and lifestyle habits without prompting.",
     "openingLine": "I’ve had chest pain for just over a week and it’s causing trouble breathing."
   },
-  "presentingProblem": "chest pain with associated shortness of breath",
+  "presentingProblem": "chest pain and breathlessness",
   "facts": [
     {
       "text": "I’ve had this pain in my chest for just over a week now and it’s caused me to have trouble breathing.",

@@ -1,8 +1,8 @@
 {
   "id": "case-res0001",
   "pack": "uk-clinical-history",
-  "title": "Chest Pain and Shortness of Breath Post-Hysterectomy",
-  "candidateBrief": "You are a doctor in a GP surgery. Jen Carter, 52, has come in about chest pain with associated shortness of breath. Take a focused history. You have 8 minutes.",
+  "title": "Chest pain and breathlessness",
+  "candidateBrief": "You are a doctor in a GP surgery. Jen Carter, 52, has come in about chest pain and breathlessness. Take a focused history. You have 8 minutes.",
   "durationSeconds": 480,
   "reviewStatus": "unreviewed",
   "patient": {
