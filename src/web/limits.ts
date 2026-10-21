@@ -65,13 +65,18 @@ export interface TurnAllowance {
   input: string;
 }
 
+/** A letter or a digit in any script: what separates a line worth sending to a model from noise. */
+const HAS_WORDS = /[\p{L}\p{N}]/u;
+
 /**
  * Everything that can stop a turn before a model is called, in the order a candidate would meet
  * it. The spending cap is last because the others cost nothing to check.
  */
 export function checkTurn(limits: WebLimits, allowance: TurnAllowance): Refusal | null {
   const input = allowance.input.trim();
-  if (input === '') return refuse('empty');
+  // Punctuation alone ("?", "。。") is no question at all, and given one the patient model carried
+  // the conversation on by itself: it asked the doctor's questions and invented symptoms.
+  if (!HAS_WORDS.test(input)) return refuse('empty');
   if (input.length > limits.maxInputChars) return refuse('input_too_long');
   if (allowance.secondsLeft <= 0) return refuse('time_up');
   if (allowance.turnsUsed >= limits.maxTurns) return refuse('too_many_turns');

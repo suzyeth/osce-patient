@@ -34,6 +34,14 @@ describe('checkTurn', () => {
     expect(checkTurn(limits, { ...allowance, input: 'x'.repeat(501) })?.reason).toBe('input_too_long');
   });
 
+  it('stops a line of punctuation alone, which left the patient model to carry on the conversation by itself', () => {
+    for (const input of ['？', '?', '。。', '...', '!?', '— —']) {
+      expect(checkTurn(limits, { ...allowance, input })?.reason).toBe('empty');
+    }
+    // Anything with a letter or a digit is for the judge to read, in any script.
+    for (const input of ['nb', '7', '你好', 'Hi?']) expect(checkTurn(limits, { ...allowance, input })).toBeNull();
+  });
+
   it('stops a station that is out of time, out of turns or out of budget', () => {
     expect(checkTurn(limits, { ...allowance, secondsLeft: 0 })?.reason).toBe('time_up');
     expect(checkTurn(limits, { ...allowance, turnsUsed: 40 })?.reason).toBe('too_many_turns');
