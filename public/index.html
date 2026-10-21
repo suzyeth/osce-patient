@@ -19,10 +19,26 @@
     <main>
       <!-- Gate -->
       <section id="gate" class="card">
+        <!-- The finished report is the point of the tool, so it is one click away before anything else. -->
+        <div class="preview">
+          <div>
+            <h2>See what you get in 30 seconds</h2>
+            <p class="muted">A finished report from a real case: every mark opens the question that earned it.</p>
+          </div>
+          <button type="button" id="sampleButton">See a finished report</button>
+        </div>
+
         <h2>Start a station</h2>
-        <p>
-          A timed conversation with a simulated person, then a report on what you covered, quoting the words that
-          earned each mark. They only tell you what you ask about properly.
+        <ol class="steps">
+          <li>Choose a station and enter the access code.</li>
+          <li>Take a history by typing, or speak through your keyboard's microphone. The patient only tells you what you ask about.</li>
+          <li>Finish, or let the 8 minutes run out, for a report on what you covered and what you missed.</li>
+        </ol>
+        <!-- Which model does what. These are the defaults in src/nebius/config.ts; change both together. -->
+        <p class="muted models">
+          Under the hood, on Nebius Token Factory: <strong>Nemotron 3 Super</strong> judges each question against the
+          published mark scheme; a second Nemotron 3 Super call plays the patient and sees only the facts you have
+          unlocked; a third checks whether you are describing your own symptoms.
         </p>
         <fieldset id="caseChoice" class="cases">
           <legend>Choose a station</legend>
@@ -34,7 +50,6 @@
           <button type="submit" id="startButton">Start the station</button>
         </form>
         <p id="gateError" class="error" hidden></p>
-        <p class="muted">No code? <button type="button" class="link" id="sampleButton">See a finished report</button></p>
       </section>
 
       <!-- Station -->
