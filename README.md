@@ -33,9 +33,27 @@ which found **no significant difference** in OSCE scores (6.5 vs 6.3, p = 0.543)
 randomised evidence too, so this is uncommon rather than unique. Several smaller PLAB 2 products gate their
 patients for £10–30.
 
-**Different.** Of the three dozen products checked in September 2026, **none publishes its mark scheme or
-its gating rules, and none anchors a mark to a line of the transcript.** One vendor called its rubric
-"commercially sensitive". And what students say they do not want is to be marked by it. In an interim UCLA
+Tying a mark to the candidate's words is not new either, and an earlier version of this README said it was.
+Oscelyra (iPhone, spoken, 53 stations), launched on r/PLABprep in September 2026, says "every mark links to
+the exact line in your transcript that earned it. ... Tap the mark, check the receipt." Quesmed's OSCE-AI
+marker reads the transcript against the station's mark scheme and decides each criterion "citing what you
+actually said", and Quesmed has published a pilot of it (*We put our AI marker through an exam of its own*,
+2026): ten anonymised voice-station transcripts, each marked blind by four doctors and by the AI. The AI was
+within one band of a given examiner 88% of the time against 87% between examiners; on individual criteria its
+agreement with the examiners' majority was 0.77 (Gwet's AC1) against 0.76 between examiners; and across
+three runs 92% of criteria got the identical mark. Quesmed calls it a pilot, and ten transcripts is a small one.
+Holding back what was not asked for is not new in research: *Patients With Personality* (arXiv 2606.17441,
+MIT-licensed code) simulates patients through "controlled diversity and selective disclosure". That is a
+research framework for simulating patients; this is a practice tool built on the same idea.
+
+**Different.** Of the products checked in September 2026 and again on 21 October 2026, **none publishes its
+mark scheme or its rules for what unlocks what openly, outside its own app or account**: Quesmed's criteria
+can be opened on Quesmed, Oscelyra describes a "written mark scheme" without publishing it, and one vendor
+called its rubric "commercially sensitive". None publishes a measured leak rate (how often the patient says
+what was not asked for), invention rate or safety figure; Quesmed's published figures are about marking
+agreement, which this project has not measured yet (see Status). Here, facts that have not been asked for
+are not in the patient's prompt at all, by construction, and the evaluation below measures how often
+something gets out anyway. And what students say they do not want is to be marked by it. In an interim UCLA
 student-poster evaluation of Geeky Medics' AI OSCE in an obstetrics and gynaecology clerkship (n = 27, data
 collection still ongoing), 96% agreed the cases were "reflective of what they had learned on their rotation
 and appropriate for their level of training", but only **41%** agreed it was "a comparable learning
@@ -45,9 +63,10 @@ difficulties encountered. That is a poster abstract with 27 students and unfinis
 trial: read it as the shape of a worry, not a rate. A mark you cannot inspect is a mark you cannot argue
 with.
 
-So this repository publishes all of it: the case file with every fact's trigger, the content list with a
-source per item, the gating rules as code with tests, and a report that quotes the question that earned each
-mark.
+So this repository publishes all of it, open source and with no login: the case file with every fact's
+trigger, the content list with a source per item, the gating rules as code with tests, the evaluation sets
+and their results, and a report that quotes the question that earned each mark and opens it in the
+conversation.
 
 There is also a regulator's sentence behind this. GMC, *Promoting excellence* (2015, in effect from 2016),
 R5.8, under the heading "Undergraduate assessment":
@@ -369,7 +388,7 @@ so it is no longer untouched, and the misses from the first run shaped the devel
 
 The offline core engine, the Nemotron clients with spend caps, the evaluation harness, the case pipeline and
 the web station are complete, as is the split into domain packs. Not done: Cohen's kappa against a person's
-labels, and no case reviewed by an expert in its field.
+labels, and no case reviewed by an expert in its field. Competitors re-checked 2026-10-21.
 
 ## Building a case from a transcript
 
