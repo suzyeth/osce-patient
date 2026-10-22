@@ -4,11 +4,12 @@
  * The key never leaves this process: the browser only ever sends the candidate's line.
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { readdirSync } from 'node:fs';
 import { createBudget } from '../nebius/budget.js';
 import { healthBody } from '../web/health.js';
+import { playSession, type RecordedSession } from '../recordedSession.js';
 import { createChat } from '../nebius/chat.js';
 import { describeConfigError, loadConfig, loadDotEnv, type NebiusConfig } from '../nebius/config.js';
 import { createNemotronJudge } from '../nebius/judgeClient.js';
@@ -27,6 +28,7 @@ import type { PatientCase } from '../types.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const PUBLIC_DIR = 'public';
+const SAMPLES_DIR = 'samples';
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -66,24 +68,25 @@ function cases(): Record<string, PatientCase> {
 /**
  * A finished station for anyone without a code, and the only thing most visitors will see.
  *
- * It is a real session, played offline against the keyword doubles, not a hand-made state. The old
- * version set rubricHits directly with an empty transcript, so every covered item in the sample came
- * back with no quote: the public demonstration of a tool whose whole claim is that a mark carries the
- * words that earned it was a page full of marks with nothing behind them. It also hard-coded clinical
- * item ids, so a non-clinical case would have shown nothing covered at all.
- *
- * The questions are the case's own example questions, so this works for any domain pack, and it
- * deliberately leaves the later items unasked so the sample shows misses as well as hits.
+ * It replays a station recorded once against the real models (samples/<case>.json, made by
+ * npm run record-sample), so visitors read real replies and no visit costs anything. The keyword
+ * doubles it falls back to answered a greeting and "What's brought you in today?" with "I'm not
+ * sure", which made the public sample look broken. The recording never asks about the legs, so the
+ * sample shows a missed critical item as well as earned marks.
  */
 const SAMPLE_CASE_ID = 'case-res0001';
 
 async function sampleReport(all: Record<string, PatientCase>) {
-  // Prefer a case with a critical item, so the one thing most visitors see demonstrates a missed
-  // critical item as well as earned marks. Falls back to whatever is first.
   // Named rather than found: directory order is not guaranteed on Linux, and this is the only real
   // case with both a critical item and a hidden concern.
   const cases = Object.values(all);
   const patientCase = all[SAMPLE_CASE_ID] ?? cases.find((c) => c.rubric.some((r) => r.critical)) ?? cases[0]!;
+  const recording = join(SAMPLES_DIR, `${patientCase.id}.json`);
+  if (existsSync(recording)) {
+    const played = await playSession(patientCase, JSON.parse(readFileSync(recording, 'utf8')) as RecordedSession);
+    return { caseTitle: patientCase.title, ...played };
+  }
+  console.warn(`No recorded sample at ${recording}; playing the keyword doubles instead.`);
   const judge = offlineJudge();
   const patient = offlinePatient();
   let state = initialSessionState();

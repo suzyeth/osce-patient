@@ -1,0 +1,141 @@
+{
+  "caseId": "case-res0001",
+  "recordedAt": "2026-10-22T14:48:10.896Z",
+  "models": "judge nvidia/nemotron-3-super-120b-a12b, patient nvidia/nemotron-3-super-120b-a12b",
+  "turns": [
+    {
+      "input": "Hello, I'm one of the doctors. Is it okay if I ask you a few questions today?",
+      "verdict": {
+        "rubricItemIds": [
+          "intro_consent"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "open",
+        "empathy": false,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": false,
+        "unclear": false,
+        "trustDelta": 5,
+        "reasoning": "The candidate introduced themselves and sought consent, fulfilling the intro_consent rubric item."
+      },
+      "reply": "Of course, go ahead."
+    },
+    {
+      "input": "What's brought you in today?",
+      "verdict": {
+        "rubricItemIds": [
+          "intro_consent",
+          "open_question"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "open",
+        "empathy": false,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": true,
+        "unclear": false,
+        "trustDelta": 5,
+        "reasoning": "The candidate introduced themselves and sought consent appropriately, then used an open question to elicit the presenting complaint."
+      },
+      "reply": "I’ve had some chest pain for just over a week now, and it’s been making it hard to breathe. That’s why I came in."
+    },
+    {
+      "input": "When did this start?",
+      "verdict": {
+        "rubricItemIds": [
+          "onset_duration"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "closed",
+        "empathy": false,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": true,
+        "unclear": false,
+        "trustDelta": 0,
+        "reasoning": "The candidate asked specifically about onset but missed duration."
+      },
+      "reply": "It started just over a week ago. The pain comes in episodes that last about 15 to 20 minutes each time before easing off."
+    },
+    {
+      "input": "Can you describe the pain for me?",
+      "verdict": {
+        "rubricItemIds": [
+          "character_severity"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "open",
+        "empathy": false,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": true,
+        "unclear": false,
+        "trustDelta": 0,
+        "reasoning": "The candidate asks for description of the pain, which maps to character_severity."
+      },
+      "reply": "The pain is sharp and constant while it’s there, but it gets worse when I take a deep breath."
+    },
+    {
+      "input": "Have you had any operations recently?",
+      "verdict": {
+        "rubricItemIds": [
+          "past_medical"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "closed",
+        "empathy": false,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": true,
+        "unclear": false,
+        "trustDelta": 0,
+        "reasoning": "The candidate asks about recent operations, which falls under past medical history."
+      },
+      "reply": "Yes, I had a hysterectomy a few weeks ago because of heavy bleeding from fibroids."
+    },
+    {
+      "input": "Do you smoke or drink at all?",
+      "verdict": {
+        "rubricItemIds": [
+          "social_smoking_alcohol"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "closed",
+        "empathy": false,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": true,
+        "unclear": false,
+        "trustDelta": 0,
+        "reasoning": "The candidate asked a closed question about smoking and alcohol use."
+      },
+      "reply": "I smoke about half a pack of cigarettes a day and have smoked since my teens. I occasionally have a glass of wine on weekends but don’t drink otherwise."
+    },
+    {
+      "input": "That sounds really worrying. Is there anything in particular you're concerned this could be?",
+      "verdict": {
+        "rubricItemIds": [
+          "ice_concerns"
+        ],
+        "requestedFactIds": [],
+        "questionStyle": "open",
+        "empathy": true,
+        "interrupted": false,
+        "jargon": false,
+        "selfDisclosure": false,
+        "asksAboutFacts": false,
+        "unclear": false,
+        "trustDelta": 3,
+        "reasoning": "The candidate explores the patient's concerns using an open-ended question with empathetic language."
+      },
+      "reply": "I’m worried it might be a blood clot, especially since I just had surgery and I smoke—those both increase the risk."
+    }
+  ]
+}

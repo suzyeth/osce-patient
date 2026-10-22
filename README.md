@@ -405,6 +405,13 @@ The offline core engine, the Nemotron clients with spend caps, the evaluation ha
 the web station are complete, as is the split into domain packs. Not done: Cohen's kappa against a person's
 labels, and no case reviewed by an expert in its field. Competitors re-checked 2026-10-21.
 
+Known gap, seen while recording the public sample on 22 October: a question that asks about something the
+case holds *and* something it doesn't ("Can you describe the pain? Does anything make it better?") can draw an
+invented denial for the second half ("nothing makes it better"). The honesty guard only steps in when the
+whole line asks for something the case cannot answer, because the judge reports that per line, not per part.
+The public sample (`samples/case-res0001.json`, recorded with `npm run record-sample`) asks one thing per
+question for that reason.
+
 ## Building a case from a transcript
 
 `npm run build-case` turns one published consultation into a draft case and a review sheet:

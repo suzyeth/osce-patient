@@ -11,6 +11,7 @@
     "play": "tsx src/cli/play.ts",
     "check-case": "tsx src/cli/checkCase.ts",
     "smoke": "tsx src/cli/smoke.ts",
+    "record-sample": "tsx src/cli/recordSample.ts",
     "eval": "tsx src/cli/eval.ts",
     "serve": "tsx src/cli/serve.ts",
     "build-case": "tsx src/cli/buildCase.ts",
