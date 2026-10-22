@@ -1,7 +1,10 @@
 import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 
+/** Which cap stopped the call: one session's, the day's, or the ledger itself (unreadable or unsavable). */
+export type BudgetScope = 'session' | 'day' | 'ledger';
+
 export class BudgetError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly scope: BudgetScope = 'ledger') {
     super(message);
     this.name = 'BudgetError';
   }
@@ -79,10 +82,10 @@ export function createBudget(limits: BudgetLimits, now: () => Date = () => new D
   return {
     check(estimateUsd) {
       if (session + estimateUsd > limits.sessionBudgetUsd) {
-        throw new BudgetError(`this session has reached its $${limits.sessionBudgetUsd} cap`);
+        throw new BudgetError(`this session has reached its $${limits.sessionBudgetUsd} cap`, 'session');
       }
       if (readSpent(limits.budgetFile, today()) + estimateUsd > limits.dailyBudgetUsd) {
-        throw new BudgetError(`today's $${limits.dailyBudgetUsd} cap has been reached`);
+        throw new BudgetError(`today's $${limits.dailyBudgetUsd} cap has been reached`, 'day');
       }
     },
     record(costUsd) {

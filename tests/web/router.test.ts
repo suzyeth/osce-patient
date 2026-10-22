@@ -8,6 +8,7 @@ import { initialSessionState } from '../../src/state.js';
 import { loadDemoCase } from '../loadCase.js';
 import { readFileSync } from 'node:fs';
 import { parseCase } from '../../src/types.js';
+import { BudgetError } from '../../src/nebius/budget.js';
 
 const c = loadDemoCase();
 const SECRET = 'a-secret-of-at-least-16-chars';
@@ -142,6 +143,25 @@ describe('POST /api/turn', () => {
     expect(response.status).toBe(502);
     expect(response.headers.getSetCookie()).toEqual([]);
     expect(openSession(cookie, SECRET).state.turnsUsed).toBe(0);
+  });
+
+  it('says so plainly when a spending cap stops the turn, instead of blaming the model', async () => {
+    const capped = (scope: 'session' | 'day'): WebDeps['clientsFor'] => () => ({
+      judge: { async evaluate() { throw new BudgetError('cap', scope); } },
+      patient: offlinePatient(),
+      spentUsd: () => 0,
+    });
+    const cookie = sealed();
+    const day = await handleApi(post('/api/turn', { input: 'Do you smoke?' }, cookie), deps({ clientsFor: capped('day') }));
+    expect(day.status).toBe(503);
+    const dayPayload = (await day.json()) as { reason: string; error: string };
+    expect(dayPayload.reason).toBe('daily_budget');
+    expect(dayPayload.error).toContain('sample report');
+    expect(day.headers.getSetCookie()).toEqual([]);
+
+    const session = await handleApi(post('/api/turn', { input: 'Do you smoke?' }, cookie), deps({ clientsFor: capped('session') }));
+    expect(session.status).toBe(429);
+    expect((await session.json()) as { reason: string }).toMatchObject({ reason: 'session_budget' });
   });
 
   it('gives each station its own remaining budget', async () => {

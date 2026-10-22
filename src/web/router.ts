@@ -5,7 +5,8 @@ import { appendTurn, runTurn } from '../orchestrator.js';
 import { computeReport, type SessionReport } from '../report.js';
 import { initialSessionState } from '../state.js';
 import { packFor } from '../domains/index.js';
-import { checkAccess, checkTurn, type WebLimits } from './limits.js';
+import { checkAccess, checkTurn, refuse, type WebLimits } from './limits.js';
+import { BudgetError } from '../nebius/budget.js';
 import {
   joinCookieChunks,
   MAX_COOKIE_CHUNKS,
@@ -19,6 +20,10 @@ import {
 } from './sessionCookie.js';
 
 export const SESSION_COOKIE = 'osce_station';
+
+/** The site's daily cap is spent: say what still works and when it comes back, never the money. */
+const DAILY_BUDGET_MESSAGE =
+  "The demo has reached today's usage limit, so nothing was recorded. It resets at midnight UTC; the sample report on the start page still works.";
 
 /** One station's clients, built per request so each station gets its own spending cap. */
 export interface StationClients {
@@ -183,8 +188,15 @@ async function turn(request: Request, deps: WebDeps): Promise<Response> {
   let result;
   try {
     result = await runTurn(patientCase, toSessionState(stored), input.trim(), clients.judge, clients.patient, history, clients.safety);
-  } catch {
-    // The station is untouched, so the candidate can simply ask again.
+  } catch (e) {
+    // The station is untouched either way. A spending cap is not a model fault, so it is named:
+    // asking again would only hit the same cap.
+    if (e instanceof BudgetError && e.scope === 'session') {
+      return json({ error: refuse('session_budget').message, reason: 'session_budget', secondsLeft: left }, { status: 429 });
+    }
+    if (e instanceof BudgetError) {
+      return json({ error: DAILY_BUDGET_MESSAGE, reason: 'daily_budget', secondsLeft: left }, { status: 503 });
+    }
     return json({ error: 'Something went wrong with the model, so nothing was recorded. Please ask again.', reason: 'model_error', secondsLeft: left }, { status: 502 });
   }
 

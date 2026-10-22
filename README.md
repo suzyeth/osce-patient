@@ -17,6 +17,28 @@ and points them to NHS 111, their GP, 999 or Samaritans (116 123).
 
 **No case has been reviewed by an expert.** Every case is marked `unreviewed`, and the report says so.
 
+**Try it:** <https://osce-patient.onrender.com> (access code `plab2026`; the sample report needs no code).
+
+## Built on NVIDIA Nemotron and Nebius Token Factory
+
+Every question a candidate types makes three calls to **NVIDIA Nemotron 3 Super**
+(`nvidia/nemotron-3-super-120b-a12b`, reasoning off) through **Nebius Token Factory**'s OpenAI-compatible API:
+
+| Call | What it does | Where |
+|---|---|---|
+| Judge | Scores the line against the case's published rubric and returns structured JSON. It never sees the case facts. | `src/nebius/judgeClient.ts`, `judgePrompt.ts` |
+| Patient | Answers in character from a prompt built only from the facts already unlocked. Locked facts are not in its context. | `src/nebius/patientClient.ts`, `src/patientContext.ts` |
+| Safety check | Runs beside the judge and pauses practice if the user seems to describe their own symptoms. | `src/nebius/safetyClient.ts` |
+
+Where Token Factory sped the work up: Nano, Lightning, Super and Ultra sit behind one endpoint, so comparing
+five judge settings on the same 50 labelled lines was a one-line model change
+([eval/results/demo-cough/judge.md](eval/results/demo-cough/judge.md)). Lightning credited a rubric item on 40%
+of the lines that should score nothing and Nano on 7%; Super with reasoning off on none, for $0.0112 against
+$0.0283 with reasoning on, so it runs everything. Token Factory has no hard spending limit of its own, so the
+site caps spend in code ($0.05 a station, $0.50 a day) and reports the day's spend at `/healthz`.
+
+Nebius services used: Token Factory for all inference. The site itself is hosted on Render, not on Nebius AI Cloud.
+
 ## Who it is for
 
 Doctors preparing for PLAB 2 and UK medical students, practising history taking when no partner is available.
