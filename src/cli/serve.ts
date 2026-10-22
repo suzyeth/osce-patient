@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { readdirSync } from 'node:fs';
 import { createBudget } from '../nebius/budget.js';
+import { healthBody } from '../web/health.js';
 import { createChat } from '../nebius/chat.js';
 import { describeConfigError, loadConfig, loadDotEnv, type NebiusConfig } from '../nebius/config.js';
 import { createNemotronJudge } from '../nebius/judgeClient.js';
@@ -174,6 +175,20 @@ async function toRequest(req: IncomingMessage): Promise<Request> {
 // Node's default request-header limit is 16 KB, and the session can legitimately use several
 // cookies. Raising it here is the difference between a long station working and every request
 // failing with 431; MAX_COOKIE_CHUNKS keeps the state inside this.
+
+// For /healthz: what the site has spent today, read from the same ledger that enforces the daily
+// cap, and how many stations were started since this instance came up.
+const ledger = nebius ? createBudget({ ...nebius, dailyBudgetUsd: limits.dailyBudgetUsd }) : null;
+const spentToday = (): number | null => {
+  if (!ledger) return 0;
+  try {
+    return ledger.daySpentUsd();
+  } catch {
+    return null;
+  }
+};
+let stationsStarted = 0;
+const startedAt = new Date().toISOString();
 const MAX_HEADER_BYTES = 32 * 1024;
 
 createServer({ maxHeaderSize: MAX_HEADER_BYTES }, (req, res) => {
@@ -183,7 +198,15 @@ createServer({ maxHeaderSize: MAX_HEADER_BYTES }, (req, res) => {
   // something has to knock on the door, and that something must not be able to cost anything.
   if (path === '/healthz') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-    res.end(JSON.stringify({ ok: true, cases: Object.keys(all).length, models: nebius !== null || offline }));
+    const body = healthBody({
+      cases: Object.keys(all).length,
+      models: nebius !== null || offline,
+      spentTodayUsd: spentToday(),
+      dailyCapUsd: limits.dailyBudgetUsd,
+      stationsStarted,
+      since: startedAt,
+    });
+    res.end(JSON.stringify(body));
     return;
   }
   if (!path.startsWith('/api/')) {
@@ -192,6 +215,7 @@ createServer({ maxHeaderSize: MAX_HEADER_BYTES }, (req, res) => {
   }
   void (async () => {
     const response = await handleApi(await toRequest(req), deps);
+    if (path === '/api/start' && response.ok) stationsStarted += 1;
     const headers: Record<string, string | string[]> = {};
     response.headers.forEach((value, name) => {
       if (name === 'set-cookie') return;
