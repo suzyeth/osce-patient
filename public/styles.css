@@ -33,6 +33,8 @@ body {
 header, main, footer { max-width: 760px; margin: 0 auto; padding: 0 16px; }
 header { padding-top: 28px; }
 h1 { font-size: 1.4rem; margin: 0 0 8px; }
+h1 .tagline { font-size: 0.95rem; font-weight: 500; color: var(--muted); margin-left: 6px; }
+@media (max-width: 520px) { h1 .tagline { display: block; margin: 2px 0 0; } }
 h2 { font-size: 1.15rem; margin: 0 0 8px; }
 h3 { font-size: 1rem; margin: 20px 0 8px; }
 
@@ -126,14 +128,15 @@ button[disabled] { opacity: 0.55; cursor: not-allowed; }
 .banner p:empty { display: none; }
 
 .summary { margin: 12px 0 4px; }
-.summary .flag { margin: 8px 0 0; font-weight: 600; }
-.summary .flag.bad { color: var(--bad); }
-.summary .flag.good { color: var(--good); }
+/* The result lines carry the report, so they read as callouts, not as body text. */
+.summary .flag { margin: 8px 0 0; font-weight: 600; font-size: 1.05rem; padding: 6px 10px; border-left: 4px solid currentColor; border-radius: 4px; }
+.summary .flag.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, transparent); }
+.summary .flag.good { color: var(--good); background: color-mix(in srgb, var(--good) 9%, transparent); }
 
 .scores { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
 .score { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 130px; flex: 1 1 130px; }
-.score b { display: block; font-size: 1.3rem; }
-.score small { color: var(--muted); }
+.score b { display: block; font-size: 1.6rem; line-height: 1.2; margin-top: 2px; }
+.score small { color: var(--muted); font-size: 0.82rem; line-height: 1.35; display: block; }
 
 .items { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .items li { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.95rem; }
@@ -141,6 +144,9 @@ button[disabled] { opacity: 0.55; cursor: not-allowed; }
 .items .cross { color: var(--bad); font-weight: 700; margin-right: 6px; }
 .items .critical { border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
 .items .hint { display: block; color: var(--muted); font-size: 0.88rem; margin-top: 2px; overflow-wrap: anywhere; }
+/* What to say next time is the useful line; where the item comes from is the reference under it. */
+.items .hint.try { color: var(--text); font-size: 0.93rem; }
+.items .hint.source { font-size: 0.8rem; opacity: 0.85; }
 .items a.quote { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .items .unassessed { opacity: 0.7; }
 .items .outcome { margin-right: 2px; }

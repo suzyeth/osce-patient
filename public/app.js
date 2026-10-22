@@ -153,8 +153,8 @@ function scoreCard(label, score) {
   return box;
 }
 
-function hint(text) {
-  return Object.assign(document.createElement('span'), { className: 'hint', textContent: text });
+function hint(text, kind = '') {
+  return Object.assign(document.createElement('span'), { className: kind ? `hint ${kind}` : 'hint', textContent: text });
 }
 
 function itemRow(item, covered) {
@@ -182,9 +182,9 @@ function itemRow(item, covered) {
   } else if (covered) {
     li.append(hint(`question ${item.turn} — the words that earned this were not kept, so this mark cannot be checked`));
   } else {
-    li.append(hint(`Try: ${item.exampleQuestion}`));
+    li.append(hint(`Try: ${item.exampleQuestion}`, 'try'));
   }
-  li.append(hint(item.source ? `Source: ${item.source}` : "Source: none published; this item is this case's own."));
+  li.append(hint(item.source ? `Source: ${item.source}` : "Source: none published; this item is this case's own.", 'source'));
   return li;
 }
 
