@@ -17,6 +17,13 @@ and points them to NHS 111, their GP, 999 or Samaritans (116 123).
 
 **No case has been reviewed by an expert.** Every case is marked `unreviewed`, and the report says so.
 
+## Who it is for
+
+Doctors preparing for PLAB 2 and UK medical students, practising history taking when no partner is available.
+What candidates say they need, read from 123 public Reddit threads and mapped to what this tool does and does
+not do (it does not cover management, timing or speaking out loud yet), is in
+[docs/user-research.md](docs/user-research.md).
+
 ## What is actually different, and what is not
 
 Being honest about this mattered enough to change the product, so it belongs at the top. Every figure here
