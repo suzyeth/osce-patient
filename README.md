@@ -57,9 +57,13 @@ research framework for simulating patients; this is a practice tool built on the
 rules for what unlocks what openly, and one vendor called its rubric "commercially sensitive". On 21 October
 2026 sixteen were checked again or found for the first time (among them Quesmed, Oscelyra, Geeky Medics,
 Plabable, SimsBuddy, OSCEPilot and RehearseMD; three could not be opened or were still a waiting list). Of
-those that could be opened, none publishes its mark scheme openly: Quesmed's and SimsBuddy's criteria can be
-opened inside their own sites, and Oscelyra describes a "written mark scheme" without publishing it. None
-publishes a measured leak rate (how often the patient says what was not asked for), invention rate or safety
+those that could be opened, none publishes its per-item marking rules openly: Quesmed's and SimsBuddy's
+criteria can be opened inside their own sites, and Oscelyra describes a "written mark scheme" without
+publishing it. The closest is Plabity, checked on 22 October: it is free (an account is needed), voice-first,
+has 474 PLAB 2 stations, says its feedback quotes evidence from your transcript, and publishes a guide for
+each condition describing what the station tests and its safety-critical checks; its per-station marking is
+shown after a station, not published. So being free is not what is different here; publishing the rules as
+tested code, with no account, is. None publishes a measured leak rate (how often the patient says what was not asked for), invention rate or safety
 figure; Quesmed's published figures are about marking agreement, which this project has not measured yet (see
 Status). Here, facts that have not been asked for are not in the patient's prompt at all, by construction,
 and the evaluation below measures how often something gets out anyway.
