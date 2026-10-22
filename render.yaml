@@ -35,6 +35,6 @@ services:
       - key: OSCE_WEB_SESSION_BUDGET_USD
         value: '0.05'
       - key: OSCE_WEB_DAILY_BUDGET_USD
-        value: '1'
+        value: '0.5'
       - key: OSCE_WEB_MAX_TURNS
         value: '40'
