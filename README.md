@@ -1,5 +1,7 @@
 # osce-patient
 
+**Show Your Marks** · [demo video (2:45)](https://youtu.be/3jgTBU9ih7w) · [live site](https://osce-patient.onrender.com) · built for the Nebius x NVIDIA Global AI Hackathon
+
 Practice for the kind of conversation where the other person only tells you what you ask for properly,
 and every mark you are given can be traced back to their words.
 
